@@ -13,6 +13,10 @@ permissions:
   pages: write
   id-token: write
 
+# Node 24 imposé par GitHub à partir du 16 juin 2026 : on opte dès maintenant.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -21,8 +25,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -33,10 +37,10 @@ jobs:
       - name: Construire le site
         run: npx astro build --site "https://jmchantrein.github.io" --base "/site"
         working-directory: site
+      # Prérequis (une fois) : Settings → Pages → Source : « GitHub Actions ».
+      # Le GITHUB_TOKEN n'a pas le droit d'activer Pages lui-même.
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/dist
