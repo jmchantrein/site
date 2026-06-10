@@ -16,11 +16,11 @@ terminal: false
 
 Tout d'abord, la section **Dockerfile** vise à nous emmener étape par étape vers l'utilisation de docker-compose. Nous installerons tout un service WordPress dans une seule image. Cela nous permettra de prendre en main la rédaction d'un Dockerfile. Nous nous interrogerons au fur et à mesure sur la mise en place de bonnes pratiques à la rédaction de Dockerfile. Nous pointerons du doigt les problèmes qui sont engendrés lorsque plusieurs processus sont exécutés dans un seul conteneur et nous proposerons une architecture de microservices permettant de pallier ces problèmes. Cet aboutissement se fera étape par étape. **Il est tout à fait inutile de vouloir griller une étape, chaque étape supérieure repose sur la compréhension et la réalisation des étapes inférieures.**
 
-Ensuite, dans la section **docker-compose**, nous verrons les méthodes de travail plus adaptées et plus simples pour mettre en place un service Docker en production sur un serveur. En l'occurrence, il s'agira toujours d'un service WordPress.
+Ensuite, dans la section **Docker Compose**, nous verrons les méthodes de travail plus adaptées et plus simples pour mettre en place un service Docker en production sur un serveur. En l'occurrence, il s'agira toujours d'un service WordPress.
 
 Enfin, dans la section **Docker Swarm**, nous verrons comment fonctionne Docker Swarm de manière générale, nous présenterons brièvement les fonctionnalités de répartition de charge et de mise à l'échelle et enfin nous orchestrerons notre architecture de microservices WordPress dans un cluster de machines Docker.
 
-## Dockerfile : du Dockerfile au fichier docker-compose par l'exemple
+## Dockerfile : du Dockerfile au fichier compose par l'exemple
 
 ### Étape 1 : création basique d'un Dockerfile
 
@@ -56,7 +56,7 @@ Pensez à tester votre conteneur à l'adresse [http://localhost:80/wordpress](ht
 RUN DEBIAN_FRONTEND=noninteractive apt install package1 package2 ...
 ```
 
-- Si vous n'avez besoin de changer de chemin que pour une ou des commandes, n'utilisez pas le mot-clé `WORKDIR` (cela ajouterait une image intermédiaire inutile). Préférez l'utilisation de :
+- Si vous n'avez besoin de changer de chemin que pour une ou des commandes, n'utilisez pas le mot-clé `WORKDIR` (sa portée s'étend à toutes les instructions suivantes, y compris la commande par défaut du conteneur). Préférez l'utilisation de :
 
 ```bash
 RUN cd /mon/chemin && mes_commandes
@@ -76,7 +76,7 @@ mysql --user=username --password=userpassword --execute="CREATE DATABASE userbas
 </Note>
 
 - N'oubliez pas que les instructions sont effectuées par l'utilisateur `root` par défaut. Cela pourrait poser des problèmes de droits par la suite.
-- Vous allez exécuter un conteneur contenant plusieurs services : je vous propose de lire cet [article](https://docs.docker.com/engine/admin/multi-service_container/).
+- Vous allez exécuter un conteneur contenant plusieurs services : je vous propose de lire cet [article](https://docs.docker.com/engine/containers/multi-service_container/).
 - Lorsque vous allez exécuter votre conteneur, il va falloir que celui-ci communique depuis son réseau (par défaut, le réseau *bridge* qui « NAT » le trafic des conteneurs vers l'extérieur) vers le réseau de l'hôte. Vous allez donc devoir mapper/associer un port de l'hôte avec un port du conteneur. Cela se fait via l'option `-p` de `docker run`. Par exemple, la commande suivante permet de mapper le port 8000 de l'hôte au port 80 du conteneur de l'image nginx :
 
 ```bash
@@ -134,7 +134,7 @@ Ici, vous exécutez plusieurs processus dans un conteneur. La philosophie de Doc
     jmc@laptop ~ $
     ```
 
-    Le conteneur s'arrête alors même que l'on souhaiterait qu'il exécute la commande `sleep infinity`. Cela s'explique par le fait que la commande `sleep infinity` est exécutée en tâche de fond (utilisation de `&`). Puis la commande `ps -eflH` s'exécute… et il n'y a plus de tâche en mode *foreground*. Or les conteneurs sont conçus pour qu'il y ait une [tâche en mode *foreground* qui soit exécutée](https://docs.docker.com/engine/reference/run/#detached-vs-foreground).
+    Le conteneur s'arrête alors même que l'on souhaiterait qu'il exécute la commande `sleep infinity`. Cela s'explique par le fait que la commande `sleep infinity` est exécutée en tâche de fond (utilisation de `&`). Puis la commande `ps -eflH` s'exécute… et il n'y a plus de tâche en mode *foreground*. Or les conteneurs sont conçus pour qu'il y ait une [tâche en mode *foreground* qui soit exécutée](https://docs.docker.com/engine/containers/run/#foreground-and-background).
 
     Lorsque vous exécutez un conteneur en mode détaché (`--detach`, `-d`), il n'y a pas d'interaction avec le conteneur : `/bin/bash` ne peut donc pas rester en mode *foreground* :
 
@@ -172,7 +172,7 @@ Est-ce que l'on peut avoir une rédaction plus propre ? Quelles sont les bonnes 
 #### Quelques contraintes
 
 - Copiez votre répertoire `1_wordpress_multiservice_dirty` en `2_wordpress_multiservice_better`.
-- Modifiez votre Dockerfile de manière à ce que celui-ci respecte les [bonnes pratiques](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/).
+- Modifiez votre Dockerfile de manière à ce que celui-ci respecte les [bonnes pratiques](https://docs.docker.com/build/building/best-practices/).
 - Effectuez une construction sans cache du Dockerfile que vous avez modifié.
 - Vérifiez que votre service WordPress fonctionne correctement.
 
@@ -194,7 +194,7 @@ Quel utilisateur est à l'origine de l'exécution d'apache2, de mysql et de la c
 
 ### Étape 3 : le problème de l'utilisateur root
 
-Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/security) sur la sécurité lorsque l'on utilise un environnement Docker, ou bien directement la [conclusion](https://docs.docker.com/engine/security/security/#conclusions).
+Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/) sur la sécurité lorsque l'on utilise un environnement Docker, ou bien directement la [conclusion](https://docs.docker.com/engine/security/#conclusions).
 
 #### Quelques contraintes
 
@@ -235,9 +235,9 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
 
 #### Méthodes pour la pérennisation des données
 
-1. Nous avons trouvé une méthode pour pérenniser nos données dans un volume. Lorsque ce volume est dans l'arborescence du système de fichiers de Docker (Docker a son propre [backend de stockage (device-mapper, aufs, ou autres)](https://docs.docker.com/storage/storagedriver/select-storage-driver/)), les données initialement contenues dans l'image sont copiées lors du premier lancement dans le volume. Ensuite les données sont ajoutées dans le volume.
+1. Nous avons trouvé une méthode pour pérenniser nos données dans un volume. Lorsque ce volume est dans l'arborescence du système de fichiers de Docker (Docker a son propre [backend de stockage (overlay2 par défaut aujourd'hui)](https://docs.docker.com/engine/storage/drivers/select-storage-driver/)), les données initialement contenues dans l'image sont copiées lors du premier lancement dans le volume. Ensuite les données sont ajoutées dans le volume.
 
-2. Nous pourrions faire un point de montage de `/var/lib/mysql` dans notre propre système de fichiers (par exemple : `/data`). Cependant, lors du premier montage, toutes les données contenues dans `/var/lib/mysql` de l'image sont inaccessibles, car le dossier `/data` monté est initialement vide : le conteneur serait inutilisable car MySQL n'aurait même plus les informations concernant ses propres utilisateurs. On peut contourner ce problème en lançant un script au démarrage du conteneur, qui regarde si le point de montage `/data` est vide ou non. S'il est vide, on initialise MySQL, sinon on ne fait rien. L'initialisation se fait donc une seule fois lors du premier démarrage du conteneur et elle ne se fait pas dans l'image. Vous pouvez voir cet [exemple](http://txt.fliglio.com/2013/11/creating-a-mysql-docker-container/). Peut-être trouvez-vous cela bien compliqué et contraignant ? Cependant, un énorme avantage de cette méthode, en plus de localiser ses données où on le souhaite, c'est la possibilité de passer ses propres variables d'environnement à l'instanciation du conteneur : par exemple, on choisit quel est le mot de passe utilisateur au lancement du conteneur et non de manière figée dans l'image. Cette méthode nous apporte donc beaucoup plus de souplesse dans la gestion de nos conteneurs. On ne mettra pas en œuvre cette méthode dans cette partie. Mais gardez à l'esprit que ce type de mécanisme peut être inclus dans des images dont vous pourriez vous servir. Ce sera d'ailleurs le cas du microservice officiel MySQL dont nous nous servirons dans la prochaine partie.
+2. Nous pourrions faire un point de montage de `/var/lib/mysql` dans notre propre système de fichiers (par exemple : `/data`). Cependant, lors du premier montage, toutes les données contenues dans `/var/lib/mysql` de l'image sont inaccessibles, car le dossier `/data` monté est initialement vide : le conteneur serait inutilisable car MySQL n'aurait même plus les informations concernant ses propres utilisateurs. On peut contourner ce problème en lançant un script au démarrage du conteneur, qui regarde si le point de montage `/data` est vide ou non. S'il est vide, on initialise MySQL, sinon on ne fait rien. L'initialisation se fait donc une seule fois lors du premier démarrage du conteneur et elle ne se fait pas dans l'image. Vous pouvez voir cet [exemple](https://web.archive.org/web/2017/http://txt.fliglio.com/2013/11/creating-a-mysql-docker-container/) (archive d'un article de 2013). Peut-être trouvez-vous cela bien compliqué et contraignant ? Cependant, un énorme avantage de cette méthode, en plus de localiser ses données où on le souhaite, c'est la possibilité de passer ses propres variables d'environnement à l'instanciation du conteneur : par exemple, on choisit quel est le mot de passe utilisateur au lancement du conteneur et non de manière figée dans l'image. Cette méthode nous apporte donc beaucoup plus de souplesse dans la gestion de nos conteneurs. On ne mettra pas en œuvre cette méthode dans cette partie. Mais gardez à l'esprit que ce type de mécanisme peut être inclus dans des images dont vous pourriez vous servir. Ce sera d'ailleurs le cas du microservice officiel MySQL dont nous nous servirons dans la prochaine partie.
 
    On pourrait remarquer aussi que la mise en place d'une telle complexité ne peut être envisageable que pour une instanciation massive de conteneurs WordPress et non pas pour quelques instances. C'est vrai, mais gardez à l'esprit que nous sommes dans le cadre d'un TP de compréhension des mécanismes de Docker : les images officielles implémentent elles-mêmes ce type de mécanisme, et de manière bien plus efficace que ce que nous faisons ici. Ainsi, un microservice devrait pouvoir être déployé tout aussi bien sporadiquement que massivement.
 
@@ -251,18 +251,18 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
 
 4. Nous pourrions aussi pérenniser les sources (`/var/www/html`) avec un montage sur l'hôte. Dans le cas d'un montage hors du système de fichiers de Docker (cf. notre solution numéro 2), cela nécessiterait l'écriture d'un bootstrap sur lequel on mettrait un bit setuid ; le bootstrap modifierait le propriétaire du répertoire monté par `www-data:www-data` avec `chown` ; il faut donc être `root` pour cette exécution (d'où l'usage du setuid).
 
-**Conclusion.** La méthode 1 est la plus facile à mettre en œuvre. C'est la méthode officielle recommandée par Docker, mais elle nous ôte la liberté de choisir où nous stockons nos données. La méthode 2 est la plus difficile à mettre en œuvre mais offre plus de souplesse dans la gestion de nos services ; cependant, contrairement à la méthode 1, nous ne pouvons pas gérer les données via le CLI de Docker (`docker volume cmd`). Les méthodes 3 et 4 sont, à mon avis, à proscrire. Vous trouverez plus d'informations sur la méthode 1 [ici](https://docs.docker.com/engine/admin/volumes/volumes/) et sur la méthode 2 [ici](https://docs.docker.com/storage/bind-mounts/).
+**Conclusion.** La méthode 1 est la plus facile à mettre en œuvre. C'est la méthode officielle recommandée par Docker, mais elle nous ôte la liberté de choisir où nous stockons nos données. La méthode 2 est la plus difficile à mettre en œuvre mais offre plus de souplesse dans la gestion de nos services ; cependant, contrairement à la méthode 1, nous ne pouvons pas gérer les données via le CLI de Docker (`docker volume cmd`). Les méthodes 3 et 4 sont, à mon avis, à proscrire. Vous trouverez plus d'informations sur la méthode 1 [ici](https://docs.docker.com/engine/storage/volumes/) et sur la méthode 2 [ici](https://docs.docker.com/engine/storage/bind-mounts/).
 
 <Note type="warning" title="Nommez vos volumes">
-  Lorsque vous utilisez la méthode 1, vous devez [nommer vos volumes](https://docs.docker.com/storage/volumes/#remove-volumes). En effet, les volumes anonymes sont supprimés à la suppression du conteneur ou lors de l'utilisation de la commande `docker volume prune`.
+  Lorsque vous utilisez la méthode 1, vous devez [nommer vos volumes](https://docs.docker.com/engine/storage/volumes/). En effet, les volumes anonymes sont supprimés à la suppression du conteneur (option `--rm`) ou lors de l'utilisation de la commande `docker volume prune`.
 </Note>
 
-<Note type="danger" title="Attention">
-  Si un volume nommé n'est utilisé par aucun conteneur, alors la commande `docker volume prune` supprimerait ce volume, bien que celui-ci soit nommé.
+<Note type="danger" title="Attention à docker volume prune">
+  Historiquement, `docker volume prune` supprimait **aussi** les volumes nommés qui n'étaient utilisés par aucun conteneur. Depuis Docker 23, la commande ne supprime par défaut que les volumes **anonymes** ; les volumes nommés inutilisés ne sont supprimés qu'avec `docker volume prune --all`. Dans tous les cas, un volume nommé inutilisé n'est pas à l'abri d'un prune : nommer ne suffit pas, sauvegardez.
 </Note>
 
 <Note title="N.B.">
-  Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
+  Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
 </Note>
 
 ### Étape 5 : vers une architecture de microservices
@@ -284,8 +284,8 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
 RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.cnf
 ```
 
-- Bien que dépréciée, vous utiliserez ici l'option historique `--link` pour lier vos 2 conteneurs.
-- Avec les nouvelles fonctionnalités du réseau Docker, il nous faudrait plutôt créer notre propre réseau pour notre service. Et cela nous montre qu'il est tout à fait possible d'avoir un réseau dédié pour chaque service ! Plus d'informations [ici (link)](https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/) et [ici (network)](https://docs.docker.com/engine/tutorials/networkingcontainers/).
+- Bien que dépréciée, vous utiliserez ici l'option historique `--link` pour lier vos 2 conteneurs (mécanisme hérité, qui ne fonctionne que sur le réseau *bridge* par défaut — conservé ici à des fins pédagogiques).
+- Avec les fonctionnalités du réseau Docker, il nous faudrait plutôt créer notre propre réseau pour notre service (`docker network create`). Et cela nous montre qu'il est tout à fait possible d'avoir un réseau dédié pour chaque service ! Plus d'informations [ici (liens hérités)](https://docs.docker.com/engine/network/links/) et [ici (réseaux)](https://docs.docker.com/engine/network/).
 
 #### Quelques questions, remarques
 
@@ -293,24 +293,28 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Notez que l'on n'a pas exposé le port du conteneur MySQL à l'extérieur : seul le conteneur Apache y a accès.
 - Nous sommes en présence d'une architecture de 2 microservices : que pensez-vous du mécanisme de script `build_and_launch.sh` ?
 - Et si nous étions en présence d'une architecture de 25 microservices, que penseriez-vous du mécanisme de script `build_and_launch.sh` ?
-- Docker va plus loin que la simple rédaction de Dockerfile : Docker nous permet aussi de gérer la façon dont interagissent les conteneurs entre eux. Pour cela, Docker met à notre disposition l'outil docker-compose. C'est l'objet de notre prochaine partie.
+- Docker va plus loin que la simple rédaction de Dockerfile : Docker nous permet aussi de gérer la façon dont interagissent les conteneurs entre eux. Pour cela, Docker met à notre disposition l'outil Docker Compose. C'est l'objet de notre prochaine partie.
 
-## docker-compose, ou l'art d'orchestrer nos conteneurs sur une seule machine
+## Docker Compose, ou l'art d'orchestrer nos conteneurs sur une seule machine
 
-<Note title="Installation de docker-compose">
+<Note title="Installation de Docker Compose">
+  Docker Compose (v2) est aujourd'hui un **plugin** du client Docker, fourni par le paquet `docker-compose-plugin` du dépôt officiel ([documentation](https://docs.docker.com/compose/install/linux/)) :
+
   ```bash
-  sudo curl -L https://github.com/docker/compose/releases/download/1.17.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
+  sudo apt update && sudo apt install docker-compose-plugin
+  docker compose version
   ```
+
+  La commande s'écrit `docker compose` (avec une espace). L'ancien binaire autonome `docker-compose` (v1), que ce TP installait par curl à l'époque, est en fin de vie depuis 2023.
 </Note>
 
-### Étape 6 : une architecture de microservices décrite dans un fichier docker-compose
+### Étape 6 : une architecture de microservices décrite dans un fichier compose
 
 #### Quelques contraintes
 
-- Lisez la documentation présentant un [aperçu des fonctionnalités de docker-compose](https://docs.docker.com/compose/overview/).
+- Lisez la documentation présentant un [aperçu des fonctionnalités de Docker Compose](https://docs.docker.com/compose/).
 - Copiez votre répertoire `5_wordpress_microservice_persistant` en `6_wordpress_microservice_compose`.
-- Remplacez votre script `build_and_launch.sh` par un fichier docker-compose en version 3 qui vous permette d'avoir une configuration équivalente au script.
+- Remplacez votre script `build_and_launch.sh` par un fichier compose (`compose.yaml` ; la clé `version:` que l'on voit dans les anciens tutoriels est aujourd'hui obsolète) qui vous permette d'avoir une configuration équivalente au script.
 - Il y aura un service (microservice) nommé `apache_wordpress` et un service (microservice) `mysql_wordpress`.
 - Vérifiez que votre service fonctionne correctement.
 
@@ -319,11 +323,11 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Listez les réseaux avec `docker network ls`. Que constatez-vous ?
 - Essayons d'enlever l'option `link`. Pourquoi cela fonctionne-t-il ?
 - Avez-vous remarqué que lors de l'installation de WordPress, vous pouviez adresser le nom du service de la base de données à la place du hostname ? Comment est-ce possible ? Allez regarder du côté de la commande `docker container inspect nom_du_conteneur_mysql`.
-- Observez bien tous les [paramètres](https://docs.docker.com/compose/compose-file/) que vous pouvez fixer pour vos conteneurs dans le fichier docker-compose, parmi les plus intéressants : `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`… Parmi ces options, deux retiennent mon attention : il s'agit de `deploy` et d'`overlay`, qui ne fonctionnent qu'avec l'usage de Docker Swarm ; nous verrons ces deux commandes plus tard dans la partie Docker Swarm.
+- Observez bien tous les [paramètres](https://docs.docker.com/reference/compose-file/) que vous pouvez fixer pour vos conteneurs dans le fichier compose, parmi les plus intéressants : `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`… Parmi ces options, deux retiennent mon attention : il s'agit de `deploy` et d'`overlay`, qui ne fonctionnent qu'avec l'usage de Docker Swarm ; nous verrons ces deux commandes plus tard dans la partie Docker Swarm.
 
 Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de Docker. Ce fut peut-être long et difficile. Il est maintenant temps pour vous de savoir que tout ce que nous avons fait là à la main, d'autres personnes l'ont déjà fait, en beaucoup mieux, et pour notre usage. Nous allons donc maintenant nous servir de leurs travaux ; mais nous savons maintenant quels sont les mécanismes qui seront employés par les images officielles dont nous allons nous servir (variables d'environnement, fichier de bootstrap, setuid, volume). Il n'y a plus aucune ombre de magie dans Docker, nous savons désormais globalement comment tout cela s'articule.
 
-### Étape 7 : une architecture de microservices décrite dans un fichier docker-compose fourni par la communauté
+### Étape 7 : une architecture de microservices décrite dans un fichier compose fourni par la communauté
 
 #### Quelques contraintes
 
@@ -331,8 +335,6 @@ Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de D
 - Créez un fichier `stack_wordpress.yml` avec ce contenu :
 
 ```yaml
-version: '3.1'
-
 services:
 
   wordpress:
@@ -347,7 +349,7 @@ services:
       WORDPRESS_DB_NAME: exampledb
 
   db:
-    image: mysql:5.7
+    image: mysql:8.0
     restart: always
     environment:
       MYSQL_DATABASE: exampledb
@@ -389,7 +391,7 @@ services:
 C'est fini ! Vous pouvez vous arrêter là. Toutefois :
 
 - Si vous êtes administrateur systèmes et/ou réseaux, alors la prochaine et dernière partie devrait aussi vous intéresser.
-- Si vous êtes développeur, vous avez tout ce dont vous avez besoin pour fournir une application et ses dépendances à n'importe qui sachant écrire `docker-compose up` dans un terminal.
+- Si vous êtes développeur, vous avez tout ce dont vous avez besoin pour fournir une application et ses dépendances à n'importe qui sachant écrire `docker compose up` dans un terminal.
 - Si vous êtes chercheur, vous avez ici un mécanisme qui permet d'inscrire vos travaux dans une démarche de recherche reproductible : vous voulez tester mon algorithme révolutionnaire ? Bien sûr, faites `docker run super-chercheur/super-algo`. Et voilà !
 
 Nous n'avons pas fait mention ici de la possibilité et de l'efficacité de Docker en ce qui concerne les techniques d'intégration continue et d'usine logicielle. Docker n'est pas en mesure de fournir à lui tout seul cette fonctionnalité. Pour des tests simples, sachez simplement que l'on peut déjà faire des merveilles avec un GitLab et un dépôt GitHub. Cerise sur le gâteau, vous pouvez vous servir des images officielles de ces services pour mettre en œuvre vos tests.
@@ -399,7 +401,7 @@ Pour aller plus loin, je vous conseille de suivre les cours officiels de Docker 
 ## Docker Swarm, ou l'art d'orchestrer nos conteneurs sur un cluster de machines Docker
 
 <Note title="Prérequis">
-  Il vous faut un [compte Docker](https://cloud.docker.com/) pour pouvoir réaliser cette partie.
+  Il vous faut un [compte Docker](https://hub.docker.com/) pour pouvoir réaliser cette partie.
 </Note>
 
 ### Introduction
@@ -408,7 +410,7 @@ Docker Swarm est un orchestrateur. C'est un outil permettant de gérer vos image
 
 - Gestion d'un cluster de démons Docker.
 - Décentralisation d'exécution (un conteneur `a` sur une machine A peut communiquer avec un conteneur `b` sur une machine B).
-- Utilisation d'un fichier au format docker-compose pour le déploiement (modèle déclaratif).
+- Utilisation d'un fichier au format compose pour le déploiement (modèle déclaratif).
 - Passage à l'échelle : pour chaque service, vous pouvez déclarer le nombre de conteneurs que vous souhaitez exécuter. Lorsque vous augmentez ou réduisez ce nombre de conteneurs, Docker Swarm s'adapte automatiquement en ajoutant ou en supprimant des conteneurs pour maintenir l'état souhaité. Cela nécessite toutefois d'avoir pensé une architecture de microservices pour son service.
 - Adaptation de l'état général du cluster : si un des nœuds du cluster tombe, Swarm redéploie automatiquement les conteneurs perdus sur les nœuds restants et actifs.
 - Réseaux virtuels partagés entre plusieurs machines (*overlay network*).
@@ -421,7 +423,7 @@ Docker Swarm est un orchestrateur. C'est un outil permettant de gérer vos image
 </Note>
 
 <Note title="Kubernetes">
-  Il existe un concurrent très sérieux à Swarm : il s'agit de l'orchestrateur [Kubernetes](https://kubernetes.io/). Celui-ci est plus mature, plus stable et offre plus de fonctionnalités que Docker Swarm. En outre, il a été adopté massivement par le monde de l'industrie. Docker Swarm présente l'avantage d'être plus facile à prendre en main, mais les fonctionnalités présentées ici sont également présentes dans Kubernetes.
+  Il existe un concurrent très sérieux à Swarm : il s'agit de l'orchestrateur [Kubernetes](https://kubernetes.io/). Celui-ci est plus mature, plus stable et offre plus de fonctionnalités que Docker Swarm. En outre, il a été adopté massivement par le monde de l'industrie. Docker Swarm présente l'avantage d'être plus facile à prendre en main, mais les fonctionnalités présentées ici sont également présentes dans Kubernetes. Depuis, le marché a tranché : Kubernetes s'est imposé comme le standard de l'orchestration et Swarm, toujours fonctionnel, n'évolue plus guère — il reste un excellent marchepied conceptuel.
 </Note>
 
 ### Gestion native de l'équilibrage de charge d'un service
@@ -462,7 +464,7 @@ La partie ci-dessous est une introduction à Docker Swarm présente sous forme d
 
 #### Objectif
 
-Déployer une pile (*stack*) d'une application de vote (*voting app*) avec Docker Swarm. Le but de ce TP est d'illustrer comment déployer une pile (application multi-(micro)services) avec Swarm et à partir d'un fichier docker-compose.
+Déployer une pile (*stack*) d'une application de vote (*voting app*) avec Docker Swarm. Le but de ce TP est d'illustrer comment déployer une pile (application multi-(micro)services) avec Swarm et à partir d'un fichier compose.
 
 #### L'application
 
@@ -511,7 +513,7 @@ Assurez-vous que vous êtes dans le premier terminal et faites ce qui suit :
 docker stack deploy --compose-file=docker-stack.yml voting_stack
 ```
 
-Note : être capable de déployer une pile à partir d'un fichier docker-compose est une fonctionnalité intéressante ajoutée dans Docker 1.13.
+Note : être capable de déployer une pile à partir d'un fichier compose est une fonctionnalité intéressante ajoutée dans Docker 1.13.
 
 Vérifiez la pile déployée depuis le premier terminal :
 
@@ -607,7 +609,7 @@ docker service update --replicas 2 voting_stack_vote
 docker service rollback voting_stack_vote
 ```
 
-En fonction de ce qui a été défini dans le fichier docker-compose et des éventuelles mises à jour disponibles, vous pouvez mettre à jour la pile (le service dans sa globalité) de cette manière :
+En fonction de ce qui a été défini dans le fichier compose et des éventuelles mises à jour disponibles, vous pouvez mettre à jour la pile (le service dans sa globalité) de cette manière :
 
 ```bash
 docker stack deploy --compose-file docker-stack.yml
