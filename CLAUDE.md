@@ -2,8 +2,9 @@
 
 Site pédagogique **statique** : cours techniques (style manuel) + blog
 scientifique « Miscelánea ». Astro + MDX. Design issu d'un prototype Claude
-Design (`project/`, transcripts dans `chats/`) fondé sur les sciences
-cognitives (Sweller, Mayer), WCAG AA (corps AAA).
+Design (`project/` ; justification des choix dans
+`docs/design-rationale.md`) fondé sur les sciences cognitives (Sweller,
+Mayer), WCAG AA (corps AAA).
 
 ## Règles non négociables
 
@@ -28,8 +29,10 @@ cognitives (Sweller, Mayer), WCAG AA (corps AAA).
   gabarit de cours, liste des composants MDX).
 - `sources/` — cours sources fournis par lots (LaTeX et Markdown fiables ;
   PDF en dernier recours, extraction bruitée).
-- `project/`, `chats/` — prototype et transcripts Claude Design (référence
-  visuelle ; ne pas modifier).
+- `project/` — prototype Claude Design (référence visuelle ; ne pas
+  modifier).
+- `docs/design-rationale.md` — le « pourquoi » du design : principes
+  cognitifs/WCAG et décisions prises en session de conception.
 
 ## Migration des cours (workflow imposé)
 
