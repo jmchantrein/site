@@ -1,0 +1,2 @@
+CONTAINER ID  IMAGE   COMMAND      CREATED         STATUS                       PORTS   NAMES
+dfdf734253a9  ubuntu  "/bin/bash"  26 minutes ago  Exited (127) 6 minutes ago           stoic_engelbart

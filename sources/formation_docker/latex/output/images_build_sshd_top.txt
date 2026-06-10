@@ -1,0 +1,4 @@
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+sshd                latest              8f8b2b932bc7        17 minutes ago      143 MB
+<none>              <none>              1c1305bc7c28        2 days ago          143 MB
+debian              testing-slim        f2020c7a5565        5 days ago          55.2 MB

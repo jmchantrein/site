@@ -1,0 +1,8 @@
+# setuid sur le démon ssh
+RUN chmod u+s /usr/sbin/sshd
+
+# root => lambda
+USER lambda
+
+# Commande par défaut au lancement du conteneur
+CMD ["/usr/sbin/sshd", "-D"]

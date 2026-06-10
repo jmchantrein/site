@@ -1,0 +1,10 @@
+IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+8f8b2b932bc7        About an hour ago   /bin/sh -c #(nop)  CMD ["/usr/sbin/sshd" "...   0 B                 
+07c952331a94        About an hour ago   /bin/sh -c #(nop)  USER [lambda]                0 B                 
+1e8030a5f34b        About an hour ago   /bin/sh -c chmod u+s /usr/sbin/sshd &&  ec...   791 kB              
+15bd3d357785        3 days ago          /bin/sh -c apt update &&     apt install -...   86.8 MB             
+a17fecb71d55        3 days ago          /bin/sh -c useradd lambda --create-home --...   333 kB              
+fbb7230757c2        3 days ago          /bin/sh -c #(nop)  LABEL maintainer=Jean-M...   0 B                 
+e3ef9a7b6a23        3 days ago          /bin/sh -c #(nop)  ENV VERSION=1 DEBIAN_FR...   0 B                 
+f2020c7a5565        5 days ago          /bin/sh -c #(nop)  CMD ["bash"]                 0 B                 
+<missing>           5 days ago          /bin/sh -c #(nop) ADD file:2bad6c695080ae4...   55.2 MB             
