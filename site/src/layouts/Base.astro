@@ -1,0 +1,141 @@
+---
+/**
+ * Gabarit de base : <head> (anti-FOUC, polices locales, styles), en-tête,
+ * pied de page, tiroirs de préférences, runtime partagé (site.js).
+ * Toute page du site passe par ici — le contenu ne porte jamais le chrome.
+ */
+import "@fontsource/source-serif-4/400.css";
+import "@fontsource/source-serif-4/600.css";
+import "@fontsource/source-serif-4/700.css";
+import "@fontsource/public-sans/400.css";
+import "@fontsource/public-sans/500.css";
+import "@fontsource/public-sans/600.css";
+import "@fontsource/public-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "@fontsource/ibm-plex-mono/700.css";
+/* Polices de lecture alternatives — déclarées partout, téléchargées par le
+   navigateur uniquement si le lecteur les active (font-face est paresseux). */
+import "@fontsource/atkinson-hyperlegible/400.css";
+import "@fontsource/atkinson-hyperlegible/700.css";
+import "@fontsource/atkinson-hyperlegible/400-italic.css";
+import "@fontsource/opendyslexic/400.css";
+import "@fontsource/opendyslexic/700.css";
+import "@fontsource/opendyslexic/400-italic.css";
+import "katex/dist/katex.min.css";
+import "../styles/tokens.css";
+import "../styles/themes.css";
+import "../styles/base.css";
+import "../styles/components.css";
+import "../styles/a11y-panel.css";
+import Icon from "../components/Icon.astro";
+import Panels from "../components/Panels.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Affiche le fil de progression de lecture (pages longues). */
+  progress?: boolean;
+}
+const { title, description, progress = false } = Astro.props;
+const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const nav = [
+  { href: `${base}/`, fr: "Accueil", en: "Home" },
+  { href: `${base}/cours/`, fr: "Cours", en: "Courses" },
+  { href: `${base}/miscelanea/`, fr: "Miscelánea", en: "Miscellanea" },
+  { href: `${base}/aide/`, fr: "Aide", en: "Help" },
+  { href: `${base}/systeme/`, fr: "Système", en: "System" },
+];
+const isCurrent = (href: string) =>
+  href === `${base}/` ? path === href : path.startsWith(href);
+---
+<!doctype html>
+<html lang="fr" data-theme="abysse">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Anti-FOUC : applique les préférences AVANT le premier rendu. */}
+    <script is:inline>
+      (function () {
+        try {
+          var p = JSON.parse(localStorage.getItem("site-astro-prefs-v1") || "{}");
+          var r = document.documentElement;
+          if (p.theme) r.setAttribute("data-theme", p.theme);
+          if (p.contrast) r.setAttribute("data-contrast", "high");
+          if (p.lang) r.setAttribute("lang", p.lang);
+          if (p.readfont && p.readfont !== "default") r.setAttribute("data-readfont", p.readfont);
+          if (p.motion === "off") r.setAttribute("data-motion", "off");
+          if (p.width) r.style.setProperty("--page-max", "min(" + p.width + "rem, 98vw)");
+          if (p.scale) r.style.fontSize = p.scale * 100 + "%";
+        } catch (e) {}
+      })();
+    </script>
+    <title>{title} — Site Astro</title>
+    {description && <meta name="description" content={description} />}
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+    {progress && (
+      <div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="read-progress__bar" data-read-progress></div>
+      </div>
+    )}
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href={`${base}/`}>
+          <span class="brand__mark" aria-hidden="true">$_</span>
+          <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en">teaching framework</small></span>
+        </a>
+        <nav class="site-nav" aria-label="Navigation principale">
+          {nav.map((item) => (
+            <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
+              <span data-lang="fr">{item.fr}</span><span data-lang="en">{item.en}</span>
+            </a>
+          ))}
+        </nav>
+        <div class="header-utils">
+          <button class="util-btn lang-toggle" data-lang-toggle type="button">
+            <Icon name="earth" class="util-btn__icon" />
+            <span data-lang-cur>FR</span>
+          </button>
+          <button class="util-btn util-btn--icon" data-search-trigger type="button" aria-label="Rechercher (Ctrl+K)">
+            <Icon name="search" class="util-btn__icon" />
+            <span class="util-btn__label"><span data-lang="fr">Rechercher</span><span data-lang="en">Search</span> <kbd>Ctrl K</kbd></span>
+          </button>
+          <button class="util-btn util-btn--icon" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+            <Icon name="settings" class="util-btn__icon" />
+            <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+          </button>
+          <button class="util-btn util-btn--icon" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+            <Icon name="eye" class="util-btn__icon" />
+            <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <slot />
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Claude Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+        <span data-lang="fr">Site Astro — cadre pédagogique fondé sur les sciences cognitives de l'apprentissage (Sweller, Mayer).</span><span data-lang="en">Site Astro — a teaching framework grounded in the cognitive science of learning (Sweller, Mayer).</span>
+        <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
+        <button class="util-btn footer-a11y" data-a11y-trigger type="button" aria-haspopup="dialog">
+          <Icon name="eye" class="util-btn__icon" />
+          <span data-lang="fr">Préférences d'accessibilité</span><span data-lang="en">Accessibility preferences</span>
+        </button>
+      </div>
+    </footer>
+
+    <Panels />
+    <script src="../scripts/site.js"></script>
+    <style>
+      .footer-a11y { margin-left: auto; }
+    </style>
+  </body>
+</html>

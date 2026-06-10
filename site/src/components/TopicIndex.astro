@@ -1,0 +1,122 @@
+---
+/**
+ * INDEX PAR THÉMATIQUES — composant partagé des pages Cours et Miscelánea.
+ * Nuage de tags (taille selon le nombre d'entrées), bascule
+ * « Par thématique / Par entrée », cartes filtrables. Une entrée
+ * multi-thématique apparaît dans chaque bloc, sans duplication de contenu.
+ */
+import { TOPICS, type TopicId } from "../data/topics";
+
+export interface IndexItem {
+  href: string;
+  title: string;
+  description: string;
+  topics: TopicId[];
+  meta?: string;
+  num?: string;
+  tags?: string[];
+}
+interface Props {
+  items: IndexItem[];
+  /** Libellé de la vue « à plat » (ex. « Par cours », « Par article »). */
+  flatLabel: string;
+}
+const { items, flatLabel } = Astro.props;
+
+const counts = new Map<TopicId, number>();
+for (const it of items) for (const t of it.topics) counts.set(t, (counts.get(t) ?? 0) + 1);
+const topicIds = (Object.keys(TOPICS) as TopicId[]).filter((t) => counts.has(t) || t === "divers");
+const weight = (n: number) => (n >= 3 ? 3 : n);
+---
+<div data-topic-index>
+  <div class="misc-controls">
+    <div class="tag-cloud" role="group" aria-label="Filtrer par thématique">
+      <span class="tag-cloud__label"><span data-lang="fr">Naviguer par thématique</span><span data-lang="en">Browse by topic</span></span>
+      <button class="tag-chip" data-filter="all" data-weight="3" type="button" aria-pressed="true"><span data-lang="fr">Toutes</span><span data-lang="en">All</span> <span class="n">{items.length}</span></button>
+      {topicIds.map((t) => (
+        <button class="tag-chip" data-filter={t} data-weight={weight(counts.get(t) ?? 0)} type="button" aria-pressed="false">{TOPICS[t]} <span class="n">{counts.get(t) ?? 0}</span></button>
+      ))}
+    </div>
+    <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+      <button data-view="topic" type="button" aria-pressed="true"><span data-lang="fr">Par thématique</span><span data-lang="en">By topic</span></button>
+      <button data-view="flat" type="button" aria-pressed="false">{flatLabel}</button>
+    </div>
+  </div>
+
+  {topicIds.filter((t) => (counts.get(t) ?? 0) > 0).map((t) => (
+    <section class="theme-block" data-topic-block={t}>
+      <div class="theme-block__head">
+        <h2>{TOPICS[t]}</h2>
+        <span class="theme-block__count">{counts.get(t)} <span data-lang="fr">entrée(s)</span><span data-lang="en">item(s)</span></span>
+      </div>
+      <div class="card-grid">
+        {items.filter((it) => it.topics.includes(t)).map((it) => (
+          <a class="module-card" href={it.href}>
+            <div class="module-card__top">
+              {it.num && <span class="module-card__num">{it.num}</span>}
+              {it.meta && <span class="module-card__meta">{it.meta}</span>}
+            </div>
+            <h3 class="module-card__title">{it.title}</h3>
+            <p class="module-card__desc">{it.description}</p>
+            <ul class="module-card__tags">
+              {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
+              {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
+            </ul>
+            <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <div class="topic-flat" data-topic-flat hidden>
+    <div class="card-grid">
+      {items.map((it) => (
+        <a class="module-card" href={it.href} data-topics={it.topics.join(" ")}>
+          <div class="module-card__top">
+            {it.num && <span class="module-card__num">{it.num}</span>}
+            {it.meta && <span class="module-card__meta">{it.meta}</span>}
+          </div>
+          <h3 class="module-card__title">{it.title}</h3>
+          <p class="module-card__desc">{it.description}</p>
+          <ul class="module-card__tags">
+            {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
+            {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
+          </ul>
+          <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Filtrage par thématique + bascule de vue — défini une fois pour toutes
+  // les pages qui instancient ce composant.
+  document.querySelectorAll("[data-topic-index]").forEach((box) => {
+    const chips = box.querySelectorAll(".tag-chip");
+    const views = box.querySelectorAll(".view-toggle button");
+    const blocks = box.querySelectorAll("[data-topic-block]");
+    const flat = box.querySelector("[data-topic-flat]");
+    const flatCards = flat ? flat.querySelectorAll(".module-card") : [];
+    let filter = "all";
+    let view = "topic";
+    function render() {
+      blocks.forEach((b) => {
+        b.hidden = view !== "topic" || (filter !== "all" && b.getAttribute("data-topic-block") !== filter);
+      });
+      if (flat) {
+        flat.hidden = view !== "flat";
+        flatCards.forEach((c) => {
+          const t = (c.getAttribute("data-topics") || "").split(" ");
+          c.hidden = filter !== "all" && !t.includes(filter);
+        });
+      }
+      chips.forEach((c) => c.setAttribute("aria-pressed", String(c.getAttribute("data-filter") === filter)));
+      views.forEach((v) => v.setAttribute("aria-pressed", String(v.getAttribute("data-view") === view)));
+    }
+    chips.forEach((c) => c.addEventListener("click", () => { filter = c.getAttribute("data-filter"); render(); }));
+    views.forEach((v) => v.addEventListener("click", () => { view = v.getAttribute("data-view"); render(); }));
+    render();
+  });
+</script>

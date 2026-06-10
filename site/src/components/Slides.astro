@@ -1,0 +1,40 @@
+---
+/**
+ * DIAPORAMA — îlot « slides » : navigation précédent/suivant, points, compteur,
+ * clavier ←/→, vue étendue (pop-up) et plein écran. Peut contenir un PDF ou
+ * tout média via <Slide media>.
+ *
+ * Usage MDX :
+ *   <Slides title="Cycle de vie">
+ *     <Slide>### 1. create …</Slide>
+ *     <Slide media><iframe src="…" /></Slide>
+ *   </Slides>
+ */
+import Icon from "./Icon.astro";
+
+interface Props {
+  /** Titre affiché dans le chapeau (ex. « Diaporama — cycle de vie »). */
+  title: string;
+}
+const { title } = Astro.props;
+---
+<section class="slides" data-slides tabindex="0" aria-roledescription="diaporama" aria-label={`Diaporama : ${title}`}>
+  <div class="slides__head">
+    <span class="slides__tag"><Icon name="layers" /> {title}</span>
+    <span class="slides__counter" data-slides-counter aria-hidden="true"></span>
+    <span class="slides__tools">
+      <button class="slides__tool" data-slides-expand type="button" aria-pressed="false" aria-label="Vue étendue" title="Vue étendue"><Icon name="maximize-2" /></button>
+      <button class="slides__tool" data-slides-fs type="button" aria-pressed="false" aria-label="Plein écran" title="Plein écran"><Icon name="expand" /></button>
+    </span>
+  </div>
+  <div class="slides__viewport">
+    <div class="slides__track" data-slides-track>
+      <slot />
+    </div>
+  </div>
+  <div class="slides__foot">
+    <button class="slides__btn" data-slides-prev type="button" aria-label="Diapositive précédente"><Icon name="chevron-left" /></button>
+    <span class="slides__dots" data-slides-dots role="tablist" aria-label="Diapositives"></span>
+    <button class="slides__btn" data-slides-next type="button" aria-label="Diapositive suivante"><Icon name="chevron-right" /></button>
+  </div>
+</section>

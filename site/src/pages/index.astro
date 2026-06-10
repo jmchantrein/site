@@ -1,0 +1,81 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const cours = (await getCollection("cours", ({ data }) => !data.draft))
+  .sort((a, b) => a.data.order - b.data.order);
+const totalMin = cours.reduce((s, c) => s + (c.data.duration ?? 0), 0);
+---
+<Base
+  title="Accueil"
+  description="Cours techniques structurés et blog scientifique — un cadre pédagogique fondé sur les sciences cognitives de l'apprentissage, conforme WCAG AA."
+>
+  <main id="main">
+    <section class="hero wrap">
+      <p class="kicker kicker--bar"><span data-lang="fr">Cours &amp; blog technique</span><span data-lang="en">Courses &amp; technical blog</span></p>
+      <h1><span data-lang="fr">Des cours techniques expliqués pour être retenus.</span><span data-lang="en">Technical courses explained to be remembered.</span></h1>
+      <p class="lead"><span data-lang="fr">Des manuels techniques structurés et un blog scientifique (maths, code, exercices). Chaque décision de mise en forme sert un objectif : réduire la charge cognitive extrinsèque pour que l'attention aille au fond.</span><span data-lang="en">Structured technical manuals and a scientific blog (math, code, exercises). Every design decision serves one goal: cut extraneous cognitive load so attention goes to the substance.</span></p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={`${base}/cours/`}><span data-lang="fr">Commencer les cours</span><span data-lang="en">Start the courses</span> →</a>
+        <a class="btn btn--ghost" href={`${base}/systeme/`}><span data-lang="fr">Voir le système de design</span><span data-lang="en">See the design system</span></a>
+      </div>
+
+      <div class="principles" aria-label="Principes du cadre">
+        <div class="principle">
+          <h3><span data-lang="fr">Colonne ≤ 66 caractères</span><span data-lang="en">≤ 66-character column</span></h3>
+          <p><span data-lang="fr">La longueur de ligne optimale soutient le suivi visuel.</span><span data-lang="en">Optimal line length supports visual tracking.</span> <code>max-width: 66ch</code></p>
+        </div>
+        <div class="principle">
+          <h3><span data-lang="fr">Corps ≥ 18px, AAA</span><span data-lang="en">Body ≥ 18px, AAA</span></h3>
+          <p><span data-lang="fr">Contraste du corps visé à 7:1, jamais en dessous de 4,5:1.</span><span data-lang="en">Body contrast aims for 7:1, never below 4.5:1.</span></p>
+        </div>
+        <div class="principle">
+          <h3><span data-lang="fr">Signalement sobre</span><span data-lang="en">Plain signaling</span></h3>
+          <p><span data-lang="fr">Hiérarchie nette, mise en évidence discrète — pas d'esthétique « SaaS ».</span><span data-lang="en">Clear hierarchy, restrained highlighting — no "SaaS" aesthetic.</span></p>
+        </div>
+        <div class="principle">
+          <h3><span data-lang="fr">Réglable par le lecteur</span><span data-lang="en">Reader-adjustable</span></h3>
+          <p><span data-lang="fr">Taille, espacement, contraste, mouvement, police — persistants.</span><span data-lang="en">Size, spacing, contrast, motion, font — all persistent.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap modules">
+      <div class="section-head">
+        <h2><span data-lang="fr">Modules du cours</span><span data-lang="en">Course modules</span></h2>
+        <span class="count">{cours.length} <span data-lang="fr">modules · ≈ {totalMin} min</span><span data-lang="en">modules · ≈ {totalMin} min</span></span>
+      </div>
+      <div class="card-grid">
+        {cours.map((c) => (
+          <a class="module-card" href={`${base}/cours/${c.id}/`}>
+            <div class="module-card__top">
+              <span class="module-card__num">{String(c.data.order).padStart(2, "0")}</span>
+              {c.data.duration && <span class="module-card__meta">≈ {c.data.duration} min</span>}
+            </div>
+            <h3 class="module-card__title">{c.data.title}</h3>
+            <p class="module-card__desc">{c.data.description}</p>
+            <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+            <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .hero { padding-block: var(--space-8) var(--space-7); }
+  .hero h1 { font-size: clamp(2rem, 5.2vw, 3rem); max-width: 18ch; margin-top: var(--space-4); }
+  .hero .lead { margin-top: var(--space-5); max-width: 60ch; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
+  .section-head h2 { margin: 0; }
+  .section-head .count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
+  .modules { margin-top: var(--space-7); }
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); margin-block: var(--space-6); max-width: none; }
+  .principle { padding-top: var(--space-4); border-top: 2px solid var(--color-accent); }
+  .principle h3 { font-size: var(--text-md); margin: 0 0 var(--space-2); }
+  .principle p { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 34ch; margin: 0; }
+  .principle code { font-size: 0.85em; }
+</style>

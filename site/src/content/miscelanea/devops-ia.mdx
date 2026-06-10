@@ -1,0 +1,32 @@
+---
+title: "DevOps & IA"
+description: "Faire entrer un modèle dans une chaîne d'intégration continue : reproductibilité, coût et sûreté."
+topics: [linux, sciences]
+duration: 11
+---
+
+## 1. Reproductibilité : figer l'environnement
+
+Un modèle n'est reproductible que si son environnement l'est. On **épingle** les versions (bibliothèques, pilotes CUDA, poids du modèle) et on construit une image de conteneur immuable — exactement les principes vus dans le [cours sur la conteneurisation](/cours/conteneurisation/).
+
+<Note type="success" title="Astuce">
+  Versionnez les *poids* du modèle comme des artefacts (registre dédié), pas dans le dépôt Git : ils sont volumineux et binaires.
+</Note>
+
+## 2. Le coût, mis en équation
+
+Une étape d'inférence dans la CI a un coût qu'on peut estimer. Pour $n$ requêtes de test, un coût unitaire $c$ par millier de tokens et $t$ tokens par requête :
+
+$$
+C \;=\; n \cdot t \cdot \frac{c}{1000}
+$$
+
+Avec $n=200$ tests, $t=1500$ tokens et $c=0{,}50$ €, chaque exécution coûte $200 \cdot 1500 \cdot 0{,}0005 = 150$ € — d'où l'intérêt de ne lancer ces tests que sur les branches concernées.
+
+## 3. Garde-fous
+
+Un modèle est non déterministe : un test ne peut pas exiger une sortie exacte. On évalue plutôt des **propriétés** (format valide, absence de fuite de secret, score au-dessus d'un seuil) et on fixe un budget de coût par exécution.
+
+<Note type="danger" title="Piège">
+  Ne mettez jamais une clé d'API de modèle en clair dans la configuration CI : utilisez les secrets chiffrés du runner, et faites-les expirer.
+</Note>

@@ -1,0 +1,25 @@
+---
+/**
+ * NOTE / ADMONITION → principe de signalement (Mayer).
+ * L'info n'est jamais portée par la couleur seule : icône + libellé toujours.
+ *
+ * Usage MDX :
+ *   <Note type="warning" title="Attention">…</Note>
+ * Types : info (défaut) · success · warning · danger
+ */
+interface Props {
+  type?: "info" | "success" | "warning" | "danger";
+  /** Libellé du bloc (ex. « Prérequis », « Astuce », « Attention », « Piège »). */
+  title?: string;
+}
+const { type = "info", title } = Astro.props;
+const GLYPHS = { info: "i", success: "✓", warning: "!", danger: "✕" };
+const LABELS = { info: "Note", success: "Astuce", warning: "Attention", danger: "Piège" };
+---
+<aside class:list={["note", type !== "info" && `note--${type}`]} role="note">
+  <div class="note__icon" aria-hidden="true">{GLYPHS[type]}</div>
+  <div class="note__body">
+    <p class="note__label">{title ?? LABELS[type]}</p>
+    <slot />
+  </div>
+</aside>

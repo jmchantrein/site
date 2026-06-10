@@ -1,0 +1,55 @@
+---
+/**
+ * Icône Lucide inlinée au build (lucide-static) — aucun JS ni CDN au runtime.
+ * La taille se règle en CSS sur le conteneur (ex. `.toc svg { width: 16px }`).
+ */
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  Earth,
+  Expand,
+  Eye,
+  HardDrive,
+  Layers,
+  List,
+  Lock,
+  Maximize2,
+  Moon,
+  Network,
+  RotateCcw,
+  Search,
+  Settings,
+  Sun,
+} from "lucide-static";
+
+const ICONS: Record<string, string> = {
+  "book-open": BookOpen,
+  "chevron-left": ChevronLeft,
+  "chevron-right": ChevronRight,
+  compass: Compass,
+  earth: Earth,
+  expand: Expand,
+  eye: Eye,
+  "hard-drive": HardDrive,
+  layers: Layers,
+  list: List,
+  lock: Lock,
+  "maximize-2": Maximize2,
+  moon: Moon,
+  network: Network,
+  "rotate-ccw": RotateCcw,
+  search: Search,
+  settings: Settings,
+  sun: Sun,
+};
+
+interface Props { name: string; class?: string }
+const { name, class: cls } = Astro.props;
+const raw = ICONS[name];
+if (!raw) throw new Error(`Icon « ${name} » absent de la carte ICONS (src/components/Icon.astro)`);
+// Icônes toujours décoratives : le sens est porté par un libellé texte (WCAG 1.1.1).
+const svg = raw.replace("<svg", '<svg aria-hidden="true" focusable="false"');
+---
+{cls ? <span class={cls} aria-hidden="true" set:html={svg} /> : <Fragment set:html={svg} />}

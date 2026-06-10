@@ -1,0 +1,137 @@
+---
+/**
+ * Les deux tiroirs de préférences, présents sur toute page (via Base.astro) :
+ * - ACCESSIBILITÉ (œil)    : réglages WCAG — taille, espacements, contraste,
+ *   animations, police de lecture. WCAG 1.4.12 / 2.3.3 / 1.4.6.
+ * - PARAMÈTRES (engrenage) : apparence — thème, exercices, largeur, langue.
+ * Le comportement (ouverture, persistance) est câblé par scripts/site.js.
+ */
+import Icon from "./Icon.astro";
+---
+<div class="a11y-overlay" data-a11y-overlay></div>
+
+<aside class="a11y-panel" data-a11y-panel role="dialog" aria-modal="true" aria-labelledby="a11y-title" tabindex="-1">
+  <div class="a11y-panel__head">
+    <Icon name="eye" class="panel-head-ico" />
+    <div>
+      <h2 id="a11y-title"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></h2>
+      <span class="sub">WCAG 1.4.12 / 2.3.3 / 1.4.6</span>
+    </div>
+    <button class="a11y-close" data-a11y-close aria-label="Fermer le panneau">✕</button>
+  </div>
+  <div class="a11y-panel__body">
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Taille du texte</span><span data-lang="en">Text size</span></span><span class="a11y-field__value" data-a11y-scaleval>100%</span></span>
+      <div class="a11y-stepper">
+        <button data-a11y-scale="-1" aria-label="Réduire la taille du texte">A−</button>
+        <output data-a11y-scaleout>100%</output>
+        <button data-a11y-scale="1" aria-label="Augmenter la taille du texte">A+</button>
+      </div>
+    </div>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Interligne</span><span data-lang="en">Line height</span></span><span class="a11y-field__value" data-a11y-leadval>1.6</span></span>
+      <input class="a11y-range" type="range" min="1.4" max="2" step="0.05" data-a11y-lead aria-label="Interligne" />
+      <p class="a11y-field__help"><span data-lang="fr">Seuil recommandé : 1,5× minimum.</span><span data-lang="en">Recommended threshold: at least 1.5×.</span></p>
+    </div>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Espacement des lettres</span><span data-lang="en">Letter spacing</span></span><span class="a11y-field__value" data-a11y-letterval>0.00em</span></span>
+      <input class="a11y-range" type="range" min="0" max="0.12" step="0.01" data-a11y-letter aria-label="Espacement des lettres" />
+    </div>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Espacement des mots</span><span data-lang="en">Word spacing</span></span><span class="a11y-field__value" data-a11y-wordval>0.00em</span></span>
+      <input class="a11y-range" type="range" min="0" max="0.16" step="0.01" data-a11y-word aria-label="Espacement des mots" />
+      <div class="a11y-preview" aria-hidden="true"><p><span data-lang="fr">Un conteneur isole un processus et son système de fichiers.</span><span data-lang="en">A container isolates a process and its filesystem.</span></p></div>
+    </div>
+
+    <div class="a11y-section-title"><span data-lang="fr">Modes</span><span data-lang="en">Modes</span></div>
+
+    <label class="a11y-toggle">
+      <input type="checkbox" data-a11y-contrast />
+      <span class="a11y-toggle__sw" aria-hidden="true"></span>
+      <span class="a11y-toggle__text"><b><span data-lang="fr">Contraste élevé</span><span data-lang="en">High contrast</span></b><small><span data-lang="fr">Renforce le corps au-delà de 7:1</span><span data-lang="en">Pushes body text beyond 7:1</span></small></span>
+      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
+    </label>
+
+    <label class="a11y-toggle">
+      <input type="checkbox" data-a11y-motion />
+      <span class="a11y-toggle__sw" aria-hidden="true"></span>
+      <span class="a11y-toggle__text"><b><span data-lang="fr">Réduire les animations</span><span data-lang="en">Reduce motion</span></b><small><span data-lang="fr">Fige le terminal, le scroll et les transitions</span><span data-lang="en">Freezes terminal, scroll and transitions</span></small></span>
+      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
+    </label>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span data-lang="fr">Police de lecture</span><span data-lang="en">Reading font</span></span>
+      <div class="a11y-seg" data-a11y-font role="group" aria-label="Police de lecture">
+        <button data-set-font="default"><span data-lang="fr">Défaut</span><span data-lang="en">Default</span></button>
+        <button data-set-font="atkinson">Atkinson</button>
+        <button data-set-font="dyslexic">OpenDyslexic</button>
+      </div>
+      <p class="a11y-field__help"><span data-lang="fr">Proposée, jamais imposée. Atkinson Hyperlegible distingue mieux les caractères proches ; OpenDyslexic aide certains lecteurs dyslexiques.</span><span data-lang="en">Offered, never forced. Atkinson Hyperlegible better distinguishes similar glyphs; OpenDyslexic helps some dyslexic readers.</span></p>
+    </div>
+
+  </div>
+  <div class="a11y-panel__foot">
+    <button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button>
+    <span class="a11y-saved"><span data-lang="fr">Préférences enregistrées</span><span data-lang="en">Preferences saved</span></span>
+  </div>
+</aside>
+
+<aside class="a11y-panel" data-settings-panel role="dialog" aria-modal="true" aria-labelledby="set-title" tabindex="-1">
+  <div class="a11y-panel__head">
+    <Icon name="settings" class="panel-head-ico" />
+    <div>
+      <h2 id="set-title"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></h2>
+      <span class="sub"><span data-lang="fr">apparence &amp; préférences</span><span data-lang="en">appearance &amp; preferences</span></span>
+    </div>
+    <button class="a11y-close" data-settings-close aria-label="Fermer le panneau">✕</button>
+  </div>
+  <div class="a11y-panel__body">
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span data-lang="fr">Thème de couleurs</span><span data-lang="en">Color theme</span></span>
+      <div class="a11y-themes" data-a11y-theme role="group" aria-label="Thème de couleurs">
+        <button data-set-theme="abysse" type="button"><span class="sw" style="background:linear-gradient(135deg,#0a1822 50%,#6fc7e6 50%)"></span><span data-lang="fr">Abysse</span><span data-lang="en">Abyss</span></button>
+        <button data-set-theme="marine" type="button"><span class="sw" style="background:linear-gradient(135deg,#e9f0f3 50%,#0b5067 50%)"></span>Marine</button>
+        <button data-set-theme="ardoise" type="button"><span class="sw" style="background:linear-gradient(135deg,#f4f6f9 50%,#1e40af 50%)"></span>Ardoise</button>
+        <button data-set-theme="foret" type="button"><span class="sw" style="background:linear-gradient(135deg,#eef3ee 50%,#14532d 50%)"></span><span data-lang="fr">Forêt</span><span data-lang="en">Forest</span></button>
+        <button data-set-theme="aurore" type="button"><span class="sw" style="background:linear-gradient(135deg,#f5efe4 50%,#0b5067 50%)"></span><span data-lang="fr">Aurore</span><span data-lang="en">Dawn</span></button>
+      </div>
+      <p class="a11y-field__help"><span data-lang="fr">Le mode contraste élevé (Accessibilité) prime sur le thème choisi.</span><span data-lang="en">High-contrast mode (Accessibility) overrides the chosen theme.</span></p>
+    </div>
+
+    <label class="a11y-toggle">
+      <input type="checkbox" data-a11y-require />
+      <span class="a11y-toggle__sw" aria-hidden="true"></span>
+      <span class="a11y-toggle__text"><b><span data-lang="fr">Exiger une réponse avant la correction</span><span data-lang="en">Require an answer before the solution</span></b><small><span data-lang="fr">Verrouille la solution des exercices tant que le champ réponse est vide</span><span data-lang="en">Locks an exercise solution until the answer field is filled</span></small></span>
+      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
+    </label>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value" data-a11y-widthval>72 rem</span></span>
+      <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label="Largeur globale du site" />
+      <p class="a11y-field__help"><span data-lang="fr">De compact à quasi pleine largeur (borné à la fenêtre).</span><span data-lang="en">From compact to nearly full width (capped to the window).</span></p>
+    </div>
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span data-lang="fr">Langue</span><span data-lang="en">Language</span></span>
+      <div class="a11y-seg" data-a11y-lang role="group" aria-label="Langue">
+        <button data-set-lang="fr">Français</button>
+        <button data-set-lang="en">English</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="a11y-panel__foot">
+    <button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button>
+    <span class="a11y-saved"><span data-lang="fr">Préférences enregistrées</span><span data-lang="en">Preferences saved</span></span>
+  </div>
+</aside>
+
+<style>
+  .panel-head-ico { width: 24px; height: 24px; flex: none; color: var(--color-accent-text); display: inline-block; }
+  .panel-head-ico :global(svg) { width: 100%; height: 100%; }
+</style>

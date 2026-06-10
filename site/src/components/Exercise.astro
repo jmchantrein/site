@@ -1,0 +1,57 @@
+---
+/**
+ * EXERCICE → effet de test (testing effect).
+ * Structure imposée : énoncé visible → solution repliable, masquée par défaut.
+ * Un champ réponse verrouille la solution tant qu'il est vide (réglage global
+ * « Exiger une réponse » dans Paramètres ; forçable par bloc via `gate`).
+ *
+ * Usage MDX :
+ *   <Exercise id="cgroups-partage" level={2}>
+ *     Énoncé…
+ *     <Fragment slot="solution">Solution…</Fragment>
+ *   </Exercise>
+ */
+interface Props {
+  /** Identifiant unique sur la page (sert au champ réponse). */
+  id: string;
+  /** 1 = base · 2 = intermédiaire · 3 = avancé */
+  level?: 1 | 2 | 3;
+  /** "on" force le verrou, "off" le désactive ; absent → réglage global. */
+  gate?: "on" | "off";
+}
+const { id, level = 1, gate } = Astro.props;
+const LEVELS = { 1: "Niveau 1 · base", 2: "Niveau 2 · intermédiaire", 3: "Niveau 3 · avancé" };
+const LEVELS_EN = { 1: "Level 1 · basics", 2: "Level 2 · intermediate", 3: "Level 3 · advanced" };
+const fieldId = `ex-${id}`;
+import Icon from "./Icon.astro";
+---
+<section class="exercise" data-level={level} data-gate-mode={gate} aria-label="Exercice">
+  <header class="exercise__head">
+    <span class="exercise__tag"><span data-lang="fr">Exercice</span><span data-lang="en">Exercise</span></span>
+    <span class="exercise__level"><span data-lang="fr">{LEVELS[level]}</span><span data-lang="en">{LEVELS_EN[level]}</span></span>
+  </header>
+  <div class="exercise__prompt prose">
+    <slot />
+  </div>
+  <div class="exercise__answer" data-exercise-answer>
+    <label class="exercise__answer-label" for={fieldId}>
+      <span data-lang="fr">Votre réponse</span><span data-lang="en">Your answer</span>
+      <span class="req"><span data-lang="fr">requise</span><span data-lang="en">required</span></span>
+    </label>
+    <textarea id={fieldId} class="exercise__answer-field" rows="2" placeholder="Posez votre raisonnement ici avant d'afficher la solution…"></textarea>
+    <p class="exercise__answer-hint">
+      <span data-lang="fr">Rédigez une réponse pour débloquer la solution (effet de test).</span><span data-lang="en">Write an answer to unlock the solution (testing effect).</span>
+    </p>
+  </div>
+  <details class="exercise__solution">
+    <summary>
+      <span class="lock" aria-hidden="true"><Icon name="lock" /></span>
+      <span class="label-show"><span data-lang="fr">Afficher la solution</span><span data-lang="en">Show the solution</span></span>
+      <span class="label-hide"><span data-lang="fr">Masquer la solution</span><span data-lang="en">Hide the solution</span></span>
+      <span class="label-locked"><span data-lang="fr">Renseignez votre réponse pour débloquer</span><span data-lang="en">Fill in your answer to unlock</span></span>
+    </summary>
+    <div class="exercise__solution-body prose">
+      <slot name="solution" />
+    </div>
+  </details>
+</section>

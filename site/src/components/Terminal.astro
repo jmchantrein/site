@@ -1,0 +1,48 @@
+---
+/**
+ * PANNEAU TERMINAL sombre — blanc cassé sur quasi-noir, jamais #fff sur #000.
+ * Démo simulée : reçoit les commandes cliquables (<Cmd>) et la saisie directe
+ * (help, ls, podman ps… — interpréteur dans scripts/site.js).
+ * Bascule clair/sombre locale (persistante) + réinitialisation.
+ *
+ * Usage : <Terminal id="term-1" title="bash — atelier-conteneurs" comment="…" />
+ */
+import Icon from "./Icon.astro";
+
+interface Props {
+  id: string;
+  title?: string;
+  /** Commentaire bash affiché en première ligne. */
+  comment?: string;
+}
+const { id, title = "bash", comment = "# tapez « help » pour la liste des commandes" } = Astro.props;
+---
+<div class="terminal" id={id} data-terminal>
+  <div class="terminal__bar">
+    <span class="terminal__glyph" aria-hidden="true">❯_</span>
+    <span class="terminal__title">{title}</span>
+    <span class="terminal__actions">
+      <button class="term-icon-btn" data-term-theme-btn type="button" aria-pressed="false">
+        <span class="to-light" aria-hidden="true"><Icon name="sun" /></span>
+        <span class="to-dark" aria-hidden="true"><Icon name="moon" /></span>
+        <span class="term-tip"><span class="to-light"><span data-lang="fr">Mode clair</span><span data-lang="en">Light mode</span></span><span class="to-dark"><span data-lang="fr">Mode sombre</span><span data-lang="en">Dark mode</span></span></span>
+      </button>
+      <button class="term-icon-btn" data-term-replay type="button" aria-label="Réinitialiser le terminal">
+        <Icon name="rotate-ccw" />
+        <span class="term-tip"><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></span>
+      </button>
+    </span>
+  </div>
+  <div class="terminal__screen" role="log" aria-live="polite" aria-label="Sortie du terminal"></div>
+  <template class="term-initial">
+    <div class="term-line term-line--out">{comment}</div>
+  </template>
+  <form class="terminal__input" data-term-input>
+    <span class="p" aria-hidden="true">$</span>
+    <input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Saisir une commande, puis Entrée. Tapez help pour la liste." placeholder="help · ls · podman ps" />
+  </form>
+  <div class="terminal__hint">
+    <span aria-hidden="true">▶</span>
+    <span data-lang="fr">Démo simulée — tapez une commande ou cliquez-en une.</span><span data-lang="en">Simulated demo — type a command or click one.</span>
+  </div>
+</div>

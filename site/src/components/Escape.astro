@@ -1,0 +1,15 @@
+---
+/**
+ * TRAPPE D'ÉVASION — le cadre pédagogique se désactive explicitement.
+ * Contenu arbitraire (HTML/JS/visualisation custom), marqué visuellement
+ * comme hors cadre. C'est le SEUL endroit où le contenu libre est attendu.
+ */
+interface Props { label?: string }
+const { label = "Hors cadre — pleine liberté" } = Astro.props;
+---
+<section class="escape">
+  <span class="escape__tab" aria-hidden="true">⤣ {label}</span>
+  <div class="escape__body">
+    <slot />
+  </div>
+</section>

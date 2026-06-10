@@ -1,0 +1,25 @@
+---
+/**
+ * COMMANDE CLIQUABLE → apprentissage actif, couplée au terminal de la page.
+ * Le clic « exécute » la commande : frappe animée + sortie simulée.
+ * La sortie est décrite en enfants avec <TermLine> (jamais de HTML brut).
+ *
+ * Usage MDX :
+ *   <Cmd cmd="podman ps">
+ *     <TermLine>NAMES  STATUS</TermLine>
+ *     <TermLine type="ok" tag="note">tout roule.</TermLine>
+ *   </Cmd>
+ */
+interface Props {
+  /** La commande affichée et tapée dans le terminal. */
+  cmd: string;
+  /** Sélecteur du terminal cible (défaut : premier [data-terminal] de la page). */
+  term?: string;
+}
+const { cmd, term } = Astro.props;
+---
+<button class="cmd" type="button" data-cmd={cmd} data-term={term}>
+  <span class="cmd__prompt" aria-hidden="true">$</span><code>{cmd}</code>
+  <span class="cmd__hint"><span data-lang="fr">exécuter</span><span data-lang="en">run</span></span>
+</button>
+<template class="cmd-out"><slot /></template>

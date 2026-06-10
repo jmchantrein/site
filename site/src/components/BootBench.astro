@@ -1,0 +1,56 @@
+---
+/**
+ * Démo « hors cadre » : comparaison animée du temps de démarrage VM / conteneur.
+ * Exemple de contenu arbitraire placé dans une <Escape> (trappe d'évasion).
+ */
+---
+<div class="bench" data-bench>
+  <div class="bench__row">
+    <span><span data-lang="fr">Machine virtuelle</span><span data-lang="en">Virtual machine</span></span>
+    <span class="bench__track"><span class="bench__fill vm" data-target="100"></span></span>
+    <span class="bench__val" data-for="vm">0 s</span>
+  </div>
+  <div class="bench__row">
+    <span><span data-lang="fr">Conteneur</span><span data-lang="en">Container</span></span>
+    <span class="bench__track"><span class="bench__fill ct" data-target="4"></span></span>
+    <span class="bench__val" data-for="ct">0 s</span>
+  </div>
+  <button data-bench-go type="button"><span data-lang="fr">Mesurer le démarrage</span><span data-lang="en">Measure boot</span></button>
+</div>
+
+<style>
+  .bench { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+  .bench__row { display: grid; grid-template-columns: 9rem 1fr 5rem; align-items: center; gap: var(--space-3); }
+  .bench__track { height: 26px; background: var(--color-surface-sunken); border-radius: 999px; overflow: hidden; border: 1px solid var(--color-border); }
+  .bench__fill { height: 100%; width: 0; border-radius: 999px; transition: width 900ms var(--ease); display: block; }
+  .bench__fill.vm { background: var(--color-danger); }
+  .bench__fill.ct { background: var(--color-success); }
+  .bench__val { font-family: var(--font-mono); font-size: var(--text-sm); text-align: right; }
+  .bench button { cursor: pointer; justify-self: start; border: 1px solid var(--color-border-strong); background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-weight: 600; }
+  .bench button:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+</style>
+
+<script>
+  document.querySelectorAll("[data-bench]").forEach((bench) => {
+    const go = bench.querySelector("[data-bench-go]");
+    go.addEventListener("click", () => {
+      const reduced = document.documentElement.getAttribute("data-motion") === "off";
+      bench.querySelectorAll(".bench__fill").forEach((f) => {
+        const target = parseFloat(f.getAttribute("data-target"));
+        const label = bench.querySelector('[data-for="' + (f.classList.contains("vm") ? "vm" : "ct") + '"]');
+        const secs = ((target / 100) * 30).toFixed(1); // 100 % ≈ 30 s pour la VM
+        f.style.width = target + "%";
+        if (reduced) { label.textContent = secs + " s"; return; }
+        let start = null;
+        const dur = 900;
+        function tick(ts) {
+          if (!start) start = ts;
+          const p = Math.min(1, (ts - start) / dur);
+          label.textContent = (secs * p).toFixed(1) + " s";
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    });
+  });
+</script>

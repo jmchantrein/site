@@ -1,0 +1,13 @@
+---
+/**
+ * Une ligne de sortie de terminal (dans <Cmd> ou <Terminal slot="initial">).
+ * `type` : out (défaut) · ok · warn · cmd — `tag` ajoute le label texte qui
+ * double la couleur (l'info n'est jamais portée par la couleur seule).
+ */
+interface Props {
+  type?: "out" | "ok" | "warn" | "cmd";
+  tag?: string;
+}
+const { type = "out", tag } = Astro.props;
+---
+<div class={`term-line term-line--${type}`}>{tag && <span class="tag">{tag}</span>}<slot /></div>

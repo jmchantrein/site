@@ -1,0 +1,31 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import TopicIndex from "../../components/TopicIndex.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const articles = (await getCollection("miscelanea", ({ data }) => !data.draft))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title, "fr"));
+const items = articles.map((a) => ({
+  href: `${base}/miscelanea/${a.id}/`,
+  title: a.data.title,
+  description: a.data.description,
+  topics: a.data.topics,
+  meta: a.data.duration ? `≈ ${a.data.duration} min` : undefined,
+}));
+---
+<Base title="Miscelánea" description="Articles techniques et scientifiques courts, classés par thématiques — un article peut relever de plusieurs thématiques.">
+  <main id="main" class="wrap">
+    <div class="page-hero">
+      <p class="kicker"><span data-lang="fr">Recueil technique &amp; scientifique</span><span data-lang="en">Technical &amp; scientific miscellany</span></p>
+      <h1>Miscelánea</h1>
+      <p class="lead"><span data-lang="fr">Des articles courts, classés par thématiques. Un même article peut relever de plusieurs thématiques : il apparaît alors dans chacune, sans duplication.</span><span data-lang="en">Short articles, organised by topic. A single article can belong to several topics: it then appears in each, without duplication.</span></p>
+    </div>
+    <TopicIndex items={items} flatLabel="Par article" />
+  </main>
+</Base>
+
+<style>
+  .page-hero { padding-block: var(--space-7) var(--space-5); }
+  .page-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); }
+</style>

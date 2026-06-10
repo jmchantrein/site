@@ -1,0 +1,8 @@
+---
+/** Une diapositive. `media` : variante plein cadre (PDF, iframe, embed). */
+interface Props { media?: boolean }
+const { media = false } = Astro.props;
+---
+<div class:list={["slide", media && "slide--media"]}>
+  <slot />
+</div>

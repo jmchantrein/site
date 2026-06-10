@@ -1,0 +1,100 @@
+---
+title: "Ce qu'est vraiment un conteneur"
+description: "Module 01 — Ce qu'est vraiment un conteneur : namespaces, cgroups et isolation, avec atelier terminal."
+order: 1
+topics: [linux]
+duration: 12
+badge: "Fondations"
+tags: [namespaces, cgroups, podman]
+terminal: true
+terminalTitle: "bash — atelier-conteneurs"
+terminalComment: "# atelier conteneurs — tapez « help » pour la liste des commandes"
+---
+
+## 1. Le partage du noyau
+
+Une machine virtuelle embarque un noyau complet par-dessus un hyperviseur. Un conteneur, lui, **partage le noyau de l'hôte** : il n'y a qu'un seul noyau pour tous les conteneurs. C'est ce qui rend le démarrage quasi instantané et l'empreinte mémoire minuscule.
+
+<Note title="Prérequis">
+  Les exemples utilisent `podman` en mode *rootless*. Tout fonctionne à l'identique avec `docker` : remplacez simplement le nom de la commande.
+</Note>
+
+## 2. Les `namespaces` : mentir sur ce qu'on voit
+
+Un *namespace* (espace de noms) cloisonne une ressource du noyau. Le namespace **PID** donne au conteneur sa propre numérotation de processus : à l'intérieur, votre application est le processus n° 1, et elle ne voit aucun autre processus de l'hôte.
+
+Vérifions-le. Cliquez la commande pour l'exécuter dans le terminal →
+
+<Cmd cmd="podman run --rm alpine ps -ef" term="#term-1">
+  <TermLine>PID   USER     TIME  COMMAND</TermLine>
+  <TermLine>{"    1 root      0:00 ps -ef"}</TermLine>
+  <TermLine type="ok" tag="note">un seul processus, PID 1 — l'hôte est invisible.</TermLine>
+</Cmd>
+
+Un seul processus, numéroté 1. Le conteneur ne perçoit pas les centaines de processus de la machine hôte : le namespace PID les a masqués.
+
+## 3. Les `cgroups` : limiter ce qu'on consomme
+
+Là où les namespaces gèrent la *visibilité*, les **control groups** (cgroups) gèrent les *quantités* : CPU, mémoire, E/S. Le partage CPU est proportionnel à un poids. Pour un conteneur $i$ de poids $w_i$, sa part garantie de CPU sous contention vaut :
+
+$$
+\text{part}_i \;=\; \frac{w_i}{\displaystyle\sum_{j} w_j}
+$$
+
+Avec deux conteneurs de poids 100 et 300, le second reçoit $\frac{300}{400}=75\%$ du CPU *uniquement* lorsque la machine est saturée ; sinon, chacun prend ce qui est libre.
+
+<Cmd cmd="podman run --rm -m 64m alpine free -m">
+  <TermLine>{"              total    used    free"}</TermLine>
+  <TermLine>{"Mem:             64       3      61"}</TermLine>
+  <TermLine type="warn" tag="limite">la mémoire est plafonnée à 64 Mo par le cgroup.</TermLine>
+</Cmd>
+
+<Note type="warning">
+  L'option `--privileged` et le drapeau `--pid=host` désactivent l'isolation. Pratiques pour le débogage, dangereux en production : un processus du conteneur peut alors agir sur tout l'hôte.
+</Note>
+
+## Récapitulatif
+
+- **Namespaces** → ce que le conteneur *voit* (processus, réseau, montages…).
+- **cgroups** → ce que le conteneur *consomme* (CPU, mémoire, E/S).
+- **Noyau partagé** → pourquoi c'est léger et rapide.
+
+<Slides title="Diaporama — cycle de vie">
+  <Slide>
+    ### 1. `create`
+
+    Le conteneur est **préparé** à partir d'une image : son système de fichiers en couches est monté, mais aucun processus ne tourne encore.
+  </Slide>
+  <Slide>
+    ### 2. `start` / `run`
+
+    Le noyau crée les *namespaces* et *cgroups*, puis lance le processus n° 1 du conteneur. C'est l'état **actif**.
+  </Slide>
+  <Slide>
+    ### 3. `stop` & `rm`
+
+    À l'arrêt, le processus 1 reçoit `SIGTERM`. La couche écriture subsiste jusqu'au `rm`, qui **détruit** le conteneur (mais pas l'image).
+  </Slide>
+</Slides>
+
+<Exercise id="cgroups-partage" level={2}>
+  Vous lancez deux conteneurs de calcul, de poids CPU respectifs 256 et 768, sur une machine à un seul cœur entièrement saturée. Quelle fraction du CPU le premier conteneur reçoit-il ? Exprimez le calcul.
+
+  <Fragment slot="solution">
+    On applique la formule de partage proportionnel :
+
+    $$
+    \text{part}_1 = \frac{256}{256+768} = \frac{256}{1024} = \frac{1}{4} = 25\%
+    $$
+
+    Le premier conteneur reçoit **25 %** du cœur, le second **75 %** — mais seulement sous contention. À vide, chacun peut atteindre 100 %.
+  </Fragment>
+</Exercise>
+
+<Escape>
+  ### Démarrage : VM contre conteneur
+
+  Visualisation interactive libre, hors du gabarit pédagogique standard.
+
+  <BootBench />
+</Escape>

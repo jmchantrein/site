@@ -1,0 +1,72 @@
+---
+/**
+ * Gabarit des pages de LECTURE (cours & articles) :
+ * hero (fil d'Ariane, pastilles, titre, chapeau) puis
+ *  - avec terminal : colonne ≤66ch à gauche + panneau terminal sticky à droite ;
+ *  - sans terminal : colonne unique (largeur technique --measure-wide).
+ * Navigation précédent/suivant en pied. Le contenu arrive par <slot/>.
+ */
+import Base from "./Base.astro";
+import Terminal from "../components/Terminal.astro";
+
+interface NavLink { href: string; label: string }
+interface Props {
+  title: string;
+  description?: string;
+  crumb: { href: string; label: string };
+  badges?: string[];
+  /** Pastilles de thématiques (articles) ; `multi` signale la multi-appartenance. */
+  topics?: string[];
+  lead?: string;
+  terminal?: boolean;
+  terminalTitle?: string;
+  terminalComment?: string;
+  prev?: NavLink;
+  next?: NavLink;
+}
+const {
+  title, description, crumb, badges = [], topics = [], lead,
+  terminal = false, terminalTitle, terminalComment, prev, next,
+} = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<Base title={title} description={description} progress>
+  <main id="main" class="wrap">
+    <div class:list={["course-hero", !terminal && "article"]}>
+      <div class="course-meta">
+        <span class="crumb"><a href={`${base}/`}>~</a> / <a href={crumb.href}>{crumb.label}</a></span>
+        {badges.map((b) => <span class="pill">{b}</span>)}
+      </div>
+      {topics.length > 0 && (
+        <ul class="article-tags" aria-label="Thématiques">
+          {topics.length > 1 && <li class="multi">↔ {topics.length} thématiques</li>}
+          {topics.map((t) => <li>{t}</li>)}
+        </ul>
+      )}
+      <h1>{title}</h1>
+      {lead && <p class="lead">{lead}</p>}
+    </div>
+
+    {terminal ? (
+      <div class="course">
+        <article class="course__reading prose">
+          <slot />
+        </article>
+        <aside class="course__aside" aria-label="Atelier terminal">
+          <Terminal id="term-1" title={terminalTitle} comment={terminalComment} />
+        </aside>
+      </div>
+    ) : (
+      <article class="article course__reading prose">
+        <slot />
+      </article>
+    )}
+
+    {(prev || next) && (
+      <nav class="course-nav wrap-flush" aria-label="Navigation du cours">
+        {prev ? <a class="btn btn--ghost" href={prev.href}>← {prev.label}</a> : <span />}
+        {next && <a class="btn btn--primary" href={next.href}>{next.label} →</a>}
+      </nav>
+    )}
+  </main>
+</Base>
