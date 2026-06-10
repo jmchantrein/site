@@ -1,0 +1,119 @@
+---
+/**
+ * PILE DE COUCHES — schéma « image, couches, conteneur » du cours Docker.
+ * Quatre états pour dérouler le raisonnement en diaporama :
+ *   image     → l'image x = pile de couches en lecture seule ;
+ *   conteneur → le conteneur x = image x + couche RW ;
+ *   commit    → docker commit : la couche RW devient la couche n+1 de l'image y ;
+ *   partage   → images x et y coexistent et partagent n couches.
+ *
+ * Usage MDX (dans un <Slides>) :
+ *   <LayerStack state="conteneur" />
+ */
+interface Props {
+  state: "image" | "conteneur" | "commit" | "partage";
+}
+const { state } = Astro.props;
+
+const LABELS = {
+  image: "L'image x est une pile de couches en lecture seule, de la couche 1 à la couche n.",
+  conteneur: "Le conteneur x ajoute une couche en lecture/écriture au-dessus des couches en lecture seule de l'image x.",
+  commit: "Après docker commit, la couche RW devient la couche n+1, en lecture seule, de la nouvelle image y.",
+  partage: "Les images x (couches 1 à n) et y (couches 1 à n+1) coexistent et partagent n couches.",
+};
+
+const L_N = "Couche n : z3d56…";
+const L_DOTS = "…";
+const L_1 = "Couche 1 : a8ze4…";
+const L_RW = "Couche RW (lecture/écriture)";
+const L_NP1 = "Couche n+1 : d32…";
+const IMG_X = "image x\nlecture seule";
+const IMG_Y = "image y\nlecture seule";
+
+/* Couches du haut vers le bas + crochets (from/to en lignes de grille, col 2 ou 3). */
+const STATES = {
+  image: {
+    layers: [L_N, L_DOTS, L_1],
+    braces: [{ label: IMG_X, from: 1, to: 4, col: 2 }],
+  },
+  conteneur: {
+    layers: [L_RW, L_N, L_DOTS, L_1],
+    braces: [
+      { label: IMG_X, from: 2, to: 5, col: 2 },
+      { label: "conteneur x", from: 1, to: 5, col: 3 },
+    ],
+  },
+  commit: {
+    layers: [L_NP1, L_N, L_DOTS, L_1],
+    braces: [{ label: IMG_Y, from: 1, to: 5, col: 2 }],
+  },
+  partage: {
+    layers: [L_NP1, L_N, L_DOTS, L_1],
+    braces: [
+      { label: IMG_Y, from: 1, to: 5, col: 2 },
+      { label: IMG_X, from: 2, to: 5, col: 3 },
+    ],
+  },
+};
+const { layers, braces } = STATES[state];
+---
+<figure class="lstack" role="img" aria-label={LABELS[state]}>
+  {layers.map((label, i) => (
+    <span
+      class:list={[
+        "lstack__layer",
+        label === L_DOTS && "lstack__layer--dots",
+        label === L_RW && "lstack__layer--rw",
+      ]}
+      style={`grid-row: ${i + 1};`}
+    >
+      {label}
+    </span>
+  ))}
+  {braces.map((b) => (
+    <span class="lstack__brace" style={`grid-row: ${b.from} / ${b.to}; grid-column: ${b.col};`} aria-hidden="true">
+      {b.label.split("\n").map((line, i) => (i === 0 ? line : [<br />, line]))}
+    </span>
+  ))}
+</figure>
+
+<style>
+  .lstack {
+    display: grid;
+    grid-template-columns: minmax(12rem, 22rem) max-content max-content;
+    gap: var(--space-1) 0;
+    margin: var(--space-4) 0;
+    font-size: var(--text-sm);
+  }
+  .lstack__layer {
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-info-weak);
+    text-align: center;
+    font-family: var(--font-mono);
+    min-height: 2.6rem;
+  }
+  .lstack__layer--dots { background: var(--color-surface-sunken); }
+  .lstack__layer--rw {
+    background: var(--color-warning-weak);
+    border-color: var(--color-warning);
+  }
+  /* Crochet : bordure droite + retours haut/bas, libellé centré. */
+  .lstack__brace {
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2) 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-left: none;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+</style>

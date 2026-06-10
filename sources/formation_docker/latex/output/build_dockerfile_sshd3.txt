@@ -1,0 +1,15 @@
+Sending build context to Docker daemon 8.192 kB
+Step 1/8 : FROM debian:testing-slim
+ ---> f2020c7a5565
+Step 2/8 : ENV VERSION 1 DEBIAN_FRONTEND noninteractive
+ ---> Using cache
+ ---> e3ef9a7b6a23
+Step 3/8 : LABEL maintainer "Jean-Mathieu Chantrein" maintainer_email "jean-mathieu.chantrein@univ-angers.fr" version "${VERSION}"
+ ---> Using cache
+ ---> fbb7230757c2
+Step 4/8 : RUN useradd lambda --create-home --shell /bin/bash &&     echo "lambda:password" | chpasswd
+ ---> Using cache
+ ---> a17fecb71d55
+Step 5/8 : RUN apt update &&     apt install -yq openssh-server &&     rm -rf /varlib/apt/lists/* &&     mkdir /var/run/sshd
+ ---> Using cache
+ ---> 15bd3d357785

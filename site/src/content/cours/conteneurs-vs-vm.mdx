@@ -1,0 +1,170 @@
+---
+title: "Conteneur ou machine virtuelle ?"
+description: "Machine physique, hyperviseurs, virtualisation et conteneurisation : ce qui les distingue, et des technologies différentes pour des objectifs différents."
+order: 1
+topics: [linux]
+duration: 15
+badge: "Fondations"
+tags: [virtualisation, VM, conteneurs, chroot]
+terminal: false
+---
+
+## Introduction
+
+Dans cette section, nous allons définir quelques notions qui nous permettront de mieux appréhender les principales différences qu'il y a entre une machine physique (réelle), une machine virtuelle et un conteneur.
+
+## Au commencement il y avait… la machine physique
+
+L'ordinateur (serveur, PC, Mac…) :
+
+- il est fabriqué principalement avec des composants électroniques ;
+- il est programmable (on peut lui faire exécuter des programmes) ;
+- il est très puissant pour effectuer des calculs binaires (mais il ne sait faire que ça).
+
+Un **système d'exploitation** (*Operating System*, abrégé OS) est un programme qui a pour but :
+
+- d'assurer la communication entre des logiciels et les différents composants d'une machine (RAM, disques, carte réseau…) ;
+- d'organiser et de planifier l'exécution des autres programmes.
+
+## Ensuite, il y a eu la virtualisation… de machine
+
+La machine virtuelle (*virtual machine*, abrégée VM) :
+
+- une machine virtuelle est une machine **émulée** par un logiciel ;
+- le logiciel d'émulation simule la présence de ressources matérielles telles que la mémoire, le(s) processeur(s), le(s) disque(s) dur(s) : il est capable de simuler un ordinateur complet ;
+- on appelle **hyperviseur** le logiciel ayant pour mission de gérer les VM (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen, Proxmox…) ;
+- il y a 2 types d'hyperviseurs :
+  - **type 1** (*bare metal*, natif) : l'hyperviseur est l'OS, meilleure performance (Xen, QEMU/KVM) ;
+  - **type 2** (*hosted*) : hyperviseur installé au-dessus d'un OS (VirtualBox).
+
+<ArchiStack kind="vm" />
+
+<Note type="success" title="Avantages du modèle VM">
+  - Portabilité des VM.
+  - Isolation des applications.
+  - Mutualisation des ressources (plusieurs VM sur une seule machine réelle).
+  - Ressources à la demande (mémoire, CPU modifiables).
+  - Démarrage plus rapide qu'une machine réelle.
+</Note>
+
+<Note type="warning" title="Inconvénients du modèle VM">
+  - Performance inférieure à une exécution native (dite aussi *bare metal*).
+  - Consommation de mémoire vive importante (pour la VM elle-même).
+  - Consommation de mémoire de masse importante : 15 VM Linux = 15 installations du noyau Linux.
+  - Plus lent qu'un conteneur.
+</Note>
+
+## … et la virtualisation d'environnement : la conteneurisation
+
+<Note type="warning" title="Terminologie : « virtualisation légère »">
+  On désigne souvent la conteneurisation comme étant de la *virtualisation légère*. Le terme est bien adapté lorsqu'il s'agit de mettre en opposition la conteneurisation face à la virtualisation (appelée alors « virtualisation lourde »). Mais de manière générale, le terme est mal choisi : lorsque nous utilisons des techniques de conteneurisation, **il n'y a pas de virtualisation**. Pour cette raison, nous n'utiliserons plus le terme de virtualisation lorsque nous parlerons de conteneurisation dans la suite de ce cours.
+</Note>
+
+La conteneurisation :
+
+- un conteneur fournit un **environnement d'exécution isolé** pour une ou des applications ;
+- un conteneur **partage le noyau** du système d'exploitation de l'hôte ;
+- l'isolation est effectuée par des fonctionnalités du noyau (cgroups, namespaces, capabilities) ;
+- il existe différents types de conteneurs (chroot, Docker, Podman, LXC, systemd-nspawn…) ;
+- on appelle **moteur de conteneurs** (*container runtime*) le logiciel qui exécute les conteneurs (Docker, Podman, containerd…) et **orchestrateur** celui qui les gère à l'échelle (Docker Swarm, Kubernetes, LXD/Incus, Proxmox…).
+
+<ArchiStack kind="conteneur" />
+
+<Note type="success" title="Avantages du modèle conteneur">
+  - Portabilité des conteneurs (plus ou moins).
+  - Isolation des applications (plus ou moins).
+  - Mutualisation des ressources, ressources à la demande.
+  - Démarrage quasiment aussi rapide qu'une application native.
+  - Contrairement aux VM, pas de *overhead* : économie des ressources matérielles.
+</Note>
+
+<Note type="warning" title="Inconvénients du modèle conteneur">
+  - Ne permet d'exécuter que des applications compatibles avec le noyau du système hôte.
+  - Peut être sans état, volatil (selon les technologies employées) : pas de snapshot RAM incluse, pas de persistance des données nativement.
+  - Courbe d'apprentissage un peu plus élevée que pour des VM.
+  - Écosystème en évolution rapide (mais aujourd'hui stabilisé autour du standard OCI, *Open Container Initiative*).
+</Note>
+
+Remarque : on peut imbriquer plusieurs VM ou plusieurs conteneurs les uns dans les autres (*nested virtualization / nested containers*).
+
+<Escape>
+  ### Démarrage : VM contre conteneur
+
+  Visualisation interactive libre, hors du gabarit pédagogique standard.
+
+  <BootBench />
+</Escape>
+
+## chroot : les prémices de la conteneurisation
+
+<Exercise id="chroot-new-root" level={2}>
+  Réalisez un chroot pour un utilisateur d'UID 2000 sur un répertoire nommé `new_root`. Vous aurez besoin de :
+
+  - `chroot` (et de `man chroot`) ;
+  - `cp` ;
+  - `ldd` ;
+  - `mkdir`.
+
+  <Fragment slot="solution">
+    Première tentative :
+
+    ```console
+    jmc@laptop ~ $ mkdir new_root
+    jmc@laptop ~ $ cp -r /bin/ new_root/
+    jmc@laptop ~ $ sudo chroot new_root /bin/bash
+    # Zut alors !
+    ```
+
+    Le binaire ne suffit pas : il faut aussi ses bibliothèques dynamiques, que `ldd` permet de lister :
+
+    ```console
+    jmc@laptop ~ $ ldd /bin/bash
+    jmc@laptop ~ $ cp -r /lib new_root/
+    jmc@laptop ~ $ cp -r /lib64 new_root/
+    jmc@laptop ~ $ sudo chroot new_root /bin/bash
+    bash-4.3# pwd
+    /
+    bash-4.3# echo $UID
+    0
+    bash-4.3# exit
+    ```
+
+    Puis avec l'utilisateur d'UID 2000 :
+
+    ```console
+    jmc@laptop ~ $ sudo chroot --userspec 2000:2000 new_root /bin/bash
+    bash-4.3# echo $UID
+    2000
+    bash-4.3# ls -l /        # À vous de voir
+    bash-4.3# rm -r --no-preserve-root /   # À votre avis ? Et lorsqu'on ne met pas l'option --userspec ?
+    bash-4.3# exit
+    ```
+  </Fragment>
+</Exercise>
+
+## Des technologies de conteneurisation différentes pour des objectifs différents
+
+### Les conteneurs applicatifs
+
+Il s'agit des conteneurs qui ont pour objectif de n'exécuter qu'une application, qu'un service, voire même qu'un seul processus. Les deux principaux moteurs sont :
+
+- **Docker** (Docker Inc.) ;
+- **Podman** (Red Hat), compatible avec les commandes et les images Docker, sans démon et *rootless* par conception.
+
+Ce sont des technologies très prisées par le monde du DevOps (relation entre les développeurs et les administrateurs systèmes/réseaux).
+
+L'utilisation de ces technologies met en avant les architectures de **micro-services** (1 conteneur = 1 micro-service, multi-conteneurisation du service). Il s'agit de conteneurs **sans état** (*stateless*) : il n'y a pas de persistance de données par défaut, car ces conteneurs sont volatils.
+
+### Les conteneurs pour l'administration système
+
+Ce sont des conteneurs qui ont pour objectif de remplacer les VM. Ils diffèrent des conteneurs applicatifs dans le sens où ils peuvent fournir un **ensemble** de (micro-)services. Ce sont des conteneurs **avec état** (*stateful*) : ils offrent une persistance des données et ils ont pour vocation d'être manipulés comme des VM (snapshot, sauvegarde, migration à chaud). Les principales solutions sont :
+
+- LXC, via **Incus** (fork communautaire de LXD) ou via **LXD** (Canonical) ;
+- LXC, via **Proxmox** (`pct`) ;
+- OpenVZ (historique, devenu Virtuozzo).
+
+Les conteneurs LXC sont capables d'héberger des conteneurs Docker (sous conditions : voir [cet article](https://stgraber.org/2016/04/13/lxd-2-0-docker-in-lxd-712/)).
+
+### Les conteneurs pour le calcul haute performance
+
+L'idée est de se servir du mécanisme des conteneurs pour offrir des environnements isolés mais performants dans le cadre du calcul haute performance (HPC, utilisation sur des clusters de calcul). **Apptainer** (anciennement Singularity) permet l'utilisation de conteneurs à destination du HPC. Les conteneurs Apptainer sont en mesure d'exécuter des conteneurs Docker. Ils sont également plus sécurisés nativement (pas de démon root, l'utilisateur reste lui-même dans le conteneur) et permettent l'utilisation native de certains protocoles (InfiniBand, OpenMPI…).

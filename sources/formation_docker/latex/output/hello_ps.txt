@@ -1,0 +1,2 @@
+CONTAINER ID  IMAGE        COMMAND   CREATED          STATUS                      PORTS  NAMES
+ccdd8f78bf58  hello-world  "/hello"  15 minutes ago   Exited (0) 15 minutes ago          furious_pare

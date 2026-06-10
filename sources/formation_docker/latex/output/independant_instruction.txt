@@ -1,0 +1,12 @@
+Step 1/4 : FROM alpine:latest
+ ---> 7328f6f8b418
+Step 2/4 : RUN cd /tmp
+ ---> Running in d172a17e8705
+ ---> 1eb259884a9f
+Removing intermediate container d172a17e8705
+Step 3/4 : RUN pwd
+ ---> Running in 80a06bfd0434
+/
+ ---> 9f59028b0464
+Removing intermediate container 80a06bfd0434
+Step 4/4 : [...]

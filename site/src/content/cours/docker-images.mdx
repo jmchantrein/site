@@ -1,0 +1,435 @@
+---
+title: "Créer ses images Docker"
+description: "Du commit artisanal au Dockerfile : construction automatisée, contexte, cache, et la différence entre CMD et ENTRYPOINT."
+order: 3
+topics: [linux]
+duration: 25
+badge: "Pratique"
+tags: [dockerfile, build, cache, entrypoint]
+terminal: false
+---
+
+## Création d'images : la méthode naïve
+
+<Note type="warning" title="Trois cas d'usage seulement">
+  - Pour un usage pédagogique.
+  - Lorsque l'on n'est pas en mesure de configurer un environnement autrement qu'en mode graphique (Eclipse, par exemple).
+  - Pour déboguer une construction automatisée (`docker build`).
+</Note>
+
+### Utilisation de docker commit
+
+On modifie un conteneur, puis on fige sa couche en lecture/écriture dans une nouvelle image :
+
+```console
+jmc@laptop ~ $ docker run -it -h conteneur --name conteneur_avant_commit ubuntu /bin/bash
+root@conteneur:/# echo "hello world !" > /nouveau_fichier_dans_le_systeme_de_fichier_racine.txt
+root@conteneur:/# exit
+```
+
+```console
+jmc@laptop ~ $ docker images
+REPOSITORY  TAG     IMAGE ID      CREATED      SIZE
+ubuntu      latest  7b9b13f7b9c0  2 weeks ago  118 MB
+jmc@laptop ~ $ docker commit conteneur_avant_commit image_apres_commit_du_conteneur
+sha256:ca0028fa88252c281db33655b17517f3484b82ae42057e26193a6b91045bf2b8
+jmc@laptop ~ $ docker images
+REPOSITORY                        TAG     IMAGE ID      CREATED         SIZE
+image_apres_commit_du_conteneur   latest  ca0028fa8825  16 minutes ago  118 MB
+ubuntu                            latest  7b9b13f7b9c0  2 weeks ago     118 MB
+```
+
+La nouvelle image contient bien la modification :
+
+```console
+jmc@laptop ~ $ docker run --rm image_apres_commit_du_conteneur cat /nouveau_fichier_dans_le_systeme_de_fichier_racine.txt
+hello world !
+```
+
+<Exercise id="commit-ping" level={1}>
+  - Faites une image `mon_image` à partir d'une ubuntu 24.04, **avec la méthode naïve** (`docker commit`).
+  - Cette nouvelle image contiendra le paquet `iputils-ping`.
+  - Testez la commande `docker run mon_image ping localhost`.
+
+  <Fragment slot="solution">
+    ```bash
+    docker run -it --name conteneur_ping ubuntu:24.04 /bin/bash
+    # Dans le conteneur :
+    apt update && apt install -y iputils-ping
+    exit
+    # Sur l'hôte :
+    docker commit conteneur_ping mon_image
+    docker run mon_image ping localhost
+    ```
+  </Fragment>
+</Exercise>
+
+<Note type="warning" title="Problème de résolution DNS dans certains sous-réseaux">
+  Il se peut que votre réseau vous oblige à passer par un DNS précis, qui ne correspond pas aux adresses présentes dans le `/etc/resolv.conf` de l'hôte (surcharge effectuée par NetworkManager ou systemd-resolved). Dans ce cas, la résolution de noms ne se fera pas dans le conteneur (et vous ne pourrez pas installer de paquets), car la surcharge n'affecte pas le conteneur, qui s'en tient au fichier `/etc/resolv.conf`. Il vous faut soit changer le contenu de `/etc/resolv.conf`, soit passer l'argument `--dns IP_DNS` au lancement du conteneur. Pour obtenir `IP_DNS`, vous pouvez utiliser `nmcli device show | grep DNS` ou `resolvectl status`.
+</Note>
+
+## Création d'images : le Dockerfile
+
+### La méthode efficace
+
+- Un **Dockerfile** est un document texte contenant toutes les commandes que vous exécuteriez normalement manuellement sur un OS (apt/yum, configuration de logiciels, création d'utilisateurs, variables d'environnement…).
+- Avec la commande `docker build`, Docker crée des images **automatiquement** en lisant les instructions du Dockerfile.
+- À **chaque** instruction du Dockerfile, `docker build` génère une image — et une couche si nécessaire (car potentiellement vide). On parle d'image **intermédiaire**, sauf pour la dernière instruction, qui correspond à l'image finale (*top level image*).
+- Les images intermédiaires sont générées par un mécanisme de **commit** des conteneurs dans lesquels les instructions ont été exécutées.
+- On peut créer plusieurs images avec un seul Dockerfile (mais on ne devrait pas).
+
+<Note type="warning" title="BuildKit : le constructeur moderne">
+  Ce mécanisme « un conteneur committé par instruction » est celui du constructeur historique de Docker, et c'est lui que montrent les sorties de terminal de ce cours. Depuis Docker 23.0, le constructeur par défaut est **BuildKit** : le modèle couches + cache reste conceptuellement identique, mais les images intermédiaires n'apparaissent plus dans `docker images -a` et l'affichage du build est différent. Pour reproduire les sorties historiques : `DOCKER_BUILDKIT=0 docker build .` (constructeur en voie de suppression).
+</Note>
+
+### La notion de contexte
+
+- Il faut **dédier un répertoire** à chaque création d'image par Dockerfile. En effet, `docker build` fonctionne avec une notion de **contexte** qui s'applique récursivement à partir du chemin du répertoire contenant le Dockerfile.
+- À l'instar de git, vous pouvez utiliser un fichier `.dockerignore` : `docker build` ignorera tous les fichiers et répertoires qui y sont indiqués (ils ne feront pas partie du contexte).
+- Les commentaires dans un Dockerfile sont préfixés par `#`.
+
+<Note type="danger" title="Ne jamais créer un Dockerfile à la racine du système">
+  Le contexte envoyé au démon Docker concernerait l'intégralité du système de fichiers !
+</Note>
+
+### Les instructions
+
+Il est possible d'utiliser des **variables d'environnement** (comme `HOME`, `PATH`…) interprétables par certaines instructions, marquées ✦ ci-dessous :
+
+| Instruction | Rôle |
+|---|---|
+| `FROM` | image de base |
+| `RUN` | exécuter une commande (nouvelle couche) |
+| `CMD` | commande par défaut du conteneur |
+| `LABEL` ✦ | métadonnées (`MAINTAINER` est déprécié au profit de `LABEL`) |
+| `EXPOSE` ✦ | documenter un port d'écoute |
+| `ENV` ✦ | définir une variable d'environnement |
+| `ADD` ✦ / `COPY` ✦ | copier des fichiers du contexte dans l'image |
+| `ENTRYPOINT` | exécutable du conteneur |
+| `VOLUME` ✦ | déclarer un point de montage |
+| `USER` ✦ | utilisateur des instructions suivantes |
+| `WORKDIR` ✦ | répertoire de travail des instructions suivantes |
+| `ARG` | variable de construction |
+| `ONBUILD` ✦ | instruction différée aux images enfantes |
+| `STOPSIGNAL` ✦ | signal d'arrêt |
+| `HEALTHCHECK` | sonde de santé |
+| `SHELL` | shell des instructions `RUN` |
+
+### Exemple : le Dockerfile d'un serveur ssh
+
+`/home/jmc/sshd/Dockerfile` :
+
+```dockerfile
+# Image de départ
+FROM debian:testing-slim
+
+# Variables d'environnement
+ENV VERSION=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Métadonnées de l'image
+LABEL maintainer="Jean-Mathieu Chantrein" \
+    maintainer_email="jean-mathieu.chantrein@univ-angers.fr" \
+    version="${VERSION}"
+
+# Création d'un utilisateur lambda
+RUN useradd lambda --create-home --shell /bin/bash && \
+    echo "lambda:password" | chpasswd
+
+# Installation des paquets, suppression du cache apt
+RUN apt update && \
+    apt install -yq openssh-server && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir /var/run/sshd
+
+# setuid sur le démon ssh
+RUN chmod u+s /usr/sbin/sshd
+
+# root => lambda
+USER lambda
+
+# Commande par défaut au lancement du conteneur
+CMD ["/usr/sbin/sshd", "-D"]
+```
+
+<Note title="ENV DEBIAN_FRONTEND : à ne pas reproduire">
+  Déclarer `DEBIAN_FRONTEND=noninteractive` en variable d'environnement **persistante** (instruction `ENV`) est une mauvaise pratique — elle restera active dans tous les conteneurs et toutes les images enfantes ([ticket GitHub](https://github.com/moby/moby/issues/4032)). Préférez la portée d'une seule commande : `RUN DEBIAN_FRONTEND=noninteractive apt install …`. Le [TP](../tp-docker-wordpress/) y revient.
+</Note>
+
+La construction :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker build . -t sshd
+Sending build context to Docker daemon 8.192 kB
+Step 1/8 : FROM debian:testing-slim
+testing-slim: Pulling from library/debian
+8f99754b7fe0: Pull complete
+Status: Downloaded newer image for debian:testing-slim
+ ---> f2020c7a5565
+Step 2/8 : ENV VERSION 1 DEBIAN_FRONTEND noninteractive
+ ---> Running in 358b9c6ec81e
+ ---> e3ef9a7b6a23
+Removing intermediate container 358b9c6ec81e
+Step 3/8 : LABEL maintainer "Jean-Mathieu Chantrein" ...
+ ---> Running in f4d7a947fe58
+ ---> fbb7230757c2
+Removing intermediate container f4d7a947fe58
+Step 4/8 : RUN useradd lambda --create-home --shell /bin/bash && echo "lambda:password" | chpasswd
+ ---> Running in a9c930c23c4a
+ ---> a17fecb71d55
+Removing intermediate container a9c930c23c4a
+Step 5/8 : RUN apt update && apt install -yq openssh-server && ...
+ ---> Running in c378b292a0d0
+ ---> 15bd3d357785
+Removing intermediate container c378b292a0d0
+Step 6/8 : RUN chmod u+s /usr/sbin/sshd
+ ---> Running in a697d7d0bcde
+ ---> 174bd751e04d
+Removing intermediate container a697d7d0bcde
+Step 7/8 : USER lambda
+ ---> Running in e512834f2b07
+ ---> c7002394e3de
+Removing intermediate container e512834f2b07
+Step 8/8 : CMD /usr/sbin/sshd -D
+ ---> Running in 83b6f14485f3
+ ---> 1c1305bc7c28
+Removing intermediate container 83b6f14485f3
+Successfully built 1c1305bc7c28
+```
+
+### Explication graphique
+
+<Slides title="docker build, pas à pas">
+  <Slide>
+    #### Étape 1 — `FROM debian:testing-slim`
+
+    <BuildStack images={["f2020c7a5565"]} />
+
+    L'image de base est tirée (*pull*) du registre : c'est la première image de la pile.
+  </Slide>
+  <Slide>
+    #### Étape 2 — `ENV VERSION=1 …`
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23"]} container="358b9c6ec81e" />
+
+    Un conteneur temporaire est exécuté depuis l'image précédente, l'instruction y est appliquée, puis il est **committé** en image intermédiaire et supprimé.
+  </Slide>
+  <Slide>
+    #### Étape 3 — `LABEL maintainer=…`
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23", "fbb7230757c2"]} container="f4d7a947fe58" />
+
+    Même mécanique : *run* → *commit* → suppression. `ENV` et `LABEL` ne modifient pas le système de fichiers : leurs couches sont **vides** (0 octet).
+  </Slide>
+  <Slide>
+    #### Étape 4 — `RUN useradd lambda …`
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23", "fbb7230757c2", "a17fecb71d55"]} container="a9c930c23c4a" />
+
+    Cette fois le système de fichiers change (création du home, `/etc/passwd`…) : la couche associée pèse 333 ko.
+  </Slide>
+  <Slide>
+    #### Étape 5 — `RUN apt update && apt install …`
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23", "fbb7230757c2", "a17fecb71d55", "15bd3d357785"]} container="c378b292a0d0" />
+
+    L'installation d'openssh-server produit la couche la plus volumineuse (86,8 Mo).
+  </Slide>
+  <Slide>
+    #### Étapes 6 à 8 — `RUN chmod …`, `USER`, `CMD`
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23", "fbb7230757c2", "a17fecb71d55", "15bd3d357785", "174bd751e04d", "c7002394e3de", "1c1305bc7c28"]} container="83b6f14485f3" />
+
+    Chaque instruction restante répète le cycle. La dernière image produite, `1c1305bc7c28`, est la **top level image** : c'est elle qui reçoit le tag `sshd`.
+  </Slide>
+  <Slide>
+    #### Pile finale
+
+    <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23", "fbb7230757c2", "a17fecb71d55", "15bd3d357785", "174bd751e04d", "c7002394e3de", "1c1305bc7c28"]} final />
+
+    Chaque ligne du Dockerfile **a pour parent** l'image de la ligne précédente : l'architecture des images forme un arbre.
+  </Slide>
+</Slides>
+
+### Notions de contexte et de cache
+
+Modifions la 6e instruction (`RUN chmod u+s /usr/sbin/sshd && echo "Une modification de cette instruction"`) et relançons la construction :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker build . -t sshd
+Sending build context to Docker daemon 8.192 kB
+Step 1/8 : FROM debian:testing-slim
+ ---> f2020c7a5565
+Step 2/8 : ENV VERSION 1 DEBIAN_FRONTEND noninteractive
+ ---> Using cache
+ ---> e3ef9a7b6a23
+Step 3/8 : LABEL maintainer "Jean-Mathieu Chantrein" ...
+ ---> Using cache
+ ---> fbb7230757c2
+Step 4/8 : RUN useradd lambda --create-home --shell /bin/bash && ...
+ ---> Using cache
+ ---> a17fecb71d55
+Step 5/8 : RUN apt update && apt install -yq openssh-server && ...
+ ---> Using cache
+ ---> 15bd3d357785
+Step 6/8 : RUN chmod u+s /usr/sbin/sshd && echo "Une modification de cette instruction"
+ ---> Running in a74783d3335a
+Une modification de cette instruction
+ ---> 1e8030a5f34b
+Removing intermediate container a74783d3335a
+Step 7/8 : USER lambda
+ ---> Running in 6275d6897c41
+ ---> 07c952331a94
+Removing intermediate container 6275d6897c41
+Step 8/8 : CMD /usr/sbin/sshd -D
+ ---> Running in 35b3a68cb6e8
+ ---> 8f8b2b932bc7
+Removing intermediate container 35b3a68cb6e8
+Successfully built 8f8b2b932bc7
+```
+
+Les étapes 1 à 5 sont servies par le **cache** (`Using cache`) : seules les instructions à partir de la modification sont reconstruites. Observons les images :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+sshd                latest              8f8b2b932bc7        17 minutes ago      143 MB
+<none>              <none>              1c1305bc7c28        2 days ago          143 MB
+debian              testing-slim        f2020c7a5565        5 days ago          55.2 MB
+
+jmc@laptop /home/jmc/sshd $ docker images -a    # Combien d'images ?
+REPOSITORY  TAG           IMAGE ID      CREATED        SIZE
+<none>      <none>        07c952331a94  9 minutes ago  143 MB
+<none>      <none>        1e8030a5f34b  9 minutes ago  143 MB
+sshd        latest        8f8b2b932bc7  9 minutes ago  143 MB
+<none>      <none>        1c1305bc7c28  2 days ago     143 MB
+<none>      <none>        c7002394e3de  2 days ago     143 MB
+<none>      <none>        15bd3d357785  2 days ago     142 MB
+<none>      <none>        174bd751e04d  2 days ago     143 MB
+<none>      <none>        a17fecb71d55  2 days ago     55.6 MB
+<none>      <none>        e3ef9a7b6a23  2 days ago     55.2 MB
+<none>      <none>        fbb7230757c2  2 days ago     55.2 MB
+debian      testing-slim  f2020c7a5565  5 days ago     55.2 MB
+```
+
+L'ancienne top level image `1c1305bc7c28` a perdu son tag `sshd` : elle est devenue **pendante** (*dangling*). On peut la repérer et la supprimer :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker images -a --filter dangling=true
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+<none>              <none>              1c1305bc7c28        2 days ago          143 MB
+
+jmc@laptop /home/jmc/sshd $ docker rmi 1c1
+Deleted: sha256:1c1305bc7c283f1e5644209d9144184f9b1d4fd15020486eda7217227f7ad3e4
+Deleted: sha256:c7002394e3de48d4e085b957c747fbb1f82123b09ccc1987045b4692c6834eff
+Deleted: sha256:174bd751e04da05124ec3b7c42cd04f22e2507b11afde8782e772a755d1ee4b5
+```
+
+Suppression **en cascade** : les images intermédiaires qui ne sont parentes d'aucune autre top level image (`c7002394e3de`, `174bd751e04d`) disparaissent avec elle ; celles qui sont encore utilisées par `sshd` (étapes 1 à 5, servies par le cache) sont conservées :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker images -a
+REPOSITORY  TAG           IMAGE ID      CREATED         SIZE
+sshd        latest        8f8b2b932bc7  29 minutes ago  143 MB
+<none>      <none>        07c952331a94  29 minutes ago  143 MB
+<none>      <none>        1e8030a5f34b  29 minutes ago  143 MB
+<none>      <none>        15bd3d357785  2 days ago      142 MB
+<none>      <none>        a17fecb71d55  2 days ago      55.6 MB
+<none>      <none>        fbb7230757c2  2 days ago      55.2 MB
+<none>      <none>        e3ef9a7b6a23  2 days ago      55.2 MB
+debian      testing-slim  f2020c7a5565  5 days ago      55.2 MB
+```
+
+Enfin, `docker history` raconte la généalogie de l'image :
+
+```console
+jmc@laptop /home/jmc/sshd $ docker history sshd
+IMAGE               CREATED             CREATED BY                                      SIZE
+8f8b2b932bc7        About an hour ago   /bin/sh -c #(nop)  CMD ["/usr/sbin/sshd" "...   0 B
+07c952331a94        About an hour ago   /bin/sh -c #(nop)  USER [lambda]                0 B
+1e8030a5f34b        About an hour ago   /bin/sh -c chmod u+s /usr/sbin/sshd &&  ec...   791 kB
+15bd3d357785        3 days ago          /bin/sh -c apt update &&     apt install -...   86.8 MB
+a17fecb71d55        3 days ago          /bin/sh -c useradd lambda --create-home --...   333 kB
+fbb7230757c2        3 days ago          /bin/sh -c #(nop)  LABEL maintainer=Jean-M...   0 B
+e3ef9a7b6a23        3 days ago          /bin/sh -c #(nop)  ENV VERSION=1 DEBIAN_FR...   0 B
+f2020c7a5565        5 days ago          /bin/sh -c #(nop)  CMD ["bash"]                 0 B
+<missing>           5 days ago          /bin/sh -c #(nop) ADD file:2bad6c695080ae4...   55.2 MB
+```
+
+- Les images de taille 0 n'ont pas généré de couche et reposent sur les couches des images parentes (couches vides, *empty layers*).
+- Pourquoi y a-t-il une différence de 3 jours dans la création des images ? Le cache, encore lui.
+
+### Encore quelques informations
+
+- Il est important de taguer/versionner ses images de production.
+- Les couches les plus volumineuses devraient être les plus basses (utilisation efficace du mécanisme de cache).
+- Les instructions susceptibles de changer régulièrement devraient se situer dans les couches **hautes**.
+- Attention aux directives `update` et `install` lors de l'utilisation du cache : un `RUN apt update` servi par le cache peut dater.
+- Tout changement de contexte (modification d'un fichier ajouté par `ADD` ou `COPY`) entraîne une reconstruction des images à partir de la couche affectée.
+- Chaque construction d'un Dockerfile génère une **nouvelle** image (modulo une utilisation totale du cache).
+- Chaque instruction est **indépendante** : cela n'a pas de sens d'écrire `RUN cd /tmp` —
+
+```console
+Step 2/4 : RUN cd /tmp
+ ---> Running in d172a17e8705
+ ---> 1eb259884a9f
+Step 3/4 : RUN pwd
+ ---> Running in 80a06bfd0434
+/
+ ---> 9f59028b0464
+```
+
+- Pour changer de répertoire pour les instructions suivantes (y compris pour d'éventuelles images enfantes), utilisez l'instruction `WORKDIR`.
+
+<Exercise id="dockerfile-ping" level={1}>
+  - Rédigez un Dockerfile permettant de créer une image `mon_image` à partir d'une ubuntu 24.04.
+  - Cette nouvelle image contiendra le paquet `iputils-ping`.
+  - La commande par défaut doit être `ping localhost` (instruction `CMD`).
+  - Testez votre image en instanciant un conteneur.
+  - Essayez de surcharger la commande par défaut en la remplaçant par `ping qwant.com`.
+
+  <Fragment slot="solution">
+    ```dockerfile
+    FROM ubuntu:24.04
+    RUN DEBIAN_FRONTEND=noninteractive apt update && \
+        apt install -yq iputils-ping && \
+        apt clean
+    CMD ["ping", "localhost"]
+    ```
+
+    ```bash
+    docker build . -t mon_image
+    docker run mon_image                  # ping localhost
+    docker run mon_image ping qwant.com   # la commande par défaut est surchargée
+    ```
+  </Fragment>
+</Exercise>
+
+<Exercise id="cmd-vs-entrypoint" level={2}>
+  Différence entre les instructions `CMD` et `ENTRYPOINT` : construisez l'image du Dockerfile suivant avec `docker build . -t ping` :
+
+  ```dockerfile
+  FROM ubuntu:24.04
+  RUN DEBIAN_FRONTEND=noninteractive apt update && \
+      apt install -yq iputils-ping && \
+      apt clean
+  ENTRYPOINT ["ping", "-c", "2"]
+  CMD ["localhost"]
+  ```
+
+  - Instanciez cette image sans surcharge avec `docker run ping`.
+  - Instanciez cette image en surchargeant avec `docker run ping qwant.com`.
+
+  Que constatez-vous ?
+
+  <Fragment slot="solution">
+    - `ENTRYPOINT` permet de se servir d'un conteneur comme d'un **exécutable** : les arguments passés à `docker run` ne remplacent pas l'exécutable, ils remplacent `CMD`.
+    - On peut surcharger `ENTRYPOINT` avec l'option `--entrypoint`.
+    - On peut modifier les paramètres de l'exécutable défini dans `ENTRYPOINT` en surchargeant `CMD` (ici, `localhost` est remplacé par `qwant.com` : le conteneur exécute `ping -c 2 qwant.com`).
+    - On peut figer des paramètres dans `ENTRYPOINT` (ici `-c 2`), qui ne seront pas surchargés par `CMD`.
+  </Fragment>
+</Exercise>
+
+## Et maintenant, la pratique
+
+Vous savez désormais ce qu'est une image, une couche, un conteneur, et comment construire des images proprement. Place à la pratique : le [TP — Conteneurisation d'un service WordPress](../tp-docker-wordpress/) déroule, étape par étape, le chemin du Dockerfile artisanal jusqu'à l'orchestration avec Docker Compose et Docker Swarm.

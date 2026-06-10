@@ -1,0 +1,22 @@
+Step 5/8 : RUN apt update &&     apt install -yq openssh-server &&     rm -rf /varlib/apt/lists/* &&     mkdir /var/run/sshd
+ ---> Running in c378b292a0d0
+
+[update, install, config ...]
+
+ ---> 15bd3d357785
+Removing intermediate container c378b292a0d0
+Step 6/8 : RUN chmod u+s /usr/sbin/sshd
+ ---> Running in a697d7d0bcde
+ ---> 174bd751e04d
+Removing intermediate container a697d7d0bcde
+Step 7/8 : USER lambda
+ ---> Running in e512834f2b07
+ ---> c7002394e3de
+Removing intermediate container e512834f2b07
+Step 8/8 : CMD /usr/sbin/sshd -D
+ ---> Running in 83b6f14485f3
+ ---> 1c1305bc7c28
+Removing intermediate container 83b6f14485f3
+Successfully built 1c1305bc7c28
+
+

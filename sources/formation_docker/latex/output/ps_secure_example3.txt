@@ -1,0 +1,2 @@
+CONTAINER ID  IMAGE   COMMAND      CREATED        STATUS                      PORTS  NAMES
+5c2eacbfcfee  ubuntu  "/bin/bash"  8 minutes ago  Exited (0) 28 seconds ago          myname

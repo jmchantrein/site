@@ -1,0 +1,6 @@
+FROM ubuntu:16.04
+RUN DEBIAN_FRONTEND=noninterractive apt update && \
+        apt install -yq inetutils-ping && \
+        apt clean
+ENTRYPOINT ["ping","-c 2"]
+CMD ["localhost"]

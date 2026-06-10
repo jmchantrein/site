@@ -1,0 +1,14 @@
+Step 6/8 : RUN chmod u+s /usr/sbin/sshd && 	echo "Une modification de cette instruction"
+ ---> Running in a74783d3335a
+Une modification de cette instruction
+ ---> 1e8030a5f34b
+Removing intermediate container a74783d3335a
+Step 7/8 : USER lambda
+ ---> Running in 6275d6897c41
+ ---> 07c952331a94
+Removing intermediate container 6275d6897c41
+Step 8/8 : CMD /usr/sbin/sshd -D
+ ---> Running in 35b3a68cb6e8
+ ---> 8f8b2b932bc7
+Removing intermediate container 35b3a68cb6e8
+Successfully built 8f8b2b932bc7

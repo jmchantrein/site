@@ -1,0 +1,435 @@
+---
+title: "Docker : les bases"
+description: "Images, couches et conteneurs : définitions formelles, premières commandes, volatilité des données et sécurité du modèle."
+order: 2
+topics: [linux]
+duration: 30
+badge: "Fondations"
+tags: [docker, images, couches, conteneurs, sécurité]
+terminal: true
+terminalTitle: "bash — atelier docker"
+terminalComment: "# atelier docker — cliquez une commande du cours pour l'exécuter ici"
+---
+
+## Introduction
+
+<Note title="La puissance de Docker ?">
+  Démonstration : un service WordPress complet, monté en quelques minutes sur [play-with-docker](https://labs.play-with-docker.com). Nous referons cette manipulation nous-mêmes dans le [TP final](../tp-docker-wordpress/).
+</Note>
+
+### Contexte d'utilisation de Docker
+
+- Dans le cadre du cours, notre utilisation de Docker se fera uniquement sur un **noyau Linux** (il existe aussi des conteneurs natifs Windows, pour conteneuriser des applications Windows sur Windows Server).
+- On peut utiliser Docker nativement sur un OS GNU/Linux.
+- On peut utiliser Docker dans une machine virtuelle avec un OS GNU/Linux.
+- Sur Windows et macOS, **Docker Desktop** fournit l'environnement complet (sur Windows, via la couche WSL 2 qui exécute un vrai noyau Linux).
+- On peut avoir un environnement « bac à sable » Docker en ligne avec l'excellent site [play-with-docker](https://labs.play-with-docker.com) (nécessite un compte Docker).
+
+### Historique
+
+- Solomon Hykes débute le projet Docker en interne pour dotCloud, en France.
+- Docker a été distribué en tant que projet open source à partir de mars 2013.
+- À partir de la version 0.9, Docker abandonne l'utilisation de LXC et développe sa propre bibliothèque de conteneurs : libcontainer.
+- En 3 ans, 10 000 forks et 1 400 contributeurs sur GitHub.
+- En 2015, Docker donne son format d'image et son runtime (runc) à l'**Open Container Initiative** (OCI), qui standardise l'écosystème ; en 2017, le démon d'exécution containerd est donné à la CNCF.
+- Docker est principalement développé par la société Docker Inc.
+
+### Carte d'identité
+
+| | |
+|---|---|
+| Développeur | Docker Inc. (créé par Solomon Hykes) |
+| Première version | 13 mars 2013 |
+| Écrit en | Go |
+| Type | Moteur de conteneurs |
+| Licence | Apache 2.0 (moteur ; Docker Desktop a sa propre licence) |
+| Site web | [www.docker.com](https://www.docker.com) |
+
+<Note type="warning" title="Versions de Docker">
+  Il y a eu de grands changements majeurs dans l'historique de développement de Docker :
+
+  - Docker 0.9 : abandon de LXC pour la bibliothèque libcontainer (devenue runc) ;
+  - Docker 1.10 (4 février 2016) : changement de la gestion des images ;
+  - Docker 23.0 (2023) : **BuildKit** devient le constructeur d'images par défaut.
+
+  Ce cours a été écrit à l'origine sur la base de la version 17.03 et actualisé depuis. Les explications données ici peuvent être **incompatibles** avec les versions antérieures à Docker 1.10. Si vous êtes amenés à consulter des forums sur internet, pensez à regarder la date du message et/ou la version de Docker utilisée. Plus d'informations sur ces changements : [Docker 1.10](https://www.docker.com/blog/docker-1-10/), [Explaining Docker image IDs](https://windsock.io/explaining-docker-image-ids/).
+</Note>
+
+### Installation
+
+- Une distribution GNU/Linux récente (VM ou natif).
+- Dernière version stable de Docker Engine (Community) : suivre la [documentation officielle](https://docs.docker.com/engine/install/), de préférence via le dépôt apt/yum de docker.com.
+
+<Note type="warning" title="Pour ne pas avoir à écrire sudo à chaque commande docker">
+  ```bash
+  sudo usermod -aG docker $USER
+  # Déconnexion, reconnexion
+  sudo systemctl enable docker   # Activation au démarrage de l'hôte
+  ```
+
+  Considérez que vous êtes root à chaque fois que votre commande est préfixée par `docker` : l'appartenance au groupe `docker` équivaut à des privilèges root sur la machine.
+</Note>
+
+## Définitions et prérequis
+
+### Les images et les couches : bases des conteneurs Docker
+
+- Une **image** désigne une collection **ordonnée** (par empilement) de **modifications** d'un système de fichiers racine.
+- On conserve chacune de ces modifications du système de fichiers dans **une couche** (*layer*), identifiable par le hash SHA-256 de son contenu. Une image désigne donc une collection **ordonnée** de couches.
+- À chaque couche **intermédiaire** est associée une image **intermédiaire**.
+- Les couches sont créées grâce à l'exécution de conteneurs qui sont transformés en image (pas de panique, le diaporama ci-dessous le montre pas à pas).
+- Il peut y avoir des couches vides (*empty layers*).
+- Les couches désignées par une image sont nécessairement en **lecture seule**.
+- Une image est **unique** : elle est identifiée par une fonction de hachage SHA-256 de son descriptif. Elle **n'a pas d'état** (on n'exécute pas une image) et elle est **immuable**.
+
+### Un conteneur : l'instanciation d'une image
+
+- Le système de fichiers racine du conteneur **est** le système de fichiers racine de l'image sous-jacente, **mais** celui-ci est en lecture seule.
+- On a **l'illusion** de modifier le système de fichiers dans le conteneur, car les changements sont effectués dans **une nouvelle couche en lecture/écriture** (technologie de *Copy On Write*, COW).
+- La suppression du conteneur entraîne **systématiquement la suppression de cette couche en lecture/écriture**.
+- On peut pérenniser les modifications effectuées dans le système de fichiers d'un conteneur en créant une **nouvelle** image, qui ajoute aux couches en lecture seule la nouvelle couche ainsi créée : la couche qui était en lecture/écriture passe en lecture seule.
+- Cette pérennisation se fait via la commande `docker commit`.
+
+<Note type="danger" title="Ce qu'il faut bien comprendre">
+  - Image ≠ couche ≠ conteneur.
+  - Une couche contient **uniquement** les **différences** d'un système de fichiers.
+  - Un **ensemble** de couches peut former un système de fichiers racine.
+  - Les couches ne savent rien des images qui les exploitent.
+  - Les couches peuvent être utilisées par **plusieurs** images.
+  - Une image peut faire référence à **plus d'une** couche.
+  - Une image est quelque chose que vous pouvez instancier. Le **résultat** de cette instanciation est un conteneur.
+  - Lorsqu'un conteneur démarre, certaines informations de l'image ayant permis son instanciation permettent de construire son système de fichiers racine.
+</Note>
+
+### Représentation graphique
+
+<Slides title="Image, couches et conteneur">
+  <Slide>
+    #### L'image : une pile de couches
+
+    <LayerStack state="image" />
+
+    Chaque couche ne contient que les **différences** (*diff*) par rapport à la couche inférieure. L'ensemble, en lecture seule, forme l'image x.
+  </Slide>
+  <Slide>
+    #### Le conteneur : image + couche RW
+
+    <LayerStack state="conteneur" />
+
+    Le conteneur x ajoute une **couche en lecture/écriture** au-dessus des couches de l'image. Les couches de l'image sont d'ailleurs elles-mêmes obtenues grâce à une succession de conteneurs committés.
+  </Slide>
+  <Slide>
+    #### docker commit x y
+
+    <LayerStack state="commit" />
+
+    On crée une image y à partir du conteneur x — l'équivalent d'un *snapshot* à froid : la couche RW devient la couche n+1, en lecture seule.
+  </Slide>
+  <Slide>
+    #### Deux images, n couches partagées
+
+    <LayerStack state="partage" />
+
+    Avantage : les images x et y ont n couches en commun (**mutualisation des ressources**). Chaque couche construite localement a une image correspondante : on parle d'**image intermédiaire** (`docker images --all`).
+  </Slide>
+  <Slide>
+    #### Suppression d'une image
+
+    <LayerStack state="partage" />
+
+    Lorsque l'on supprime une image :
+
+    - si les couches sont utilisées par d'autres images, celles-ci ne seront pas supprimées ;
+    - sinon, il y a une destruction en cascade des images parentes intermédiaires et de leurs couches associées ;
+    - la suppression de x (resp. y) n'empêche pas l'utilisation de y (resp. x).
+  </Slide>
+  <Slide>
+    #### L'architecture des images : un arbre
+
+    On peut visualiser l'architecture globale des images sous la forme d'un **arbre** : les feuilles sont des images sans enfants, les nœuds correspondent à des images non intermédiaires (normalement taguées). Ces feuilles et ces nœuds sont les images destinées à être instanciées en production.
+
+    - On dit que l'image y **a pour parent** l'image x.
+    - Une **top level image** qui n'a pas de tag (`<none>`) est dite « pendante » (*dangling*).
+    - Une top level image devrait toujours être taguée.
+    - Lors de la conception d'une architecture locale d'images, il faudrait **maximiser le nombre de couches partagées et minimiser le nombre d'images de base**.
+  </Slide>
+</Slides>
+
+<Note title="Images particulières">
+  - Une *top level image* n'est pas une image intermédiaire.
+  - Une image taguée `<none>` est une image intermédiaire ; sinon c'est une top level image pendante (*dangling*).
+  - Une image marquée `<missing>` est une image manquante mais dont on a obtenu la couche associée (via `docker pull`).
+</Note>
+
+<Note type="warning" title="Avant la version 1.10 (historique)">
+  Chaque image était identifiée par un nombre aléatoire et associée à **une seule** couche, repérée par le même identifiant que l'image — d'où des problèmes de sécurité à cause du nombre aléatoire. Plus d'informations : [Explaining Docker image IDs](https://windsock.io/explaining-docker-image-ids/).
+</Note>
+
+## Quelques commandes de base
+
+### Gestion des images
+
+- `docker pull` : télécharger une image présente sur un registre ([Docker Hub](https://hub.docker.com) par défaut) ;
+- `docker push` : pousser (téléverser) une image sur un registre ;
+- `docker search` : chercher une image sur un registre ;
+- `docker images` : lister les images présentes localement ;
+- `docker history` : afficher l'historique de création d'une image ;
+- `docker rmi` : supprimer une image ;
+- `docker commit` : construire une image à partir d'un conteneur ;
+- `docker build` : construire une image à partir d'un Dockerfile.
+
+### Gestion des conteneurs
+
+- `docker run` : démarrer un conteneur ;
+- `docker stop` / `start` / `restart` / `pause` / `unpause` : arrêt / démarrage / redémarrage / pause / reprise d'un conteneur ;
+- `docker logs` : obtenir les journaux d'un conteneur ;
+- `docker kill` : tuer un conteneur ;
+- `docker rm` : supprimer un conteneur ;
+- `docker ps` : lister les conteneurs actifs.
+
+<Note title="Plusieurs commandes pour le même résultat">
+  Les commandes ci-dessus sont les commandes historiques de Docker. Avec le temps, Docker a regroupé ses commandes en fonction des « objets » concernés : les conteneurs dans `docker container <cmd>`, les images dans `docker image <cmd>`, et ainsi de suite pour `config`, `network`, `node`, `plugin`, `secret`, `service`, `stack`, `swarm`, `system` et `volume`. Mais `docker container ls -aq` **est identique à** `docker ps -aq`.
+</Note>
+
+### Gestion de Docker
+
+- `docker info` : afficher des informations relatives à l'écosystème Docker sur la machine ;
+- `docker inspect` : afficher des informations de bas niveau sur des objets Docker (images, conteneurs, réseaux…) ;
+- `docker version` : afficher la version de Docker.
+
+### « Philosophie » de Docker : bonnes pratiques recommandées
+
+- Un conteneur doit être éphémère (séparation et point de montage des données dans le conteneur).
+- Un conteneur = 1 (micro-)service (= 1 processus pour les puristes).
+- On ne devrait pas être root dans un conteneur (sshd, crond, pare-feu… reviennent à l'hôte).
+- Si jamais on doit être root : utilisation d'un setuid, de gosu ou de su-exec.
+- Minimiser la taille des images (pas de superflu).
+- Minimiser le nombre de couches dans une image (Dockerfile : arguments multi-lignes, tubes).
+- Maximiser le partage des couches.
+- Les couches les plus volumineuses au plus près de la racine (utilisation du cache de `docker build`).
+
+### « Philosophie·s » de Docker ?
+
+- Adapter les bonnes pratiques en fonction de ses besoins et de ses usages.
+- Pour plus d'un processus par conteneur, voir du côté de supervisord.
+- Utilisez-vous la bonne technologie de conteneurisation ?
+
+## Premiers pas
+
+### Notre premier conteneur
+
+Cliquez les commandes pour les « exécuter » dans le terminal →
+
+<Cmd cmd="docker run hello-world">
+  <TermLine>Unable to find image 'hello-world:latest' locally</TermLine>
+  <TermLine>latest: Pulling from library/hello-world</TermLine>
+  <TermLine>78445dd45222: Pull complete</TermLine>
+  <TermLine>Digest: sha256:c5515758d4c5e1e838e9cd307f6c6a0d620b5e07e6f927b07d05f6d12a1ac8d7</TermLine>
+  <TermLine>Status: Downloaded newer image for hello-world:latest</TermLine>
+  <TermLine></TermLine>
+  <TermLine>Hello from Docker!</TermLine>
+  <TermLine>This message shows that your installation appears to be working correctly.</TermLine>
+  <TermLine type="ok" tag="note">l'image est téléchargée (pull), puis instanciée en conteneur.</TermLine>
+</Cmd>
+
+À propos du conteneur :
+
+<Cmd cmd="docker ps">
+  <TermLine>CONTAINER ID  IMAGE  COMMAND  CREATED  STATUS  PORTS  NAMES</TermLine>
+  <TermLine type="ok" tag="note">aucun conteneur actif.</TermLine>
+</Cmd>
+
+<Cmd cmd="docker ps -a">
+  <TermLine>CONTAINER ID  IMAGE        COMMAND   CREATED         STATUS                     NAMES</TermLine>
+  <TermLine>ccdd8f78bf58  hello-world  "/hello"  15 minutes ago  Exited (0) 15 minutes ago  furious_pare</TermLine>
+  <TermLine type="ok" tag="note">1 conteneur inactif (-a = all) ; si le nom n'est pas spécifié, attribution d'un nom aléatoire.</TermLine>
+</Cmd>
+
+<Cmd cmd="docker inspect --format='{{.ID}}' furious_pare">
+  <TermLine>ccdd8f78bf58e744968462d979bde759155dcd6892cad94bea2bf64fe3fa0012</TermLine>
+  <TermLine type="warn" tag="à noter">le CONTAINER ID est affecté aléatoirement.</TermLine>
+</Cmd>
+
+À propos de l'image :
+
+<Cmd cmd="docker images">
+  <TermLine>REPOSITORY   TAG     IMAGE ID      CREATED       SIZE</TermLine>
+  <TermLine>hello-world  latest  48b5124b2768  4 months ago  1.84 kB</TermLine>
+  <TermLine type="ok" tag="note">liste les images de plus haut niveau (top level images) ; -aq pour toutes, silencieusement.</TermLine>
+</Cmd>
+
+<Cmd cmd="docker inspect --format='{{.RootFS.Layers}}' hello-world">
+  <TermLine>[sha256:98c944e98de8d35097100ff70a31083ec57704be0991a92c51700465e4544d08]</TermLine>
+  <TermLine type="warn" tag="à noter">l'IMAGE ID vient d'une fonction de hachage ; ici, le hash de la couche décompressée (notez les crochets : c'est une liste).</TermLine>
+</Cmd>
+
+À propos de la suppression et des identifiants :
+
+<Cmd cmd="docker rm furious_pare">
+  <TermLine>furious_pare</TermLine>
+  <TermLine type="ok" tag="note">suppression par le nom — ou par l'identifiant : docker rm ccdd8 (début du CONTAINER ID).</TermLine>
+</Cmd>
+
+<Cmd cmd="docker rmi hello-world">
+  <TermLine>Untagged: hello-world:latest</TermLine>
+  <TermLine>Untagged: hello-world@sha256:c5515758d4c5e1e838e9cd307f6c6a0d620b5e07e6f927b07d05f6d12a1ac8d7</TermLine>
+  <TermLine>Deleted: sha256:48b5124b2768d2b917edcb640435044a97967015485e812545546cbed5cf0233</TermLine>
+  <TermLine>Deleted: sha256:98c944e98de8d35097100ff70a31083ec57704be0991a92c51700465e4544d08</TermLine>
+</Cmd>
+
+- `latest` est considéré comme le tag par défaut (*untagged by user*), de même que `hello-world@sha256:c55…` (hash de l'image compressée).
+- `Deleted: sha256:48b…` : suppression de l'**image**.
+- `Deleted: sha256:98c…` : suppression des **couches** de l'image (une seule en l'occurrence), car elles ne sont partagées par aucune autre image.
+- À quoi correspondait `78445dd45222` lors du pull ? C'est le hash de la **couche compressée**.
+
+### Quelques cas faciles
+
+<Exercise id="cas-faciles" level={1}>
+  Prenez le temps de lancer quelques conteneurs simplement :
+
+  1. Exécutez `/bin/bash` dans un conteneur interactif ubuntu.
+  2. Exécutez `/bin/ls` dans un conteneur non interactif ubuntu.
+  3. Exécutez `/bin/ps -eflH` dans un conteneur non interactif ubuntu.
+  4. Exécutez `/bin/bash` dans un conteneur interactif nommé `mon_conteneur_c0` ubuntu.
+  5. Détachez-vous du conteneur `mon_conteneur_c0` avec Ctrl+p Ctrl+q.
+  6. Rattachez-vous au conteneur `mon_conteneur_c0`.
+  7. Sortez du conteneur `mon_conteneur_c0`.
+  8. Listez les conteneurs actifs, listez tous les conteneurs.
+  9. Supprimez tous les conteneurs inactifs en une seule commande (`docker container help`).
+
+  <Fragment slot="solution">
+    1. `docker run -it ubuntu /bin/bash`
+    2. `docker run ubuntu /bin/ls`
+    3. `docker run ubuntu /bin/ps -eflH`
+    4. `docker run -it --name mon_conteneur_c0 ubuntu`
+    5. Ctrl+p Ctrl+q
+    6. `docker container attach mon_conteneur_c0`
+    7. `exit`
+    8. `docker container ls ; docker container ls -a`
+    9. `docker container prune`
+  </Fragment>
+</Exercise>
+
+### Quelques cas pénibles
+
+<Exercise id="cas-penibles" level={2}>
+  Vous utiliserez les commandes `docker run` et `docker container` (`docker <cmd> help` pour l'aide sur la commande `<cmd>`) :
+
+  1. Essayez d'exécuter `/bin/bash` dans un conteneur interactif alpine.
+  2. Exécutez `echo hello world !` dans un conteneur non interactif centos `c1`.
+  3. Essayez de démarrer une fois le conteneur `c1`. Faites `docker logs c1`.
+  4. Exécutez `/bin/bash` dans un conteneur non interactif centos `c2`.
+  5. Essayez de démarrer une fois le conteneur `c2`. Faites `docker logs c2`.
+  6. Exécutez `/bin/bash` dans un conteneur interactif centos `c3`, puis sortez de c3 avec `exit`.
+  7. Démarrez, connectez-vous avec un nouveau bash et détachez-vous du conteneur `c3`.
+  8. Listez les processus du conteneur `c3` depuis l'hôte **et** depuis le conteneur (`ps`).
+
+  <Fragment slot="solution">
+    1. `/bin/bash` n'est pas présent par défaut dans alpine. Idée sous-jacente : minimiser la taille des images, on n'installe que ce dont on a besoin — la distribution Alpine fait 5 Mo !
+    2. `docker run centos echo hello world !`
+    3. `c1` est en mode non interactif et `echo` est sans boucle d'événements ; mais `hello` est réellement affiché 2 fois (regardez les logs).
+    4. `c2` est en mode non interactif et il n'y a pas de pseudo-terminal alloué.
+    5. La commande `/bin/bash` est réellement exécutée 2 fois.
+    6. `docker run -it --name c3 centos /bin/bash ; exit`
+    7. `docker start c3 ; docker exec -it c3 /bin/bash` puis Ctrl+p Ctrl+q.
+    8. `docker container top c3` (PID vus de l'hôte) ; `docker exec c3 ps` (PID vus du conteneur).
+  </Fragment>
+</Exercise>
+
+## Volatilité, persistance et sécurité des données
+
+Allons un peu plus loin (*something more ambitious*) : que se passe-t-il si l'on détruit le système de fichiers **dans** un conteneur ?
+
+```console
+jmc@laptop ~ $ docker run -it ubuntu /bin/bash
+root@dfdf734253a9:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@dfdf734253a9:/# rm -rf /     # Aucune incidence sur l'hôte : pas de montage de volume
+rm: it is dangerous to operate recursively on '/'
+rm: use --no-preserve-root to override this failsafe
+root@dfdf734253a9:/# rm -rf --no-preserve-root /
+...
+root@dfdf734253a9:/# ls
+bash: /bin/ls: No such file or directory
+root@dfdf734253a9:/# exit
+```
+
+Le conteneur est détruit de l'intérieur… mais l'hôte est indemne, et l'**image** ubuntu aussi : seule la couche en lecture/écriture du conteneur a été ravagée. La preuve — un nouveau conteneur de la même image est intact :
+
+```console
+jmc@laptop ~ $ docker rm dfd
+dfd
+jmc@laptop ~ $ docker run -it ubuntu /bin/bash
+root@63f0abcc808a:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@63f0abcc808a:/# exit
+```
+
+En revanche, si l'on **monte** la racine de l'hôte dans le conteneur, le danger devient réel :
+
+```console
+jmc@laptop ~ $ docker run -it -v /:/danger_racine_hote --hostname myhostname --name myname ubuntu /bin/bash
+root@myhostname:/# ls /danger_racine_hote
+bin  boot  cdrom  dev  etc  home  initrd.img  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var  vmlinuz
+root@myhostname:/# # Ne surtout PAS faire rm -rf /danger_racine_hote
+```
+
+Enfin, l'option `--rm` supprime automatiquement le conteneur (et sa couche RW) à la sortie :
+
+```console
+jmc@laptop ~ $ docker run -it --rm ubuntu /bin/bash
+root@30481297b94c:/# exit
+jmc@laptop ~ $ docker ps -a
+CONTAINER ID  IMAGE  COMMAND  CREATED  STATUS  PORTS  NAMES
+```
+
+<Note type="success" title="Résumé">
+  - Il peut être dangereux d'exécuter des conteneurs contenant des processus root.
+  - On peut monter des répertoires de l'hôte dans le conteneur afin d'assurer la persistance de certaines données : cette technologie s'appelle les **volumes** (*data volumes*).
+  - Pour des montages sur des ressources partagées (NFS, iSCSI, FC) : voir les *docker volume plugins*.
+  - Il existe une technologie de persistance à travers des conteneurs : les *data volume containers*.
+</Note>
+
+## Sécurité des conteneurs
+
+<Note type="warning" title="Namespaces : l'isolation de base">
+  - Les processus exécutés dans un conteneur ne peuvent ni voir, ni affecter les processus exécutés dans un autre conteneur ou dans le système hôte.
+  - Chaque conteneur possède son propre réseau. Si l'hôte est configuré en conséquence, les conteneurs peuvent interagir les uns avec les autres (et avec l'hôte) au travers de leurs interfaces réseau respectives.
+  - Tous les conteneurs d'un hôte Docker sont connectés à des ponts (*bridges*, commutateurs virtuels).
+  - Il est tout de même déconseillé d'exécuter des applications root (ssh, vpn, dhcp…) : l'hôte est supposé subvenir à ces besoins.
+  - Si on souhaite modifier le comportement par défaut de l'isolation, cela implique une intervention et une connaissance des *capabilities* — c'est un prix à payer lorsque l'on partage le même noyau.
+  - Plus d'informations : [Docker security](https://docs.docker.com/engine/security/).
+</Note>
+
+<Note type="warning" title="Capabilities">
+  - Il peut être dangereux d'exécuter des conteneurs contenant des processus root.
+  - En cas d'escalade de privilèges depuis le conteneur vers l'hôte : par défaut, le root dans le conteneur n'a pas les mêmes droits que le potentiel root sur l'hôte.
+  - En effet, celui-ci ne dispose pas de toutes les *capabilities*.
+  - Plus d'informations : [man capabilities](https://linux.die.net/man/7/capabilities).
+
+  Capabilities accordées par défaut : `CAP_CHOWN`, `CAP_DAC_OVERRIDE`, `CAP_FSETID`, `CAP_FOWNER`, `CAP_MKNOD`, `CAP_NET_RAW`, `CAP_SETGID`, `CAP_SETUID`, `CAP_SETFCAP`, `CAP_SETPCAP`, `CAP_NET_BIND_SERVICE`, `CAP_SYS_CHROOT`, `CAP_KILL`, `CAP_AUDIT_WRITE`.
+</Note>
+
+<Note type="warning" title="cgroups : limitation des ressources">
+  - Comptabilité et limitation des ressources par conteneur.
+  - Par défaut : part équitable des ressources (CPU, RAM, E/S) par conteneur.
+  - Empêche l'utilisation de toutes les ressources par un seul conteneur (démo : *fork bomb* confinée avec `--cpuset-cpus 0`).
+  - D'une certaine manière, ils empêchent certaines attaques de type déni de service.
+  - « Garantit » une disponibilité et une performance quasiment constantes.
+</Note>
+
+<Note type="danger" title="Démon Docker : surface d'attaque">
+  - Le démon Docker est exécuté en root !
+  - Seul un administrateur devrait pouvoir contrôler ce démon.
+  - Quelle confiance accordez-vous à l'image Docker que vous téléchargez ?
+  - Il est recommandé de ne faire tourner que Docker sur un serveur (à part ssh, dhcp, etc.) : s'il y a d'autres applications, il faut les conteneuriser ou les déplacer.
+  - Il ne faut pas faire ses tests de conteneurs sur une machine de production !
+  - Depuis Docker 20.10, un mode **rootless** permet d'exécuter démon et conteneurs sans privilèges root (c'est aussi le mode de fonctionnement naturel de Podman).
+</Note>
+
+## Conteneurs graphiques
+
+- Il est tout à fait possible d'exécuter des conteneurs graphiques (un navigateur dans un conteneur, par exemple).
+- En général, on fait un mapping de `/tmp/.X11-unix` et de `~/.Xauthority` de l'hôte vers le conteneur avec Xorg ; sous Wayland, on partage le socket `wayland-0` du compositeur.
+- Certains utilisent VNC (beaucoup moins efficace, mais plus sécurisé…).
+- Nous n'aborderons pas plus cet aspect dans ce cours.
