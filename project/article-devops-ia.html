@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>DevOps &amp; IA — Miscelánea</title>
+<meta name="description" content="Intégrer des modèles d'IA dans une chaîne CI/CD : reproductibilité, coûts, garde-fous.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .article-hero { padding-block: var(--space-6) var(--space-3); max-width: var(--measure-wide); margin-inline: auto; }
+  .article-hero h1 { font-size: clamp(1.9rem, 4vw, var(--text-2xl)); max-width: 22ch; margin-top: var(--space-3); }
+  .article-hero .lead { margin-top: var(--space-4); }
+  .article-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; padding: 0; margin: 0; }
+  .article-tags li { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px var(--space-3); }
+  .article-tags li.multi { color: var(--color-accent-text); border-color: var(--color-accent); }
+  .article { max-width: var(--measure-wide); margin-inline: auto; }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+<div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="read-progress__bar" data-read-progress></div></div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html" aria-current="page"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="article-hero">
+    <div class="course-meta" style="margin-bottom:var(--space-3)">
+      <span class="crumb" style="font-family:var(--font-mono)"><a href="miscelanae.html">Miscelánea</a></span>
+      <span class="pill">≈ 11 min</span>
+    </div>
+    <ul class="article-tags" aria-label="Thématiques">
+      <li class="multi"><span data-lang="fr">↔ 2 thématiques</span><span data-lang="en">↔ 2 topics</span></li>
+      <li><span data-lang="fr">Administration systèmes GNU/Linux</span><span data-lang="en">GNU/Linux system administration</span></li>
+      <li><span data-lang="fr">Sciences &amp; calcul</span><span data-lang="en">Science &amp; computing</span></li>
+    </ul>
+    <h1>DevOps &amp; IA</h1>
+    <p class="lead"><span data-lang="fr">Faire entrer un modèle dans une chaîne d'intégration continue, c'est arbitrer entre reproductibilité, coût et sûreté. Cet article relève à la fois de l'administration système et des sciences du calcul — d'où ses deux thématiques.</span><span data-lang="en">Bringing a model into a CI pipeline means balancing reproducibility, cost and safety. This article belongs to both system administration and computing science — hence its two topics.</span></p>
+  </div>
+
+  <article class="article course__reading prose">
+    <h2><span data-lang="fr">1. Reproductibilité : figer l'environnement</span><span data-lang="en">1. Reproducibility: pin the environment</span></h2>
+    <p><span data-lang="fr">Un modèle n'est reproductible que si son environnement l'est. On <strong>épingle</strong> les versions (bibliothèques, pilotes CUDA, poids du modèle) et on construit une image de conteneur immuable — exactement les principes vus dans le <a href="cours-conteneurisation.html">cours sur la conteneurisation</a>.</span><span data-lang="en">A model is reproducible only if its environment is. You <strong>pin</strong> versions (libraries, CUDA drivers, model weights) and build an immutable container image — exactly the principles from the <a href="cours-conteneurisation.html">containerization course</a>.</span></p>
+
+    <aside class="note note--success" role="note">
+      <div class="note__icon" aria-hidden="true">✓</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Astuce</span><span data-lang="en">Tip</span></p>
+        <p><span data-lang="fr">Versionnez les <em>poids</em> du modèle comme des artefacts (registre dédié), pas dans le dépôt Git : ils sont volumineux et binaires.</span><span data-lang="en">Version model <em>weights</em> as artifacts (a dedicated registry), not in the Git repo: they are large and binary.</span></p>
+      </div>
+    </aside>
+
+    <h2><span data-lang="fr">2. Le coût, mis en équation</span><span data-lang="en">2. Cost, as an equation</span></h2>
+    <p><span data-lang="fr">Une étape d'inférence dans la CI a un coût qu'on peut estimer. Pour <span class="nowrap">\(n\)</span> requêtes de test, un coût unitaire <span class="nowrap">\(c\)</span> par millier de tokens et <span class="nowrap">\(t\)</span> tokens par requête :</span><span data-lang="en">An inference step in CI has a cost you can estimate. For <span class="nowrap">\(n\)</span> test requests, a unit cost <span class="nowrap">\(c\)</span> per thousand tokens and <span class="nowrap">\(t\)</span> tokens per request:</span></p>
+    <p style="text-align:center; margin-block:var(--space-4)">$$C \;=\; n \cdot t \cdot \frac{c}{1000}$$</p>
+    <p><span data-lang="fr">Avec <span class="nowrap">\(n=200\)</span> tests, <span class="nowrap">\(t=1500\)</span> tokens et <span class="nowrap">\(c=0{,}50\)</span> €, chaque exécution coûte <span class="nowrap">\(200 \cdot 1500 \cdot 0{,}0005 = 150\)</span> € — d'où l'intérêt de ne lancer ces tests que sur les branches concernées.</span><span data-lang="en">With <span class="nowrap">\(n=200\)</span> tests, <span class="nowrap">\(t=1500\)</span> tokens and <span class="nowrap">\(c=0.50\)</span> €, each run costs <span class="nowrap">\(200 \cdot 1500 \cdot 0.0005 = 150\)</span> € — hence running these tests only on relevant branches.</span></p>
+
+    <h2><span data-lang="fr">3. Garde-fous</span><span data-lang="en">3. Guardrails</span></h2>
+    <p><span data-lang="fr">Un modèle est non déterministe : un test ne peut pas exiger une sortie exacte. On évalue plutôt des <strong>propriétés</strong> (format valide, absence de fuite de secret, score au-dessus d'un seuil) et on fixe un budget de coût par exécution.</span><span data-lang="en">A model is non-deterministic: a test cannot demand an exact output. Instead, evaluate <strong>properties</strong> (valid format, no secret leak, score above a threshold) and set a per-run cost budget.</span></p>
+
+    <aside class="note note--danger" role="note">
+      <div class="note__icon" aria-hidden="true">✕</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Piège</span><span data-lang="en">Pitfall</span></p>
+        <p><span data-lang="fr">Ne mettez jamais une clé d'API de modèle en clair dans la configuration CI : utilisez les secrets chiffrés du runner, et faites-les expirer.</span><span data-lang="en">Never put a model API key in plaintext in the CI config: use the runner's encrypted secrets, and rotate them.</span></p>
+      </div>
+    </aside>
+
+    <nav class="course-nav" aria-label="Navigation" style="display:flex; justify-content:space-between; gap:var(--space-4); margin-top:var(--space-7); padding-top:var(--space-5); border-top:1px solid var(--color-border);">
+      <a class="btn btn--ghost" href="article-wireguard.html" style="text-decoration:none; border:1px solid var(--color-border-strong); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;">← WireGuard</a>
+      <a class="btn btn--primary" href="miscelanae.html" style="text-decoration:none; background:var(--color-accent-text); color:var(--color-on-accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;"><span data-lang="fr">Tous les articles</span><span data-lang="en">All articles</span> →</a>
+    </nav>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — Miscelánea.</span><span data-lang="en">Site Astro — Miscellanea.</span>
+    <span class="pill">WCAG 2.1 · AA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>WireGuard, le VPN moderne — Miscelánea</title>
+<meta name="description" content="WireGuard : un tunnel chiffré minimaliste. Clés, configuration, mise en route.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .article-hero { padding-block: var(--space-6) var(--space-3); max-width: var(--measure-wide); margin-inline: auto; }
+  .article-hero h1 { font-size: clamp(1.9rem, 4vw, var(--text-2xl)); max-width: 22ch; margin-top: var(--space-3); }
+  .article-hero .lead { margin-top: var(--space-4); }
+  .article-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; padding: 0; margin: 0; }
+  .article-tags li { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px var(--space-3); }
+  .article { max-width: var(--measure-wide); margin-inline: auto; }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+<div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="read-progress__bar" data-read-progress></div></div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html" aria-current="page"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="article-hero">
+    <div class="course-meta" style="margin-bottom:var(--space-3)">
+      <span class="crumb" style="font-family:var(--font-mono)"><a href="miscelanae.html">Miscelánea</a> / <span data-lang="fr">Admin GNU/Linux</span><span data-lang="en">GNU/Linux admin</span></span>
+      <span class="pill">≈ 8 min</span>
+    </div>
+    <ul class="article-tags" aria-label="Thématiques"><li><span data-lang="fr">Administration systèmes GNU/Linux</span><span data-lang="en">GNU/Linux system administration</span></li></ul>
+    <h1>WireGuard, le VPN moderne</h1>
+    <p class="lead"><span data-lang="fr">Là où les VPN classiques empilent des milliers de lignes de code, WireGuard tient en quelques milliers seulement — et sa configuration en quelques lignes. Voici l'essentiel.</span><span data-lang="en">Where classic VPNs pile up thousands of lines of code, WireGuard fits in a few thousand — and its configuration in a few lines. Here's the gist.</span></p>
+  </div>
+
+  <article class="article course__reading prose">
+    <h2><span data-lang="fr">1. Le principe : des clés, pas des comptes</span><span data-lang="en">1. The idea: keys, not accounts</span></h2>
+    <p><span data-lang="fr"><dfn data-gloss="WireGuard">WireGuard</dfn> fonctionne comme SSH : chaque machine (<em>peer</em>) possède une <strong>paire de clés</strong>. On échange les clés <em>publiques</em>, et le tunnel s'établit dès que deux peers se reconnaissent. Pas de session, pas de négociation complexe.</span><span data-lang="en"><dfn data-gloss="WireGuard">WireGuard</dfn> works like SSH: each machine (<em>peer</em>) holds a <strong>key pair</strong>. You exchange <em>public</em> keys, and the tunnel forms as soon as two peers recognise each other. No session, no complex negotiation.</span></p>
+
+    <aside class="note note--info" role="note">
+      <div class="note__icon" aria-hidden="true">i</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Bon à savoir</span><span data-lang="en">Good to know</span></p>
+        <p><span data-lang="fr">WireGuard vit dans le noyau Linux depuis la version 5.6 : aucune dépendance lourde à installer côté noyau récent.</span><span data-lang="en">WireGuard ships in the Linux kernel since 5.6: no heavy dependency to install on a recent kernel.</span></p>
+      </div>
+    </aside>
+
+    <h2><span data-lang="fr">2. Générer les clés</span><span data-lang="en">2. Generate the keys</span></h2>
+    <pre class="code"><code>$ wg genkey | tee privkey | wg pubkey &gt; pubkey
+$ cat privkey   # clé privée — à garder secrète
+$ cat pubkey    # clé publique — à partager</code></pre>
+
+    <h2><span data-lang="fr">3. Une configuration minimale</span><span data-lang="en">3. A minimal configuration</span></h2>
+    <p><span data-lang="fr">Le fichier <code>/etc/wireguard/wg0.conf</code> décrit l'interface locale et chaque peer distant :</span><span data-lang="en">The file <code>/etc/wireguard/wg0.conf</code> describes the local interface and each remote peer:</span></p>
+    <pre class="code"><code>[Interface]
+PrivateKey = &lt;clé privée locale&gt;
+Address    = 10.0.0.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey  = &lt;clé publique du pair&gt;
+AllowedIPs = 10.0.0.2/32
+Endpoint   = vpn.exemple.org:51820</code></pre>
+    <p><span data-lang="fr">On active le tout avec <code>wg-quick up wg0</code>. Le champ <code>AllowedIPs</code> joue un double rôle : routage <em>et</em> filtrage des adresses autorisées dans le tunnel.</span><span data-lang="en">Bring it up with <code>wg-quick up wg0</code>. The <code>AllowedIPs</code> field plays a double role: routing <em>and</em> filtering which addresses are allowed in the tunnel.</span></p>
+
+    <aside class="note note--warning" role="note">
+      <div class="note__icon" aria-hidden="true">!</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Attention</span><span data-lang="en">Caution</span></p>
+        <p><span data-lang="fr">Mettre <code>AllowedIPs = 0.0.0.0/0</code> route <strong>tout</strong> le trafic dans le tunnel. Pratique pour un VPN « full », à éviter si vous ne vouliez qu'un accès à un sous-réseau.</span><span data-lang="en">Setting <code>AllowedIPs = 0.0.0.0/0</code> routes <strong>all</strong> traffic through the tunnel. Handy for a “full” VPN, avoid it if you only wanted access to one subnet.</span></p>
+      </div>
+    </aside>
+
+    <nav class="course-nav" aria-label="Navigation" style="display:flex; justify-content:space-between; gap:var(--space-4); margin-top:var(--space-7); padding-top:var(--space-5); border-top:1px solid var(--color-border);">
+      <a class="btn btn--ghost" href="miscelanae.html" style="text-decoration:none; border:1px solid var(--color-border-strong); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;">← <span data-lang="fr">Tous les articles</span><span data-lang="en">All articles</span></a>
+      <a class="btn btn--primary" href="article-devops-ia.html" style="text-decoration:none; background:var(--color-accent-text); color:var(--color-on-accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;">DevOps &amp; IA →</a>
+    </nav>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — Miscelánea.</span><span data-lang="en">Site Astro — Miscellanea.</span>
+    <span class="pill">WCAG 2.1 · AA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Cours — Site Astro</title>
+<meta name="description" content="Cours techniques structurés, classés par thématiques.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .misc-hero { padding-block: var(--space-7) var(--space-5); }
+  .misc-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); }
+  .theme-block { padding-block: var(--space-6); border-top: 1px solid var(--color-border); }
+  .theme-block__head { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-5); }
+  .theme-block__head h2 { margin: 0; font-size: var(--text-xl); }
+  .theme-block__count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
+  .article-card__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; padding: 0; margin: var(--space-1) 0 0; }
+  .article-card__tags li { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px var(--space-3); display: inline-flex; align-items: center; gap: 6px; }
+  .article-card__tags .multi { color: var(--color-accent-text); border-color: var(--color-accent); }
+  .misc-controls { display:flex; flex-wrap:wrap; gap: var(--space-4) var(--space-6); align-items:flex-end; justify-content:space-between; padding-block: var(--space-5); border-top:1px solid var(--color-border); }
+  .tag-cloud { display:flex; flex-wrap:wrap; gap: var(--space-2) var(--space-3); align-items:baseline; }
+  .tag-cloud__label { font-family:var(--font-mono); font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.08em; color:var(--color-text-muted); width:100%; margin-bottom: var(--space-2); }
+  .tag-chip { cursor:pointer; font-family:var(--font-sans); border:1px solid var(--color-border-strong); background:var(--color-surface); color:var(--color-text); border-radius:999px; padding:4px var(--space-4); display:inline-flex; align-items:baseline; gap:6px; line-height:1.2; }
+  .tag-chip .n { font-family:var(--font-mono); font-size:0.78em; color:var(--color-text-muted); }
+  .tag-chip:hover { border-color:var(--color-accent); color:var(--color-accent-text); }
+  .tag-chip[aria-pressed="true"] { background:var(--color-accent-weak); border-color:var(--color-accent); color:var(--color-accent-text); font-weight:600; }
+  .tag-chip[aria-pressed="true"] .n { color:var(--color-accent-text); }
+  .tag-chip[data-weight="3"] { font-size: var(--text-md); } .tag-chip[data-weight="2"] { font-size: var(--text-base); } .tag-chip[data-weight="1"] { font-size: var(--text-sm); } .tag-chip[data-weight="0"] { font-size: var(--text-sm); opacity:0.55; }
+  .view-toggle { display:flex; border:1px solid var(--color-border-strong); border-radius:var(--radius-md); overflow:hidden; flex:none; }
+  .view-toggle button { cursor:pointer; background:var(--color-surface); border:none; border-right:1px solid var(--color-border); color:var(--color-text); padding: var(--space-2) var(--space-4); font-size:var(--text-sm); font-weight:var(--weight-medium); }
+  .view-toggle button:last-child{ border-right:none; }
+  .view-toggle button[aria-pressed="true"]{ background:var(--color-accent-weak); color:var(--color-accent-text); font-weight:700; }
+  .theme-block[hidden], .card-grid[hidden], .module-card[hidden]{ display:none; }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html" aria-current="page"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="misc-hero">
+    <p class="kicker"><span data-lang="fr">Manuels techniques structurés</span><span data-lang="en">Structured technical manuals</span></p>
+    <h1><span data-lang="fr">Cours</span><span data-lang="en">Courses</span></h1>
+    <p class="lead"><span data-lang="fr">Des cours pas à pas, classés par thématiques. Un cours peut relever de plusieurs thématiques : il apparaît alors dans chacune.</span><span data-lang="en">Step-by-step courses, organised by topic. A course can belong to several topics: it then appears in each.</span></p>
+  </div>
+
+  <div class="misc-controls">
+    <div class="tag-cloud" role="group" aria-label="Filtrer par thématique">
+      <span class="tag-cloud__label"><span data-lang="fr">Naviguer par thématique</span><span data-lang="en">Browse by topic</span></span>
+      <button class="tag-chip" data-filter="all" data-weight="3" type="button" aria-pressed="true"><span data-lang="fr">Toutes</span><span data-lang="en">All</span> <span class="n">2</span></button>
+      <button class="tag-chip" data-filter="linux" data-weight="2" type="button" aria-pressed="false">Admin GNU/Linux <span class="n">1</span></button>
+      <button class="tag-chip" data-filter="reseau" data-weight="2" type="button" aria-pressed="false"><span data-lang="fr">Réseau</span><span data-lang="en">Networking</span> <span class="n">1</span></button>
+    </div>
+    <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+      <button data-view="topic" type="button" aria-pressed="true"><span data-lang="fr">Par thématique</span><span data-lang="en">By topic</span></button>
+      <button data-view="course" type="button" aria-pressed="false"><span data-lang="fr">Par cours</span><span data-lang="en">By course</span></button>
+    </div>
+  </div>
+
+  <!-- THÉMATIQUE : Admin GNU/Linux -->
+  <section class="theme-block" data-topic="linux" aria-labelledby="th-linux">
+    <div class="theme-block__head">
+      <h2 id="th-linux"><span data-lang="fr">Administration systèmes GNU/Linux</span><span data-lang="en">GNU/Linux system administration</span></h2>
+      <span class="theme-block__count">1 <span data-lang="fr">cours</span><span data-lang="en">course</span></span>
+    </div>
+    <div class="card-grid">
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">01</span><span class="module-card__meta">5 <span data-lang="fr">modules</span><span data-lang="en">modules</span> · 40 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">La conteneurisation sur GNU/Linux</span><span data-lang="en">Containers on GNU/Linux</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Namespaces, cgroups, images et réseau : ce qu'est vraiment un conteneur.</span><span data-lang="en">Namespaces, cgroups, images and networking: what a container really is.</span></p>
+        <ul class="article-card__tags"><li>Admin GNU/Linux</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- THÉMATIQUE : Réseau -->
+  <section class="theme-block" data-topic="reseau" aria-labelledby="th-reseau">
+    <div class="theme-block__head">
+      <h2 id="th-reseau"><span data-lang="fr">Réseau</span><span data-lang="en">Networking</span></h2>
+      <span class="theme-block__count">1 <span data-lang="fr">cours</span><span data-lang="en">course</span></span>
+    </div>
+    <div class="card-grid">
+      <a class="module-card" href="cours-masquage-ip.html">
+        <div class="module-card__top"><span class="module-card__num">02</span><span class="module-card__meta">≈ 15 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Le masquage d'adresse IP</span><span data-lang="en">IP address masking</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Comprendre les masques CIDR avec un simulateur graphique interactif.</span><span data-lang="en">Understand CIDR masks with an interactive graphical simulator.</span></p>
+        <ul class="article-card__tags"><li>Réseau</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- VUE PAR COURS (mêmes vignettes, filtrables) -->
+  <div class="card-grid" data-course-list hidden>
+    <a class="module-card" data-topics="linux" href="cours-conteneurisation.html">
+      <div class="module-card__top"><span class="module-card__num">01</span><span class="module-card__meta">5 <span data-lang="fr">modules</span><span data-lang="en">modules</span> · 40 min</span></div>
+      <h3 class="module-card__title"><span data-lang="fr">La conteneurisation sur GNU/Linux</span><span data-lang="en">Containers on GNU/Linux</span></h3>
+      <p class="module-card__desc"><span data-lang="fr">Namespaces, cgroups, images et réseau : ce qu'est vraiment un conteneur.</span><span data-lang="en">Namespaces, cgroups, images and networking: what a container really is.</span></p>
+      <ul class="article-card__tags"><li>Admin GNU/Linux</li></ul>
+      <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+    </a>
+    <a class="module-card" data-topics="reseau" href="cours-masquage-ip.html">
+      <div class="module-card__top"><span class="module-card__num">02</span><span class="module-card__meta">≈ 15 min</span></div>
+      <h3 class="module-card__title"><span data-lang="fr">Le masquage d'adresse IP</span><span data-lang="en">IP address masking</span></h3>
+      <p class="module-card__desc"><span data-lang="fr">Comprendre les masques CIDR avec un simulateur graphique interactif.</span><span data-lang="en">Understand CIDR masks with an interactive graphical simulator.</span></p>
+      <ul class="article-card__tags"><li>Réseau</li></ul>
+      <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+    </a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — Cours : manuels classés par thématiques.</span><span data-lang="en">Site Astro — Courses: manuals organised by topic.</span>
+    <span class="pill">WCAG 2.1 · AA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+<script>
+(function () {
+  var chips = [].slice.call(document.querySelectorAll('.tag-chip'));
+  var blocks = [].slice.call(document.querySelectorAll('.theme-block'));
+  var list = document.querySelector('[data-course-list]');
+  var cards = list ? [].slice.call(list.querySelectorAll('[data-topics]')) : [];
+  var viewBtns = [].slice.call(document.querySelectorAll('.view-toggle button'));
+  var filter = 'all', view = 'topic';
+  function apply() {
+    blocks.forEach(function (b) { b.hidden = (view !== 'topic') || (filter !== 'all' && b.getAttribute('data-topic') !== filter); });
+    if (list) list.hidden = view !== 'course';
+    cards.forEach(function (c) { c.hidden = (filter !== 'all') && c.getAttribute('data-topics').split(' ').indexOf(filter) === -1; });
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-filter') === filter)); });
+    viewBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-view') === view)); });
+  }
+  chips.forEach(function (c) { c.addEventListener('click', function () { filter = c.getAttribute('data-filter'); apply(); }); });
+  viewBtns.forEach(function (b) { b.addEventListener('click', function () { view = b.getAttribute('data-view'); apply(); }); });
+  apply();
+})();
+</script>
+</body>
+</html>

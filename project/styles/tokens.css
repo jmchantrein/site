@@ -1,0 +1,162 @@
+/* =============================================================================
+   TOKENS GLOBAUX — couche 1 de l'architecture
+   Modifier ici → tout le site suit.
+   Chaque couleur est annotée de son ratio de contraste WCAG (calculé sur le
+   fond du thème par défaut). Cible : corps AAA (≥7:1), AA (≥4,5:1) partout.
+   ============================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- COULEURS — thème ABYSSE par défaut (sombre, grands fonds) --------- */
+  /* Texte clair sur fond très sombre — jamais #fff sur #000 pur.             */
+  /* Les 4 thèmes clairs (Marine, Ardoise, Forêt, Aurore) sont dans themes.css. */
+  --color-bg:            #0b1a26;  /* grand fond, bleu-vert très sombre              */
+  --color-surface:       #162c3e;  /* cartes/panneaux — nettement détachés du fond   */
+  --color-surface-sunken:#102333;  /* zones en retrait (code inline, séparateurs)    */
+
+  /* Texte sur fond sombre */
+  --color-text:          #e8eef4;  /* corps — ~14:1 sur --color-bg → AAA             */
+  --color-text-strong:   #f6fafc;  /* titres — ~17:1 → AAA                           */
+  --color-text-muted:    #aab8c4;  /* méta / légendes — ~8:1 → AAA                   */
+  --color-text-faint:    #7f8f9c;  /* hints non essentiels — ~5:1 → AA               */
+
+  --color-border:        #294056;  /* bordures fines — usage non textuel             */
+  --color-border-strong: #3e5970;  /* bordures de séparation marquée (UI)            */
+
+  /* Accent unique : bleu marine / teal. L'info n'est JAMAIS portée par la couleur seule. */
+  --color-accent:        #3aa6cd;  /* accent UI / focus — ~6:1 sur --color-bg → AA   */
+  --color-accent-text:   #79cfee;  /* liens & texte d'accent — ~9:1 → AAA            */
+  --color-accent-hover:  #a8e2f5;  /* survol lien                                     */
+  --color-accent-weak:   #12313f;  /* aplat d'accent profond (fonds de note)         */
+  --color-on-accent:     #05151e;  /* texte/glyphe sombre sur aplat d'accent clair   */
+
+  /* Couleurs sémantiques d'admonition — TOUJOURS doublées d'icône + label.       */
+  --color-info:          #79cfee;  /* = accent — ~9:1 → AAA                           */
+  --color-info-weak:     #12313f;
+  --color-success:       #79d28f;  /* vert clair — ~10:1 → AAA                        */
+  --color-success-weak:  #0f3322;
+  --color-warning:       #e6b653;  /* ambre — ~9:1 → AAA                              */
+  --color-warning-weak:  #2f2712;
+  --color-danger:        #f1928b;  /* rouge rosé — ~7:1 → AAA                         */
+  --color-danger-weak:   #371a1c;
+
+  /* Profondeur (effet « plongée » au scroll) — interpolé de la surface au fond. */
+  --depth-shallow: #1d4257;  /* eau de surface (plus claire que le fond) */
+  --depth-deep:    #07131c;  /* assombrissement des grands fonds */
+  --depth-panel:   #1d3346;  /* le panneau de lecture dérive vers cet extrême (inverse du fond) */
+
+  /* ---- TERMINAL SOMBRE — blanc cassé sur quasi-noir (jamais #fff sur #000) -- */
+  --term-bg:        #1a1a1a;  /* quasi-noir                                          */
+  --term-bg-raised: #242424;  /* barre de titre / lignes actives                     */
+  --term-fg:        #e0e0e0;  /* blanc cassé — 13,2:1 sur --term-bg → AAA            */
+  --term-dim:       #9aa3ad;  /* commentaires / prompts secondaires — 6,4:1 → AA     */
+  --term-prompt:    #7fb2ff;  /* prompt $ — 7,9:1 → AAA (doublé du glyphe $)         */
+  --term-ok:        #7ad08a;  /* sortie OK — 9,4:1 → AAA (doublé d'un label « ok »)  */
+  --term-warn:      #e3b341;  /* avertissement — 9,8:1 → AAA                          */
+  --term-border:    #3a3a3a;
+
+  /* ---- TYPOGRAPHIE -------------------------------------------------------- */
+  /* Familles pilotées par variables → l'exploration Tweaks réécrit ces 3 lignes. */
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;  /* titres : signalement / hiérarchie */
+  --font-sans:  "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif; /* corps : forte hauteur d'x, lisibilité */
+  --font-mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;       /* code / terminal */
+
+  /* Échelle typographique (corps ≥ 18px = règle, pas suggestion) */
+  --text-xs:   0.875rem;  /* 14px — méta non essentielle uniquement */
+  --text-sm:   1rem;      /* 16px */
+  --text-base: 1.125rem;  /* 18px — CORPS (plancher absolu)         */
+  --text-md:   1.25rem;   /* 20px */
+  --text-lg:   1.5rem;    /* 24px — h3 */
+  --text-xl:   1.875rem;  /* 30px — h2 */
+  --text-2xl:  2.375rem;  /* 38px — h1 */
+  --text-3xl:  3rem;      /* 48px — hero accueil */
+
+  /* Interlignes & espacements de texte (overridables par le panneau a11y) */
+  --leading-body:  1.6;   /* corps : 1,5–1,6 recommandé           */
+  --leading-snug:  1.35;
+  --leading-tight: 1.18;  /* titres */
+  --tracking:      0em;    /* lettres — seuil a11y : 0,12em        */
+  --word-spacing:  0em;    /* mots — seuil a11y : 0,16em           */
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---- ESPACEMENT (base 8px, segmentation des blocs) --------------------- */
+  --space-1: 0.25rem;  /*  4px */
+  --space-2: 0.5rem;   /*  8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.5rem;   /* 24px */
+  --space-6: 2rem;     /* 32px */
+  --space-7: 3rem;     /* 48px */
+  --space-8: 4rem;     /* 64px */
+  --space-9: 6rem;     /* 96px */
+
+  /* ---- LARGEURS DE COLONNE (lisibilité : 66 caractères max) -------------- */
+  --measure:        66ch;  /* colonne de lecture — plafond strict   */
+  --measure-narrow: 52ch;  /* notes, légendes                        */
+  --measure-wide:   78ch;  /* zones techniques (tableaux, code)      */
+  --page-max:       72rem; /* largeur enveloppe (cours = 2 colonnes) */
+
+  /* ---- RAYONS & ÉLÉVATION (sobre — décoration fonctionnelle seulement) --- */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --shadow-1: 0 1px 2px rgba(14, 20, 29, 0.06), 0 1px 3px rgba(14, 20, 29, 0.05);
+  --shadow-2: 0 4px 14px rgba(14, 20, 29, 0.08);
+
+  /* ---- FOCUS (WCAG 2.4.7 / 2.4.11 — toujours visible, ≥3:1) -------------- */
+  --focus-ring: 3px solid var(--color-accent);
+  --focus-offset: 2px;
+
+  /* ---- MOUVEMENT --------------------------------------------------------- */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 340ms;  /* apparitions douces (rail, révélations au survol) */
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* =============================================================================
+   MODE CONTRASTE ÉLEVÉ (panneau a11y → html[data-contrast="high"])
+   Pousse le corps bien au-delà de 7:1 et renforce les bordures non textuelles.
+   Sélecteur doublé à dessein : spécificité (0,2,1) > thèmes (0,1,1), pour que
+   le contraste élevé PRIME sur tout html[data-theme] chargé après (themes.css).
+   ============================================================================= */
+html[data-contrast="high"][data-contrast="high"] {
+  color-scheme: light;
+  --color-bg:            #ffffff;
+  --color-surface:       #ffffff;
+  --color-surface-sunken:#eef1f5;
+  --color-text:          #000000;  /* 21:1                                   */
+  --color-text-strong:   #000000;
+  --color-text-muted:    #20262e;  /* ~15:1                                  */
+  --color-text-faint:    #2c333c;
+  --color-border:        #5a6573;
+  --color-border-strong: #2c333c;
+  --color-accent:        #0b3bd0;
+  --color-accent-text:   #0a2f9c;  /* ~10:1                                  */
+  --color-accent-hover:  #07237a;
+  --color-accent-weak:   #e4e9f7;
+  --color-on-accent:     #ffffff;
+  --depth-shallow:       #ffffff;
+  --depth-deep:          #eef1f5;
+  --depth-panel:         #ffffff;
+  --term-fg:             #f2f2f2;
+  --term-dim:            #c2c8cf;
+  --color-info:          #0a2f9c; --color-info-weak: #e7ebf8;
+  --color-success:       #0f5224; --color-success-weak: #e3efe6;
+  --color-warning:       #6e4700; --color-warning-weak: #f6efdc;
+  --color-danger:        #8f1812; --color-danger-weak: #f8e7e5;
+}
+
+/* =============================================================================
+   MOUVEMENT RÉDUIT — préférence système OU panneau a11y (html[data-motion="off"])
+   Fige le terminal animé et toute transition (WCAG 2.3.3).
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-fast: 0ms; --motion-base: 0ms; }
+}
+html[data-motion="off"] { --motion-fast: 0ms; --motion-base: 0ms; }

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Masquage d'adresse IP — Site Astro</title>
+<meta name="description" content="Comprendre les masques IP (CIDR) : un simulateur graphique interactif des bits réseau/hôte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .course-hero { padding-block: var(--space-6) 0; }
+  .course-hero h1 { font-size: clamp(1.9rem, 4vw, var(--text-2xl)); max-width: 24ch; margin-top: var(--space-3); }
+  .course-hero .lead { margin-top: var(--space-4); margin-bottom: var(--space-6); }
+  .article { max-width: var(--measure-wide); margin-inline: auto; }
+
+  /* ---- Simulateur de masque IP ---- */
+  .ipsim { max-width: var(--measure-wide); margin-block: var(--space-6); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-1); overflow: hidden; }
+  .ipsim__head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); background: var(--color-surface-sunken); border-bottom: 1px solid var(--color-border); }
+  .ipsim__head .tag { font-family: var(--font-mono); font-weight: 700; font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-accent-text); display: inline-flex; gap: var(--space-2); align-items: center; }
+  .ipsim__head .tag svg { width: 18px; height: 18px; }
+  .ipsim__body { padding: var(--space-5); display: grid; gap: var(--space-5); }
+  .ipsim__controls { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
+  @media (min-width: 620px) { .ipsim__controls { grid-template-columns: auto 1fr; align-items: center; gap: var(--space-4) var(--space-6); } }
+  .ipsim__field label { display: block; font-weight: var(--weight-semibold); color: var(--color-text-strong); margin-bottom: var(--space-2); font-size: var(--text-sm); }
+  .ipsim__ip { font-family: var(--font-mono); font-size: var(--text-md); width: 100%; max-width: 18ch; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-bg); color: var(--color-text); }
+  .ipsim__ip:focus-visible { outline: var(--focus-ring); outline-offset: 1px; border-color: var(--color-accent); }
+  .ipsim__prefix { display: flex; align-items: center; gap: var(--space-3); }
+  .ipsim__prefix input[type=range] { flex: 1; accent-color: var(--color-accent); height: 32px; }
+  .ipsim__cidr { font-family: var(--font-mono); font-weight: 700; font-size: var(--text-lg); color: var(--color-accent-text); min-width: 3.2ch; text-align: center; }
+
+  /* règle binaire 32 bits */
+  .ipsim__bits { display: flex; flex-wrap: wrap; gap: var(--space-3); font-family: var(--font-mono); }
+  .ipsim__octet { display: flex; gap: 2px; }
+  .ipsim__bit { width: 1.55em; height: 2em; display: grid; place-items: center; border-radius: 3px; font-size: 0.95rem; font-weight: 600; border: 1px solid transparent; position: relative; }
+  .ipsim__bit.net { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: var(--color-text-strong); border-color: color-mix(in srgb, var(--color-accent) 55%, transparent); }
+  .ipsim__bit.host { background: var(--color-surface-sunken); color: var(--color-text-muted); border-color: var(--color-border); }
+  .ipsim__bit.boundary { box-shadow: -3px 0 0 var(--color-warning); }
+  .ipsim__legend { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); color: var(--color-text-muted); }
+  .ipsim__legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .ipsim__legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  .ipsim__legend .k-net { background: color-mix(in srgb, var(--color-accent) 30%, transparent); border: 1px solid color-mix(in srgb, var(--color-accent) 55%, transparent); }
+  .ipsim__legend .k-host { background: var(--color-surface-sunken); border: 1px solid var(--color-border); }
+
+  .ipsim__out { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .ipsim__cell { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); background: var(--color-bg); }
+  .ipsim__cell .lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-family: var(--font-mono); }
+  .ipsim__cell .val { font-family: var(--font-mono); font-size: var(--text-md); color: var(--color-text-strong); margin-top: 2px; word-break: break-all; }
+  .ipsim__cell .val.accent { color: var(--color-accent-text); }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+<div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="read-progress__bar" data-read-progress></div></div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="course-hero article">
+    <div class="course-meta">
+      <span class="crumb" style="font-family:var(--font-mono)"><a href="index.html">~</a> / <span data-lang="fr">réseau</span><span data-lang="en">networking</span></span>
+      <span class="pill"><span data-lang="fr">Fondations</span><span data-lang="en">Foundations</span></span>
+      <span class="pill">≈ 15 min</span>
+    </div>
+    <h1><span data-lang="fr">Le masquage d'adresse IP</span><span data-lang="en">IP address masking</span></h1>
+    <p class="lead"><span data-lang="fr">Un masque sépare une adresse IP en deux parties : <strong>réseau</strong> et <strong>hôte</strong>. Manipulez le simulateur ci-dessous pour voir, bit par bit, où passe la frontière.</span><span data-lang="en">A mask splits an IP address into two parts: <strong>network</strong> and <strong>host</strong>. Use the simulator below to see, bit by bit, where the boundary lies.</span></p>
+  </div>
+
+  <article class="article course__reading prose">
+    <h2><span data-lang="fr">1. Réseau ou hôte : la frontière</span><span data-lang="en">1. Network or host: the boundary</span></h2>
+    <p><span data-lang="fr">Une adresse IPv4 fait 32 bits. Le <strong>préfixe</strong> CIDR (le <code>/24</code> de <code>192.168.1.0/24</code>) indique combien de bits, en partant de la gauche, désignent le <em>réseau</em>. Les bits restants désignent l'<em>hôte</em> à l'intérieur de ce réseau.</span><span data-lang="en">An IPv4 address is 32 bits. The CIDR <strong>prefix</strong> (the <code>/24</code> in <code>192.168.1.0/24</code>) says how many bits, from the left, denote the <em>network</em>. The remaining bits denote the <em>host</em> within that network.</span></p>
+
+    <aside class="note note--info" role="note">
+      <div class="note__icon" aria-hidden="true">i</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Le masque</span><span data-lang="en">The mask</span></p>
+        <p><span data-lang="fr">Le <strong>masque</strong> est l'adresse où les bits réseau valent 1 et les bits hôte valent 0. <code>/24</code> ⇒ <code>255.255.255.0</code>.</span><span data-lang="en">The <strong>mask</strong> is the address where network bits are 1 and host bits are 0. <code>/24</code> ⇒ <code>255.255.255.0</code>.</span></p>
+      </div>
+    </aside>
+
+    <!-- ÎLOT SIMULATEUR -->
+    <section class="ipsim" data-ipsim aria-label="Simulateur de masque IP">
+      <div class="ipsim__head">
+        <span class="tag"><i data-lucide="network" aria-hidden="true"></i> <span data-lang="fr">Simulateur de masque</span><span data-lang="en">Mask simulator</span></span>
+      </div>
+      <div class="ipsim__body">
+        <div class="ipsim__controls">
+          <div class="ipsim__field">
+            <label for="ipsim-ip"><span data-lang="fr">Adresse IPv4</span><span data-lang="en">IPv4 address</span></label>
+            <input id="ipsim-ip" class="ipsim__ip" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="192.168.1.130" data-ipsim-ip aria-label="Adresse IPv4">
+          </div>
+          <div class="ipsim__field">
+            <label for="ipsim-prefix"><span data-lang="fr">Préfixe CIDR</span><span data-lang="en">CIDR prefix</span></label>
+            <div class="ipsim__prefix">
+              <span class="ipsim__cidr" data-ipsim-cidr>/24</span>
+              <input id="ipsim-prefix" type="range" min="0" max="32" step="1" value="24" data-ipsim-prefix aria-label="Préfixe CIDR">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="ipsim__bits" data-ipsim-bits aria-hidden="true"></div>
+          <div class="ipsim__legend" style="margin-top:var(--space-3)">
+            <span><i class="k-net"></i> <span data-lang="fr">bits réseau</span><span data-lang="en">network bits</span></span>
+            <span><i class="k-host"></i> <span data-lang="fr">bits hôte</span><span data-lang="en">host bits</span></span>
+          </div>
+        </div>
+
+        <div class="ipsim__out">
+          <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Masque</span><span data-lang="en">Mask</span></div><div class="val" data-ipsim-mask>255.255.255.0</div></div>
+          <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Adresse réseau</span><span data-lang="en">Network</span></div><div class="val accent" data-ipsim-network>192.168.1.0</div></div>
+          <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Diffusion</span><span data-lang="en">Broadcast</span></div><div class="val" data-ipsim-broadcast>192.168.1.255</div></div>
+          <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Plage d'hôtes</span><span data-lang="en">Host range</span></div><div class="val" data-ipsim-range>192.168.1.1 – .254</div></div>
+          <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Hôtes utilisables</span><span data-lang="en">Usable hosts</span></div><div class="val accent" data-ipsim-hosts>254</div></div>
+        </div>
+      </div>
+      <div class="terminal__hint" style="border-top:1px solid var(--color-border); color:var(--color-text-muted); font-family:var(--font-sans); padding:var(--space-2) var(--space-5); font-size:var(--text-xs)">
+        <span data-lang="fr">Modifiez l'adresse ou faites glisser le préfixe : la frontière réseau/hôte se déplace en direct.</span><span data-lang="en">Change the address or drag the prefix: the network/host boundary moves live.</span>
+      </div>
+    </section>
+
+    <h2><span data-lang="fr">2. Ce que le masque détermine</span><span data-lang="en">2. What the mask determines</span></h2>
+    <ul>
+      <li><span data-lang="fr"><strong>Adresse réseau</strong> : bits hôte tous à 0 — l'identité du réseau.</span><span data-lang="en"><strong>Network address</strong>: host bits all 0 — the network's identity.</span></li>
+      <li><span data-lang="fr"><strong>Diffusion</strong> : bits hôte tous à 1 — atteint tous les hôtes.</span><span data-lang="en"><strong>Broadcast</strong>: host bits all 1 — reaches every host.</span></li>
+      <li><span data-lang="fr"><strong>Hôtes utilisables</strong> : \(2^{(32-p)} - 2\) (on retire réseau et diffusion).</span><span data-lang="en"><strong>Usable hosts</strong>: \(2^{(32-p)} - 2\) (network and broadcast excluded).</span></li>
+    </ul>
+
+    <aside class="note note--warning" role="note">
+      <div class="note__icon" aria-hidden="true">!</div>
+      <div class="note__body">
+        <p class="note__label"><span data-lang="fr">Cas limites</span><span data-lang="en">Edge cases</span></p>
+        <p><span data-lang="fr"><code>/31</code> n'a pas de diffusion (2 hôtes, liaison point-à-point, RFC 3021) et <code>/32</code> désigne un seul hôte.</span><span data-lang="en"><code>/31</code> has no broadcast (2 hosts, point-to-point link, RFC 3021) and <code>/32</code> denotes a single host.</span></p>
+      </div>
+    </aside>
+
+    <!-- ÎLOT DIAPORAMA : récap (page avec data-slides) -->
+    <section class="slides" data-slides tabindex="0" aria-roledescription="diaporama" aria-label="Diaporama : récapitulatif du masquage">
+      <div class="slides__head">
+        <span class="slides__tag"><i data-lucide="layers" aria-hidden="true"></i> <span data-lang="fr">Diaporama — à retenir</span><span data-lang="en">Slideshow — key points</span></span>
+        <span class="slides__counter" data-slides-counter aria-hidden="true">1 / 3</span>
+      </div>
+      <div class="slides__viewport">
+        <div class="slides__track" data-slides-track>
+          <div class="slide"><h3><span data-lang="fr">Préfixe = frontière</span><span data-lang="en">Prefix = boundary</span></h3><p><span data-lang="fr">Le <code>/p</code> fixe le nombre de bits réseau. Plus <code>p</code> est grand, plus le réseau est petit (moins d'hôtes).</span><span data-lang="en">The <code>/p</code> sets the number of network bits. The larger <code>p</code>, the smaller the network (fewer hosts).</span></p></div>
+          <div class="slide"><h3><span data-lang="fr">Réseau &amp; diffusion</span><span data-lang="en">Network &amp; broadcast</span></h3><p><span data-lang="fr">Hôtes à 0 ⇒ adresse réseau ; hôtes à 1 ⇒ diffusion. Ni l'une ni l'autre n'est attribuable à une machine.</span><span data-lang="en">Host bits 0 ⇒ network address; host bits 1 ⇒ broadcast. Neither is assignable to a machine.</span></p></div>
+          <div class="slide"><h3><span data-lang="fr">Compter les hôtes</span><span data-lang="en">Counting hosts</span></h3><p>\(2^{(32-p)} - 2\). <span data-lang="fr">Exemple : <code>/26</code> ⇒ \(2^{6}-2 = 62\) hôtes.</span><span data-lang="en">Example: <code>/26</code> ⇒ \(2^{6}-2 = 62\) hosts.</span></p></div>
+        </div>
+      </div>
+      <div class="slides__foot">
+        <button class="slides__btn" data-slides-prev type="button" aria-label="Diapositive précédente"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <span class="slides__dots" data-slides-dots role="tablist" aria-label="Diapositives"></span>
+        <button class="slides__btn" data-slides-next type="button" aria-label="Diapositive suivante"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+    </section>
+
+    <nav class="course-nav" aria-label="Navigation du cours" style="display:flex; justify-content:space-between; gap:var(--space-4); margin-top:var(--space-7); padding-top:var(--space-5); border-top:1px solid var(--color-border);">
+      <a class="btn btn--ghost" href="cours-conteneurisation.html" style="text-decoration:none; border:1px solid var(--color-border-strong); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;">← <span data-lang="fr">Cours conteneurisation</span><span data-lang="en">Containers course</span></a>
+      <a class="btn btn--primary" href="index.html" style="text-decoration:none; background:var(--color-accent-text); color:var(--color-on-accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;"><span data-lang="fr">Tous les cours</span><span data-lang="en">All courses</span> →</a>
+    </nav>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — cours réseau : masquage d'adresse IP.</span><span data-lang="en">Site Astro — networking course: IP address masking.</span>
+    <span class="pill">WCAG 2.1 · AA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script>
+/* Simulateur de masque IP — calcul 32 bits, mise à jour live */
+(function () {
+  var box = document.querySelector("[data-ipsim]");
+  if (!box) return;
+  var ipIn = box.querySelector("[data-ipsim-ip]");
+  var pfIn = box.querySelector("[data-ipsim-prefix]");
+  var cidr = box.querySelector("[data-ipsim-cidr]");
+  var bitsEl = box.querySelector("[data-ipsim-bits]");
+  var out = {
+    mask: box.querySelector("[data-ipsim-mask]"),
+    network: box.querySelector("[data-ipsim-network]"),
+    broadcast: box.querySelector("[data-ipsim-broadcast]"),
+    range: box.querySelector("[data-ipsim-range]"),
+    hosts: box.querySelector("[data-ipsim-hosts]")
+  };
+  function parseIp(s) {
+    var p = (s || "").trim().split(".");
+    if (p.length !== 4) return null;
+    var n = 0;
+    for (var i = 0; i < 4; i++) {
+      var x = Number(p[i]);
+      if (p[i] === "" || isNaN(x) || x < 0 || x > 255 || !/^\d+$/.test(p[i])) return null;
+      n = (n << 8) | x;
+    }
+    return n >>> 0;
+  }
+  function dotted(n) { return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join("."); }
+  function render() {
+    var p = parseInt(pfIn.value, 10);
+    cidr.textContent = "/" + p;
+    var ip = parseIp(ipIn.value);
+    var valid = ip !== null;
+    ipIn.style.borderColor = valid ? "" : "var(--color-danger)";
+    var mask = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+    // règle de bits
+    var html = "";
+    var base = valid ? ip : 0;
+    for (var oct = 0; oct < 4; oct++) {
+      html += '<span class="ipsim__octet">';
+      for (var b = 0; b < 8; b++) {
+        var idx = oct * 8 + b;
+        var bit = (base >>> (31 - idx)) & 1;
+        var isNet = idx < p;
+        var boundary = idx === p && p > 0 && p < 32 ? " boundary" : "";
+        html += '<span class="ipsim__bit ' + (isNet ? "net" : "host") + boundary + '">' + bit + "</span>";
+      }
+      html += "</span>";
+    }
+    bitsEl.innerHTML = html;
+    if (!valid) { out.mask.textContent = dotted(mask); out.network.textContent = "—"; out.broadcast.textContent = "—"; out.range.textContent = "—"; out.hosts.textContent = "—"; return; }
+    var network = (ip & mask) >>> 0;
+    var broadcast = (network | (~mask >>> 0)) >>> 0;
+    out.mask.textContent = dotted(mask);
+    out.network.textContent = dotted(network);
+    out.broadcast.textContent = dotted(broadcast);
+    if (p >= 32) { out.range.textContent = dotted(network) + " (" + (document.documentElement.lang === "en" ? "single host" : "hôte unique") + ")"; out.hosts.textContent = "1"; }
+    else if (p === 31) { out.range.textContent = dotted(network) + " – " + dotted(broadcast); out.hosts.textContent = "2"; }
+    else {
+      out.range.textContent = dotted((network + 1) >>> 0) + " – " + dotted((broadcast - 1) >>> 0);
+      out.hosts.textContent = String(Math.pow(2, 32 - p) - 2);
+    }
+  }
+  ipIn.addEventListener("input", render);
+  pfIn.addEventListener("input", render);
+  render();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>

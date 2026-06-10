@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Système de design — Site Astro</title>
+<meta name="description" content="Tokens annotés, composants pédagogiques contraints, panneau d'accessibilité et trappe d'évasion.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .ds-hero { padding-block: var(--space-7) var(--space-5); }
+  .ds-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); }
+  .ds-section { padding-block: var(--space-7); border-top: 1px solid var(--color-border); scroll-margin-top: 80px; }
+  .ds-section > .ds-head { margin-bottom: var(--space-5); }
+  .ds-eyebrow { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-text); }
+  .ds-section h2 { margin: var(--space-2) 0 0; }
+  .ds-note { color: var(--color-text-muted); max-width: var(--measure); margin-top: var(--space-3); }
+  .ds-sub { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: var(--space-6) 0 var(--space-4); }
+
+  /* Sommaire : composant partagé .toc-layout / .toc (components.css · site.js) — largeur locale */
+  .toc-layout { --toc-col: 210px; }
+
+  /* Swatches couleur */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px,1fr)); gap: var(--space-4); max-width: none; }
+  .swatch { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface); }
+  .swatch__chip { height: 74px; display: flex; align-items: flex-end; justify-content: flex-end; padding: var(--space-2); }
+  .swatch__ratio { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 700; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,0.9); color: #0e141d; }
+  .swatch__ratio.on-dark { background: rgba(0,0,0,0.5); color: #fff; }
+  .swatch__meta { padding: var(--space-3); display: grid; gap: 3px; }
+  .swatch__var { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-strong); font-weight: 600; }
+  .swatch__hex { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+  .swatch__role { font-size: var(--text-xs); color: var(--color-text-muted); }
+  .badge { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
+  .badge.aaa { color: var(--color-success); } .badge.aa { color: var(--color-warning); } .badge.ui { color: var(--color-text-muted); }
+
+  /* Specimen typo */
+  .type-row { display: grid; grid-template-columns: 8rem 1fr; gap: var(--space-4); align-items: baseline; padding: var(--space-3) 0; border-top: 1px dashed var(--color-border); max-width: none; }
+  .type-row .meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+  .font-card { display: grid; gap: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-5); background: var(--color-surface); }
+  .font-card .specimen { font-size: 1.8rem; }
+  .font-card .role { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent-text); text-transform: uppercase; letter-spacing: 0.06em; }
+  .font-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: var(--space-4); max-width: none; }
+
+  /* Échelle d'espacement */
+  .space-scale { display: grid; gap: var(--space-2); max-width: var(--measure); }
+  .space-row { display: grid; grid-template-columns: 6rem 1fr; gap: var(--space-3); align-items: center; }
+  .space-row .bar { height: 16px; background: var(--color-accent); border-radius: 3px; }
+  .space-row .meta { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
+
+  /* Largeurs de colonne */
+  .measure-demo { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3); position: relative; }
+  .measure-demo .ruler { position: absolute; top: 0; right: var(--space-4); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent-text); background: var(--color-accent-weak); padding: 1px 6px; border-radius: 0 0 4px 4px; }
+  .measure-demo p { margin: 0; color: var(--color-text-muted); }
+
+  /* Grille de démos composant */
+  .demo-grid { display: grid; gap: var(--space-6); }
+  .demo { display: grid; gap: var(--space-3); }
+  .demo__label { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
+  .demo__label b { color: var(--color-accent-text); }
+
+  /* Facsimilé statique du panneau a11y (pour documentation) */
+  .panel-demo { max-width: 420px; }
+  .panel-demo .a11y-panel { position: static; transform: none; height: auto; width: 100%; box-shadow: var(--shadow-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); }
+  .panel-demo .a11y-panel__body { max-height: 460px; }
+  /* Terminal de démo : pas de zone d'écran vide tant qu'aucune sortie */
+  #term-ds .terminal__screen:empty { display: none; }
+
+  /* Références */
+  .ds-refs { list-style: none; padding: 0; margin: 0; max-width: var(--measure); display: grid; gap: var(--space-4); }
+  .ds-refs > li { padding-left: var(--space-4); border-left: 3px solid var(--color-accent); }
+  .ds-refs > li > a { font-family: var(--font-serif); font-size: var(--text-md); font-weight: 600; }
+  .ds-refs__by { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+  .ds-refs p { margin: var(--space-2) 0 0; color: var(--color-text-muted); font-size: var(--text-base); }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html" aria-current="page"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+    <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+      <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+      <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+    </button>
+    <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+      <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+      <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="ds-hero">
+    <p class="ds-eyebrow">design system · v1 · <span data-lang="fr">co-conçu avec</span><span data-lang="en">co-designed with</span> <a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a></p>
+    <h1><span data-lang="fr">Le design comme cadre pédagogique</span><span data-lang="en">Design as a teaching framework</span></h1>
+    <p class="lead ds-note"><span data-lang="fr">Pourquoi un « cadre » plutôt qu'une simple feuille de style ? Parce que la forme d'un cours <em>agit</em> sur l'apprentissage : une mise en page chargée gaspille la mémoire de travail du lecteur en traitements inutiles (<a href="#references">charge cognitive extrinsèque</a>). En encodant les bonnes pratiques dans les composants eux-mêmes, écrire un cours respecte <em>automatiquement</em> les recommandations — l'auteur se concentre sur le fond, le cadre garantit la lisibilité et l'accessibilité.</span><span data-lang="en">Why a “framework” rather than a mere stylesheet? Because the <em>form</em> of a lesson <em>acts</em> on learning: a busy layout wastes the reader's working memory on needless processing (<a href="#references">extraneous cognitive load</a>). By encoding good practice into the components themselves, writing a lesson <em>automatically</em> follows the guidance — the author focuses on substance while the framework guarantees legibility and accessibility.</span></p>
+    <p class="ds-note"><span data-lang="fr">Le système repose sur des <strong>tokens</strong> : des variables de design nommées (couleur, taille de texte, espacement, largeur de colonne…) définies <em>en un seul endroit</em> et réutilisées partout. Changer un token — par exemple la couleur d'accent ou la largeur de lecture — propage le changement à tout le site d'un coup, sans toucher au contenu. Par-dessus viennent des <strong>composants contraints</strong> (note, exercice, terminal…), des <strong>variantes documentées</strong>, et une <strong>trappe d'évasion</strong> pour le hors-cadre. Le lecteur garde la main via des réglages persistants d'<strong>accessibilité</strong> et d'<strong>apparence</strong>. Chaque décision est sourcée en <a href="#references">fin de page</a>.</span><span data-lang="en">The system rests on <strong>tokens</strong>: named design variables (colour, text size, spacing, column width…) defined <em>in one place</em> and reused everywhere. Change a token — say the accent colour or the reading width — and the whole site follows at once, without touching content. On top sit <strong>constrained components</strong> (note, exercise, terminal…), <strong>documented variants</strong>, and an <strong>escape hatch</strong> for off-frame cases. The reader stays in control through persistent <strong>accessibility</strong> and <strong>appearance</strong> settings. Every decision is sourced at the <a href="#references">foot of the page</a>.</span></p>
+  </div>
+
+  <div class="toc-layout" data-swap>
+    <nav class="toc" data-swap-grip data-grip-loose role="button" tabindex="0" aria-label="Déplacer le sommaire à gauche ou à droite">
+      <ol>
+        <li><a href="#couleurs"><span class="num">01</span>Couleurs</a></li>
+        <li><a href="#typo"><span class="num">02</span>Typographie</a></li>
+        <li><a href="#espace"><span class="num">03</span>Espacement</a></li>
+        <li><a href="#colonnes"><span class="num">04</span>Colonnes</a></li>
+        <li><a href="#notes"><span class="num">05</span>Notes</a></li>
+        <li><a href="#exercices"><span class="num">06</span>Exercices</a></li>
+        <li><a href="#commande"><span class="num">07</span>Commande &amp; terminal</a></li>
+        <li><a href="#a11y"><span class="num">08</span>Accessibilité</a></li>
+        <li><a href="#parametres"><span class="num">09</span>Paramètres</a></li>
+        <li><a href="#themes"><span class="num">10</span>Thèmes</a></li>
+        <li><a href="#diaporama"><span class="num">11</span>Diaporama</a></li>
+        <li><a href="#ilots"><span class="num">12</span>Îlots déplaçables</a></li>
+        <li><a href="#profondeur"><span class="num">13</span>Profondeur &amp; largeur</a></li>
+        <li><a href="#trappe"><span class="num">14</span>Trappe d'évasion</a></li>
+        <li><a href="#references"><span class="num">15</span>Références</a></li>
+      </ol>
+    </nav>
+
+    <div data-swap-grip data-grip-strict role="button" tabindex="0" aria-label="Déplacer la colonne de contenu à gauche ou à droite">
+      <!-- 01 COULEURS -->
+      <section class="ds-section" id="couleurs">
+        <div class="ds-head">
+          <p class="ds-eyebrow">01 — tokens</p>
+          <h2><span data-lang="fr">Couleurs &amp; contrastes</span><span data-lang="en">Colors &amp; contrast</span></h2>
+          <p class="ds-note"><span data-lang="fr">Fond marine clair, jamais blanc pur. Chaque ratio est calculé sur le fond du <strong>thème Marine</strong> (défaut). Cible : corps AAA (≥7:1), AA (≥4,5:1) partout. Le lecteur peut changer de thème (Ardoise, Forêt, Aurore) via le panneau « Confort » ; chaque thème remappe ces tokens en conservant les mêmes seuils. <strong>L'information n'est jamais portée par la couleur seule.</strong></span><span data-lang="en">Light marine background, never pure white. Each ratio is computed on the <strong>Marine theme</strong> (default) background. Target: body AAA (≥7:1), AA (≥4.5:1) everywhere. Readers can switch theme (Slate, Forest, Dawn) from the “Comfort” panel; each remaps these tokens while keeping the same thresholds. <strong>Information is never carried by color alone.</strong></span></p>
+        </div>
+
+        <p class="ds-sub">Surfaces &amp; texte</p>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch__chip" style="background:#e9f0f3"></div><div class="swatch__meta"><span class="swatch__var">--color-bg</span><span class="swatch__hex">#e9f0f3</span><span class="swatch__role">fond de page</span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#f6fafb"></div><div class="swatch__meta"><span class="swatch__var">--color-surface</span><span class="swatch__hex">#f6fafb</span><span class="swatch__role">cartes / panneaux</span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#102733"><span class="swatch__ratio on-dark">13,4:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-text</span><span class="swatch__hex">#102733</span><span class="swatch__role">corps <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#08171f"><span class="swatch__ratio on-dark">16,2:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-text-strong</span><span class="swatch__hex">#08171f</span><span class="swatch__role">titres <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#3c4e58"><span class="swatch__ratio on-dark">7,2:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-text-muted</span><span class="swatch__hex">#3c4e58</span><span class="swatch__role">méta <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#5f6f78"><span class="swatch__ratio on-dark">4,8:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-text-faint</span><span class="swatch__hex">#5f6f78</span><span class="swatch__role">hints <span class="badge aa">AA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#a2b3bb"><span class="swatch__ratio">3,1:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-border-strong</span><span class="swatch__hex">#a2b3bb</span><span class="swatch__role">bordures UI <span class="badge ui">UI</span></span></div></div>
+        </div>
+
+        <p class="ds-sub">Accent — bleu marine</p>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch__chip" style="background:#0d6a87"><span class="swatch__ratio on-dark">5,3:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-accent</span><span class="swatch__hex">#0d6a87</span><span class="swatch__role">focus / UI <span class="badge aa">AA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#0b5067"><span class="swatch__ratio on-dark">7,7:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-accent-text</span><span class="swatch__hex">#0b5067</span><span class="swatch__role">liens &amp; texte <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#073d50"><span class="swatch__ratio on-dark">10,6:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-accent-hover</span><span class="swatch__hex">#073d50</span><span class="swatch__role">survol <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#d7eaf0"></div><div class="swatch__meta"><span class="swatch__var">--color-accent-weak</span><span class="swatch__hex">#d7eaf0</span><span class="swatch__role">aplat de note</span></div></div>
+        </div>
+
+        <p class="ds-sub">Sémantique — toujours doublée d'icône + label</p>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch__chip" style="background:#0b5067"><span class="swatch__ratio on-dark">7,7:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-info</span><span class="swatch__hex">#0b5067</span><span class="swatch__role">note (i) <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#15692f"><span class="swatch__ratio on-dark">6,3:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-success</span><span class="swatch__hex">#15692f</span><span class="swatch__role">astuce (✓) <span class="badge aa">AA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#8a5a00"><span class="swatch__ratio on-dark">5,9:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-warning</span><span class="swatch__hex">#8a5a00</span><span class="swatch__role">attention (!) <span class="badge aa">AA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#b1261f"><span class="swatch__ratio on-dark">6,1:1</span></div><div class="swatch__meta"><span class="swatch__var">--color-danger</span><span class="swatch__hex">#b1261f</span><span class="swatch__role">piège (✕) <span class="badge aa">AA</span></span></div></div>
+        </div>
+
+        <p class="ds-sub">Terminal sombre — blanc cassé sur quasi-noir (ratios sur #1a1a1a)</p>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch__chip" style="background:#1a1a1a"><span class="swatch__ratio on-dark">base</span></div><div class="swatch__meta"><span class="swatch__var">--term-bg</span><span class="swatch__hex">#1a1a1a</span><span class="swatch__role">fond quasi-noir</span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#1a1a1a"><span class="swatch__ratio on-dark" style="color:#e0e0e0;background:#1a1a1a;border:1px solid #444">13,2:1</span></div><div class="swatch__meta"><span class="swatch__var">--term-fg</span><span class="swatch__hex">#e0e0e0</span><span class="swatch__role">texte <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#1a1a1a"><span class="swatch__ratio on-dark" style="color:#7fb2ff;background:#1a1a1a;border:1px solid #444">7,9:1</span></div><div class="swatch__meta"><span class="swatch__var">--term-prompt</span><span class="swatch__hex">#7fb2ff</span><span class="swatch__role">prompt $ <span class="badge aaa">AAA</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:#1a1a1a"><span class="swatch__ratio on-dark" style="color:#7ad08a;background:#1a1a1a;border:1px solid #444">9,4:1</span></div><div class="swatch__meta"><span class="swatch__var">--term-ok</span><span class="swatch__hex">#7ad08a</span><span class="swatch__role">sortie ok <span class="badge aaa">AAA</span></span></div></div>
+        </div>
+      </section>
+
+      <!-- 02 TYPO -->
+      <section class="ds-section" id="typo">
+        <div class="ds-head">
+          <p class="ds-eyebrow">02 — tokens</p>
+          <h2><span data-lang="fr">Typographie</span><span data-lang="en">Typography</span></h2>
+          <p class="ds-note"><span data-lang="fr">Trois rôles. <strong>Serif</strong> pour les titres : le contraste de forme avec le corps renforce le <em>signalement</em> de la hiérarchie (Mayer). <strong>Sans-serif</strong> à forte hauteur d'x pour le corps : lisibilité prolongée. <strong>Mono</strong> pour code et terminal : alignement et désambiguïsation des caractères. Les familles sont explorables via le panneau Tweaks.</span><span data-lang="en">Three roles. <strong>Serif</strong> for headings: the shape contrast with body text reinforces hierarchy <em>signaling</em> (Mayer). High x-height <strong>sans-serif</strong> for body: sustained readability. <strong>Mono</strong> for code and terminal: alignment and character disambiguation. Families are explorable via the Tweaks panel.</span></p>
+        </div>
+
+        <div class="font-cards">
+          <div class="font-card"><span class="role">serif · titres</span><span class="specimen" style="font-family:var(--font-serif)">Conteneurs &amp; noyau</span><span class="meta">var(--font-serif) — Source Serif 4</span></div>
+          <div class="font-card"><span class="role">sans · corps</span><span class="specimen" style="font-family:var(--font-sans)">Le processus est isolé.</span><span class="meta">var(--font-sans) — Public Sans</span></div>
+          <div class="font-card"><span class="role">mono · code</span><span class="specimen" style="font-family:var(--font-mono)">podman run -it</span><span class="meta">var(--font-mono) — IBM Plex Mono</span></div>
+        </div>
+
+        <p class="ds-sub">Échelle (corps ≥ 18px, plancher absolu)</p>
+        <div style="max-width:none">
+          <div class="type-row"><span class="meta">--text-2xl<br>38px · h1</span><span style="font-family:var(--font-serif); font-size:var(--text-2xl); line-height:1.18">Titre de module</span></div>
+          <div class="type-row"><span class="meta">--text-xl<br>30px · h2</span><span style="font-family:var(--font-serif); font-size:var(--text-xl); line-height:1.2">Section du cours</span></div>
+          <div class="type-row"><span class="meta">--text-lg<br>24px · h3</span><span style="font-family:var(--font-serif); font-size:var(--text-lg)">Sous-section</span></div>
+          <div class="type-row"><span class="meta">--text-md<br>20px</span><span style="font-size:var(--text-md)">Chapeau / accroche</span></div>
+          <div class="type-row"><span class="meta">--text-base<br>18px · corps</span><span style="font-size:var(--text-base)">Le corps du texte, fixé à 18&nbsp;px minimum, interligne 1,6.</span></div>
+          <div class="type-row"><span class="meta">--text-sm<br>16px</span><span style="font-size:var(--text-sm)">Méta, légendes secondaires.</span></div>
+        </div>
+      </section>
+
+      <!-- 03 ESPACEMENT -->
+      <section class="ds-section" id="espace">
+        <div class="ds-head">
+          <p class="ds-eyebrow">03 — tokens</p>
+          <h2><span data-lang="fr">Espacement</span><span data-lang="en">Spacing</span></h2>
+          <p class="ds-note"><span data-lang="fr">Échelle de base 8&nbsp;px. Le blanc tournant est <em>fonctionnel</em> : il segmente le contenu en blocs courts (réduction de la charge cognitive extrinsèque, Sweller).</span><span data-lang="en">8&nbsp;px base scale. Whitespace is <em>functional</em>: it segments content into short blocks (reducing extraneous cognitive load, Sweller).</span></p>
+        </div>
+        <div class="space-scale">
+          <div class="space-row"><span class="meta">--space-2 · 8</span><span class="bar" style="width:8px"></span></div>
+          <div class="space-row"><span class="meta">--space-3 · 12</span><span class="bar" style="width:12px"></span></div>
+          <div class="space-row"><span class="meta">--space-4 · 16</span><span class="bar" style="width:16px"></span></div>
+          <div class="space-row"><span class="meta">--space-5 · 24</span><span class="bar" style="width:24px"></span></div>
+          <div class="space-row"><span class="meta">--space-6 · 32</span><span class="bar" style="width:32px"></span></div>
+          <div class="space-row"><span class="meta">--space-7 · 48</span><span class="bar" style="width:48px"></span></div>
+          <div class="space-row"><span class="meta">--space-8 · 64</span><span class="bar" style="width:64px"></span></div>
+          <div class="space-row"><span class="meta">--space-9 · 96</span><span class="bar" style="width:96px"></span></div>
+        </div>
+      </section>
+
+      <!-- 04 COLONNES -->
+      <section class="ds-section" id="colonnes">
+        <div class="ds-head">
+          <p class="ds-eyebrow">04 — tokens</p>
+          <h2><span data-lang="fr">Largeurs de colonne</span><span data-lang="en">Column widths</span></h2>
+          <p class="ds-note"><span data-lang="fr">La longueur de ligne est plafonnée : au-delà de ~66 caractères, le retour à la ligne suivante devient difficile (suivi visuel). Contrainte encodée, pas suggérée.</span><span data-lang="en">Line length is capped: beyond ~66 characters, finding the next line becomes hard (visual tracking). An encoded constraint, not a suggestion.</span></p>
+        </div>
+        <div class="measure-demo" style="max-width:var(--measure)"><span class="ruler">--measure · 66ch</span><p>Colonne de lecture principale. Le corps de texte ne dépasse jamais cette largeur, quelle que soit la taille de l'écran ou le zoom du lecteur.</p></div>
+        <div class="measure-demo" style="max-width:var(--measure-narrow)"><span class="ruler">--measure-narrow · 52ch</span><p>Notes et légendes, volontairement plus étroites.</p></div>
+        <div class="measure-demo" style="max-width:var(--measure-wide)"><span class="ruler">--measure-wide · 78ch</span><p>Zones techniques : blocs de code et tableaux, qui tolèrent une ligne plus longue car on les parcourt différemment du texte courant.</p></div>
+      </section>
+
+      <!-- 05 NOTES -->
+      <section class="ds-section" id="notes">
+        <div class="ds-head">
+          <p class="ds-eyebrow">05 — composant</p>
+          <h2><span data-lang="fr">Note / admonition</span><span data-lang="en">Note / admonition</span></h2>
+          <p class="ds-note"><span data-lang="fr">Une <strong>admonition</strong> est un encart qui détache du fil du texte une information à signaler — avertissement, astuce, mise en garde (le mot vient du latin <em>admonitio</em>, « avertissement »). Principe de <em>signalement</em>. Quatre variantes documentées. Chacune combine couleur + icône + label texte : l'état n'est jamais porté par la couleur seule (<a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">WCAG 1.4.1</a>).</span><span data-lang="en">An <strong>admonition</strong> is a call-out box that sets a noteworthy point apart from the running text — a warning, tip, or caution (from Latin <em>admonitio</em>, “warning”). A <em>signaling</em> device. Four documented variants. Each combines color + icon + text label: state is never carried by color alone (<a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">WCAG 1.4.1</a>).</span></p>
+        </div>
+        <div class="demo-grid">
+          <div class="demo"><span class="demo__label"><b>.note--info</b> — information, prérequis</span>
+            <aside class="note note--info" role="note"><div class="note__icon" aria-hidden="true">i</div><div class="note__body"><p class="note__label">Note</p><p>Les exemples utilisent <code>podman</code> rootless ; <code>docker</code> fonctionne à l'identique.</p></div></aside>
+          </div>
+          <div class="demo"><span class="demo__label"><b>.note--success</b> — astuce, bonne pratique</span>
+            <aside class="note note--success" role="note"><div class="note__icon" aria-hidden="true">✓</div><div class="note__body"><p class="note__label">Astuce</p><p>Préférez des images de base minces (<code>alpine</code>, <code>distroless</code>) pour réduire la surface d'attaque.</p></div></aside>
+          </div>
+          <div class="demo"><span class="demo__label"><b>.note--warning</b> — attention</span>
+            <aside class="note note--warning" role="note"><div class="note__icon" aria-hidden="true">!</div><div class="note__body"><p class="note__label">Attention</p><p><code>--privileged</code> désactive l'isolation. Réservez-le au débogage local.</p></div></aside>
+          </div>
+          <div class="demo"><span class="demo__label"><b>.note--danger</b> — piège, erreur fréquente</span>
+            <aside class="note note--danger" role="note"><div class="note__icon" aria-hidden="true">✕</div><div class="note__body"><p class="note__label">Piège</p><p>Ne stockez jamais de données persistantes dans la couche écriture du conteneur : elles disparaissent à sa suppression.</p></div></aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 EXERCICES -->
+      <section class="ds-section" id="exercices">
+        <div class="ds-head">
+          <p class="ds-eyebrow">06 — composant</p>
+          <h2><span data-lang="fr">Exercice</span><span data-lang="en">Exercise</span></h2>
+          <p class="ds-note"><span data-lang="fr">Structure imposée énoncé → solution repliable (masquée par défaut) : exploite l'<em>effet de test</em>. Trois niveaux documentés via <code>data-level</code>, signalés par une pastille colorée <em>et</em> un libellé. <strong>Variante « réponse requise »</strong> : un champ éditable verrouille la solution tant qu'il est vide (renforce l'effet de test). Activée par défaut, réglable globalement via le panneau Tweaks (<code>Exiger une réponse</code>) ou par bloc avec <code>data-gate-mode="on|off"</code>.</span><span data-lang="en">Enforced prompt → collapsible solution (hidden by default): leverages the <em>testing effect</em>. Three documented levels via <code>data-level</code>, signaled by a colored dot <em>and</em> a label. <strong>“Answer required” variant</strong>: an editable field locks the solution while empty (reinforces the testing effect). On by default, adjustable globally via the Tweaks panel (<code>Require an answer</code>) or per block with <code>data-gate-mode="on|off"</code>.</span></p>
+        </div>
+        <div class="demo-grid">
+          <section class="exercise" data-level="1" data-gate-mode="off"><header class="exercise__head"><span class="exercise__tag">Exercice</span><span class="exercise__level">Niveau 1 · base</span></header><div class="exercise__prompt prose"><p>Citez les deux mécanismes du noyau qui distinguent un conteneur d'un simple processus.</p></div><details class="exercise__solution"><summary><span class="lock" aria-hidden="true"><i data-lucide="lock"></i></span><span class="label-show">Afficher la solution</span><span class="label-hide">Masquer la solution</span><span class="label-locked">Renseignez votre réponse</span></summary><div class="exercise__solution-body prose"><p>Les <strong>namespaces</strong> (visibilité) et les <strong>cgroups</strong> (quantités).</p></div></details></section>
+          <section class="exercise" data-level="3" data-gate-mode="off"><header class="exercise__head"><span class="exercise__tag">Exercice</span><span class="exercise__level">Niveau 3 · avancé</span></header><div class="exercise__prompt prose"><p>Expliquez pourquoi un conteneur ne peut pas charger un module noyau différent de celui de l'hôte.</p></div><details class="exercise__solution"><summary><span class="lock" aria-hidden="true"><i data-lucide="lock"></i></span><span class="label-show">Afficher la solution</span><span class="label-hide">Masquer la solution</span><span class="label-locked">Renseignez votre réponse</span></summary><div class="exercise__solution-body prose"><p>Parce qu'il n'existe qu'un seul noyau, partagé. Le conteneur ne possède pas son propre espace noyau : il s'exécute sur celui de l'hôte.</p></div></details></section>
+
+          <section class="exercise" data-level="2" data-gate-mode="on"><header class="exercise__head"><span class="exercise__tag">Exercice</span><span class="exercise__level">Variante · réponse requise</span></header><div class="exercise__prompt prose"><p>En une phrase : quelle est la différence entre un <em>namespace</em> et un <em>cgroup</em> ?</p></div><div class="exercise__answer" data-exercise-answer><label class="exercise__answer-label" for="ds-ex-ans">Votre réponse <span class="req">requise</span></label><textarea id="ds-ex-ans" class="exercise__answer-field" rows="2" placeholder="Répondez ici pour débloquer la solution…"></textarea><p class="exercise__answer-hint">La solution reste verrouillée tant que ce champ est vide.</p></div><details class="exercise__solution"><summary><span class="lock" aria-hidden="true"><i data-lucide="lock"></i></span><span class="label-show">Afficher la solution</span><span class="label-hide">Masquer la solution</span><span class="label-locked">Renseignez votre réponse pour débloquer</span></summary><div class="exercise__solution-body prose"><p>Le <strong>namespace</strong> gère la <em>visibilité</em> (ce que le conteneur voit) ; le <strong>cgroup</strong> gère les <em>quantités</em> (ce qu'il consomme).</p></div></details></section>
+        </div>
+      </section>
+
+      <!-- 07 COMMANDE + TERMINAL -->
+      <section class="ds-section" id="commande">
+        <div class="ds-head">
+          <p class="ds-eyebrow">07 — composant</p>
+          <h2><span data-lang="fr">Commande cliquable &amp; terminal</span><span data-lang="en">Clickable command &amp; terminal</span></h2>
+          <p class="ds-note"><span data-lang="fr">Apprentissage actif : cliquer une commande l'exécute (en simulation) dans le panneau terminal. La sortie apparaît progressivement ; chaque ligne d'état porte un <em>label</em> en plus de la couleur. Essayez :</span><span data-lang="en">Active learning: clicking a command runs it (simulated) in the terminal panel. Output appears progressively; each status line carries a <em>label</em> in addition to color. Try it:</span></p>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,360px); gap:var(--space-5); align-items:start;" class="cmd-demo-grid" data-swap>
+          <div>
+            <button class="cmd" data-cmd="podman ps --format '{{.Names}} {{.Status}}'" data-term="#term-ds"><span class="cmd__prompt" aria-hidden="true">$</span><code>podman ps --format '{{.Names}} {{.Status}}'</code><span class="cmd__hint">exécuter</span></button>
+            <template class="cmd-out"><div class="term-line term-line--out">web    Up 2 minutes</div><div class="term-line term-line--out">db     Up 2 minutes</div><div class="term-line term-line--ok"><span class="tag">ok</span>2 conteneurs en cours.</div></template>
+            <button class="cmd" data-cmd="podman build -t demo:1 ." data-term="#term-ds"><span class="cmd__prompt" aria-hidden="true">$</span><code>podman build -t demo:1 .</code><span class="cmd__hint">exécuter</span></button>
+            <template class="cmd-out"><div class="term-line term-line--out">STEP 1/3: FROM alpine:3.20</div><div class="term-line term-line--out">STEP 2/3: COPY . /app</div><div class="term-line term-line--ok"><span class="tag">ok</span>Successfully tagged demo:1</div></template>
+          </div>
+          <div class="terminal" id="term-ds" data-terminal>
+            <div class="terminal__bar" data-swap-grip role="button" tabindex="0" aria-label="Déplacer le terminal de démonstration">
+              <span class="terminal__glyph" aria-hidden="true">❯_</span>
+              <span class="terminal__title">bash — démo</span>
+              <span class="terminal__actions">
+                <button class="term-icon-btn" data-term-theme-btn type="button" aria-pressed="false">
+                  <span class="to-light" aria-hidden="true"><i data-lucide="sun"></i></span>
+                  <span class="to-dark" aria-hidden="true"><i data-lucide="moon"></i></span>
+                  <span class="term-tip"><span class="to-light">Mode clair</span><span class="to-dark">Mode sombre</span></span>
+                </button>
+                <button class="term-icon-btn" data-term-replay type="button" aria-label="Réinitialiser le terminal">
+                  <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                  <span class="term-tip">Réinitialiser</span>
+                </button>
+              </span>
+            </div>
+            <div class="terminal__screen" role="log" aria-live="polite" aria-label="Sortie du terminal"></div>
+            <form class="terminal__input" data-term-input>
+              <span class="p" aria-hidden="true">$</span>
+              <input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Saisir une commande" placeholder="help · ls · podman ps">
+            </form>
+            <div class="terminal__hint"><span aria-hidden="true">▶</span> <span data-lang="fr">démo simulée — tapez une commande ou cliquez-en une à gauche.</span><span data-lang="en">simulated demo — type a command or click one on the left.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 PANNEAU A11Y -->
+      <section class="ds-section" id="a11y">
+        <div class="ds-head">
+          <p class="ds-eyebrow">08 — composant</p>
+          <h2><span data-lang="fr">Panneau d'accessibilité</span><span data-lang="en">Accessibility panel</span></h2>
+          <p class="ds-note"><span data-lang="fr">Accessible depuis toute page via l'icône <strong>œil</strong> de l'en-tête. Le lecteur ajuste taille, espacement, contraste, mouvement et police <em>sans perte de contenu ni de fonction</em> (<a href="https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html" target="_blank" rel="noopener">WCAG 1.4.12</a>). Réduire les animations respecte <a href="https://developer.mozilla.org/fr/docs/Web/CSS/@media/prefers-reduced-motion" target="_blank" rel="noopener">prefers-reduced-motion</a> (<a href="https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html" target="_blank" rel="noopener">WCAG 2.3.3</a>). Les préférences persistent. <strong>Daltonisme</strong> : aucune information n'est portée par la couleur seule (icône + libellé + soulignement systématiques) — voir <a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">WCAG 1.4.1</a>. Ci-dessous : l'icône, et un facsimilé du panneau ouvert avec ses états.</span><span data-lang="en">Reachable from any page via the header <strong>eye</strong> icon. The reader adjusts size, spacing, contrast, motion and font <em>without loss of content or function</em> (<a href="https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html" target="_blank" rel="noopener">WCAG 1.4.12</a>). Reduce-motion honours <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion" target="_blank" rel="noopener">prefers-reduced-motion</a> (<a href="https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html" target="_blank" rel="noopener">WCAG 2.3.3</a>). Preferences persist. <strong>Color blindness</strong>: no information is carried by color alone (icon + label + underline throughout) — see <a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">WCAG 1.4.1</a>. Below: the icon, and a facsimile of the open panel with its states.</span></p>
+        </div>
+
+        <p class="ds-sub">Icône d'accès (état fermé)</p>
+        <div style="display:flex; gap:var(--space-4); align-items:center; flex-wrap:wrap;">
+          <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-haspopup="dialog">
+            <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+            <span class="util-btn__label">Accessibilité</span>
+          </button>
+          <span class="ds-note" style="margin:0"><span data-lang="fr">← cliquez pour ouvrir le panneau réel (tiroir latéral).</span><span data-lang="en">← click to open the real panel (side drawer).</span></span>
+        </div>
+
+        <p class="ds-sub">Panneau ouvert — facsimilé statique des états</p>
+        <div class="panel-demo">
+          <aside class="a11y-panel" data-open="true" style="position:static" aria-label="Aperçu du panneau d'accessibilité">
+            <div class="a11y-panel__head"><div><h2>Accessibilité</h2><span class="sub">WCAG 1.4.12 / 2.3.3 / 1.4.6</span></div><span class="a11y-close" aria-hidden="true">✕</span></div>
+            <div class="a11y-panel__body">
+              <div class="a11y-field"><span class="a11y-field__label"><span>Taille du texte</span><span class="a11y-field__value">110%</span></span><div class="a11y-stepper"><button type="button" aria-hidden="true">A−</button><output>110%</output><button type="button" aria-hidden="true">A+</button></div></div>
+              <div class="a11y-field"><span class="a11y-field__label"><span>Interligne</span><span class="a11y-field__value">1.6</span></span><input class="a11y-range" type="range" min="1.4" max="2" step="0.05" value="1.6" aria-label="Aperçu interligne"></div>
+              <div class="a11y-field"><span class="a11y-field__label"><span>Espacement des lettres</span><span class="a11y-field__value">0.06em</span></span><input class="a11y-range" type="range" min="0" max="0.12" step="0.01" value="0.06" aria-label="Aperçu lettres"></div>
+              <div class="a11y-section-title">Modes</div>
+              <label class="a11y-toggle"><input type="checkbox" checked><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b>Contraste élevé</b><small>état activé</small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
+              <label class="a11y-toggle"><input type="checkbox"><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b>Réduire les animations</b><small>état désactivé</small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
+              <div class="a11y-field"><span class="a11y-field__label">Police de lecture</span><div class="a11y-seg" role="group" aria-label="Aperçu police"><button type="button">Défaut</button><button type="button" aria-pressed="true">Atkinson</button><button type="button">OpenDyslexic</button></div></div>
+            </div>
+            <div class="a11y-panel__foot"><span class="a11y-reset" aria-hidden="true">Réinitialiser</span><span class="a11y-saved">Préférences enregistrées</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 09 PARAMÈTRES -->
+      <section class="ds-section" id="parametres">
+        <div class="ds-head">
+          <p class="ds-eyebrow">09 — composant</p>
+          <h2><span data-lang="fr">Paramètres (apparence)</span><span data-lang="en">Settings (appearance)</span></h2>
+          <p class="ds-note"><span data-lang="fr">Second tiroir, distinct de l'accessibilité, ouvert par l'icône <strong>roue crantée</strong>. Il regroupe les préférences d'<em>apparence</em> — thème de couleurs, largeur du site, langue — séparées des réglages WCAG pour ne pas surcharger un même écran (réduction de la charge cognitive, <a href="#references">Sweller</a>). Préférences persistantes ; un seul tiroir visible à la fois.</span><span data-lang="en">A second drawer, distinct from accessibility, opened by the <strong>gear</strong> icon. It groups <em>appearance</em> preferences — colour theme, site width, language — kept apart from WCAG settings to avoid overloading one screen (lower cognitive load, <a href="#references">Sweller</a>). Persistent preferences; only one drawer visible at a time.</span></p>
+        </div>
+        <div class="panel-demo">
+          <aside class="a11y-panel" data-open="true" style="position:static" aria-label="Aperçu du panneau Paramètres">
+            <div class="a11y-panel__head"><div><h2>Paramètres</h2><span class="sub"><span data-lang="fr">apparence &amp; préférences</span><span data-lang="en">appearance &amp; preferences</span></span></div><span class="a11y-close" aria-hidden="true">✕</span></div>
+            <div class="a11y-panel__body">
+              <div class="a11y-field"><span class="a11y-field__label"><span data-lang="fr">Thème de couleurs</span><span data-lang="en">Color theme</span></span>
+                <div class="a11y-themes" role="group" aria-label="Aperçu thèmes">
+                  <button type="button" aria-pressed="true"><span class="sw" style="background:linear-gradient(135deg,#e9f0f3 50%,#0b5067 50%)"></span>Marine</button>
+                  <button type="button"><span class="sw" style="background:linear-gradient(135deg,#f4f6f9 50%,#1e40af 50%)"></span>Ardoise</button>
+                  <button type="button"><span class="sw" style="background:linear-gradient(135deg,#eef3ee 50%,#14532d 50%)"></span>Forêt</button>
+                  <button type="button"><span class="sw" style="background:linear-gradient(135deg,#0b1a26 50%,#79cfee 50%)"></span>Abysse</button>
+                </div>
+              </div>
+              <label class="a11y-toggle"><input type="checkbox" checked><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b><span data-lang="fr">Effet de plongée</span><span data-lang="en">Depth effect</span></b><small><span data-lang="fr">le fond s'assombrit au défilement</span><span data-lang="en">background darkens on scroll</span></small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
+              <div class="a11y-field"><span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value">72 rem</span></span><input class="a11y-range" type="range" min="60" max="160" step="2" value="72" aria-label="Aperçu largeur"></div>
+              <div class="a11y-field"><span class="a11y-field__label"><span data-lang="fr">Langue</span><span data-lang="en">Language</span></span><div class="a11y-seg" role="group" aria-label="Aperçu langue"><button type="button" aria-pressed="true">Français</button><button type="button">English</button></div></div>
+            </div>
+            <div class="a11y-panel__foot"><span class="a11y-reset" aria-hidden="true"><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></span><span class="a11y-saved"><span data-lang="fr">Enregistré</span><span data-lang="en">Saved</span></span></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 10 THÈMES -->
+      <section class="ds-section" id="themes">
+        <div class="ds-head">
+          <p class="ds-eyebrow">10 — tokens</p>
+          <h2><span data-lang="fr">Thèmes de couleurs</span><span data-lang="en">Color themes</span></h2>
+          <p class="ds-note"><span data-lang="fr">Cinq thèmes remappent les mêmes tokens en conservant les seuils de contraste. Quatre sont clairs (texte foncé sur fond clair), <strong>Abysse</strong> est sombre (texte clair sur fond profond) ; un token <code>--color-on-accent</code> garantit la lisibilité des aplats dans les deux régimes. Le contraste élevé (Accessibilité) prime toujours sur le thème.</span><span data-lang="en">Five themes remap the same tokens while keeping contrast thresholds. Four are light (dark text on light), <strong>Abyss</strong> is dark (light text on a deep ground); a <code>--color-on-accent</code> token keeps filled chips legible in both regimes. High-contrast (Accessibility) always overrides the theme.</span></p>
+        </div>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch__chip" style="background:linear-gradient(135deg,#e9f0f3 50%,#0b5067 50%)"></div><div class="swatch__meta"><span class="swatch__var">Marine</span><span class="swatch__role"><span data-lang="fr">défaut · clair</span><span data-lang="en">default · light</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:linear-gradient(135deg,#f4f6f9 50%,#1e40af 50%)"></div><div class="swatch__meta"><span class="swatch__var">Ardoise</span><span class="swatch__role"><span data-lang="fr">neutre · clair</span><span data-lang="en">neutral · light</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:linear-gradient(135deg,#eef3ee 50%,#14532d 50%)"></div><div class="swatch__meta"><span class="swatch__var">Forêt</span><span class="swatch__role"><span data-lang="fr">vert · clair</span><span data-lang="en">green · light</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:linear-gradient(135deg,#f5efe4 50%,#0b5067 50%)"></div><div class="swatch__meta"><span class="swatch__var">Aurore</span><span class="swatch__role"><span data-lang="fr">chaud · clair</span><span data-lang="en">warm · light</span></span></div></div>
+          <div class="swatch"><div class="swatch__chip" style="background:linear-gradient(135deg,#0b1a26 50%,#79cfee 50%)"></div><div class="swatch__meta"><span class="swatch__var">Abysse</span><span class="swatch__role"><span data-lang="fr">sombre</span><span data-lang="en">dark</span></span></div></div>
+        </div>
+      </section>
+
+      <!-- 11 DIAPORAMA -->
+      <section class="ds-section" id="diaporama">
+        <div class="ds-head">
+          <p class="ds-eyebrow">11 — composant</p>
+          <h2><span data-lang="fr">Diaporama (îlot de cours)</span><span data-lang="en">Slideshow (course island)</span></h2>
+          <p class="ds-note"><span data-lang="fr">Découper une notion en segments avancés au rythme du lecteur applique la <em>segmentation</em> de l'<a href="#references">apprentissage multimédia</a> (Mayer). Navigation au clic ou aux flèches ←/→ ; deux outils dans l'en-tête : <strong>vue étendue</strong> (pop-up au-dessus de tout) et <strong>plein écran</strong>. Une diapositive peut héberger un PDF ou tout média (<code>.slide--media</code>).</span><span data-lang="en">Breaking a notion into learner-paced segments applies <em>segmentation</em> from <a href="#references">multimedia learning</a> (Mayer). Click or ←/→ navigation; two header tools: <strong>expanded view</strong> (pop-up above everything) and <strong>fullscreen</strong>. A slide can host a PDF or any media (<code>.slide--media</code>).</span></p>
+        </div>
+        <section class="slides" data-slides tabindex="0" aria-roledescription="diaporama" aria-label="Démo diaporama">
+          <div class="slides__head">
+            <span class="slides__tag"><i data-lucide="layers" aria-hidden="true"></i> <span data-lang="fr">Démo</span><span data-lang="en">Demo</span></span>
+            <span class="slides__counter" data-slides-counter aria-hidden="true">1 / 3</span>
+          </div>
+          <div class="slides__viewport"><div class="slides__track" data-slides-track>
+            <div class="slide"><h3><span data-lang="fr">Segment 1</span><span data-lang="en">Segment 1</span></h3><p><span data-lang="fr">Chaque diapositive porte une idée. Le lecteur avance à son rythme : la charge en mémoire de travail reste basse.</span><span data-lang="en">Each slide carries one idea. The reader advances at their own pace: working-memory load stays low.</span></p></div>
+            <div class="slide"><h3><span data-lang="fr">Segment 2</span><span data-lang="en">Segment 2</span></h3><p><span data-lang="fr">Navigation clavier ←/→, points cliquables, compteur. Sobre et prévisible.</span><span data-lang="en">Keyboard ←/→, clickable dots, counter. Plain and predictable.</span></p></div>
+            <div class="slide"><h3><span data-lang="fr">Segment 3</span><span data-lang="en">Segment 3</span></h3><p><span data-lang="fr">Essayez « vue étendue » et « plein écran » dans l'en-tête.</span><span data-lang="en">Try “expanded view” and “fullscreen” in the header.</span></p></div>
+          </div></div>
+          <div class="slides__foot">
+            <button class="slides__btn" data-slides-prev type="button" aria-label="Diapositive précédente"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+            <span class="slides__dots" data-slides-dots role="tablist" aria-label="Diapositives"></span>
+            <button class="slides__btn" data-slides-next type="button" aria-label="Diapositive suivante"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+          </div>
+        </section>
+      </section>
+
+      <!-- 12 ÎLOTS DÉPLAÇABLES -->
+      <section class="ds-section" id="ilots">
+        <div class="ds-head">
+          <p class="ds-eyebrow">12 — interaction</p>
+          <h2><span data-lang="fr">Îlots déplaçables</span><span data-lang="en">Draggable islands</span></h2>
+          <p class="ds-note"><span data-lang="fr">Une classe mère <code>DragWidget</code> (POO) mutualise toute la mécanique ; <code>CoursePane</code> (colonne &amp; terminal d'un cours) et <code>SwapIsland</code> (paires permutables) en héritent. On saisit un élément par sa <strong>bordure</strong> (curseur main), il suit le curseur et permute au lâcher — laissant le texte sélectionnable. <a href="https://fr.wikipedia.org/wiki/Charge_cognitive" target="_blank" rel="noopener">Donner au lecteur la maîtrise de la disposition</a> réduit la charge extrinsèque. Le sommaire et le terminal de démo ci-dessus sont déjà déplaçables.</span><span data-lang="en">A <code>DragWidget</code> base class (OOP) shares all the mechanics; <code>CoursePane</code> (a course's column &amp; terminal) and <code>SwapIsland</code> (swappable pairs) inherit from it. Grab an element by its <strong>border</strong> (hand cursor), it follows the pointer and swaps on release — leaving text selectable. Giving the reader control of layout lowers extraneous load. The table of contents and demo terminal above are already draggable.</span></p>
+        </div>
+        <div class="cmd-demo-grid" data-swap style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); align-items:start;">
+          <div class="placeholder" data-swap-grip role="button" tabindex="0" style="min-height:120px; cursor:grab;"><span data-lang="fr">Îlot A — glissez ma bordure</span><span data-lang="en">Island A — drag my border</span></div>
+          <div class="placeholder" data-swap-grip role="button" tabindex="0" style="min-height:120px; cursor:grab;"><span data-lang="fr">Îlot B — glissez ma bordure</span><span data-lang="en">Island B — drag my border</span></div>
+        </div>
+      </section>
+
+      <!-- 13 PROFONDEUR & LARGEUR -->
+      <section class="ds-section" id="profondeur">
+        <div class="ds-head">
+          <p class="ds-eyebrow">13 — ambiance</p>
+          <h2><span data-lang="fr">Profondeur &amp; largeur</span><span data-lang="en">Depth &amp; width</span></h2>
+          <p class="ds-note"><span data-lang="fr">L'<strong>effet de plongée</strong> assombrit le fond au défilement tandis que le panneau de lecture dérive vers la teinte opposée : le contraste <em>se renforce</em> en profondeur (jamais de point de contraste nul). Décor purement ambiant, désactivable, et figé par « réduire les animations ». La <strong>poignée de largeur</strong> est devenue un <strong>rail</strong> : un filet au bord droit du contenu (même vocabulaire que le séparateur des cours), qui révèle sa poignée à l'approche et ajuste <code>--page-max</code> sans ouvrir Paramètres — glisser pour redimensionner, cliquer pour revenir au défaut.</span><span data-lang="en">The <strong>depth effect</strong> darkens the background on scroll while the reading panel drifts toward the opposite tone: contrast <em>strengthens</em> with depth (never a zero-contrast crossing). Purely ambient, switchable off, and frozen by “reduce motion”. The <strong>width handle</strong> is now a <strong>rail</strong>: a hairline at the content's right edge (same vocabulary as the course splitter) that reveals its knob on approach and tunes <code>--page-max</code> without opening Settings — drag to resize, click to reset.</span></p>
+        </div>
+        <div class="figure"><div class="placeholder" style="min-height:90px"><span data-lang="fr">scrollez la page : le fond s'assombrit progressivement</span><span data-lang="en">scroll the page: the background gradually darkens</span></div></div>
+      </section>
+
+      <!-- 14 TRAPPE -->
+      <section class="ds-section" id="trappe">
+        <div class="ds-head">
+          <p class="ds-eyebrow">14 — modulation</p>
+          <h2><span data-lang="fr">Trappe d'évasion</span><span data-lang="en">Escape hatch</span></h2>
+          <p class="ds-note"><span data-lang="fr">Quand le contenu sort du cadre pédagogique standard, ce bloc <strong>désactive explicitement les contraintes</strong> (largeur de colonne, gabarit) et accueille du HTML/JS/visualisation arbitraire. Sa bordure pointillée et son onglet signalent clairement « hors cadre ».</span><span data-lang="en">When content falls outside the standard teaching frame, this block <strong>explicitly disables the constraints</strong> (column width, template) and hosts arbitrary HTML/JS/visualization. Its dashed border and tab clearly signal "off-frame".</span></p>
+        </div>
+        <section class="escape">
+          <span class="escape__tab" aria-hidden="true">⤣ <span data-lang="fr">Hors cadre — pleine liberté</span><span data-lang="en">Off-frame — full freedom</span></span>
+          <div class="escape__body">
+            <p style="max-width:none; color:var(--color-text-muted); margin-bottom:var(--space-4)"><span data-lang="fr">Exemple : une grille large, du contenu côte à côte, libre de la colonne de 66ch.</span><span data-lang="en">Example: a wide grid, side-by-side content, free of the 66ch column.</span></p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-4);">
+              <div class="placeholder">viz custom · D3 / canvas</div>
+              <div class="placeholder">tableau large</div>
+              <div class="placeholder">démo interactive</div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 15 RÉFÉRENCES -->
+      <section class="ds-section" id="references">
+        <div class="ds-head">
+          <p class="ds-eyebrow">15 — <span data-lang="fr">fondements</span><span data-lang="en">foundations</span></p>
+          <h2><span data-lang="fr">Références scientifiques</span><span data-lang="en">Scientific references</span></h2>
+          <p class="ds-note"><span data-lang="fr">Les choix de ce cadre s'appuient sur les sciences cognitives de l'apprentissage et les normes d'accessibilité. Liens vers les articles de synthèse (Wikipédia) et les normes officielles.</span><span data-lang="en">The decisions in this framework draw on the cognitive science of learning and accessibility standards. Links to overview articles (Wikipedia) and official norms.</span></p>
+        </div>
+        <ul class="ds-refs">
+          <li>
+            <a href="https://fr.wikipedia.org/wiki/Charge_cognitive" target="_blank" rel="noopener">Théorie de la charge cognitive</a> <span class="ds-refs__by">— J. Sweller</span>
+            <p><span data-lang="fr">Limiter la charge <em>extrinsèque</em> (mise en forme parasite) pour préserver la mémoire de travail : sobriété, segmentation, blanc fonctionnel.</span><span data-lang="en">Limit <em>extraneous</em> load (incidental formatting) to spare working memory: restraint, segmentation, functional whitespace.</span></p>
+          </li>
+          <li>
+            <a href="https://en.wikipedia.org/wiki/Cognitive_theory_of_multimedia_learning" target="_blank" rel="noopener"><span data-lang="fr">Apprentissage multimédia</span><span data-lang="en">Multimedia learning</span></a> <span class="ds-refs__by">— R. Mayer</span>
+            <p><span data-lang="fr">Principes de <em>signalement</em> (hiérarchie, admonitions) et de <em>segmentation</em> (diaporama, blocs courts).</span><span data-lang="en"><em>Signaling</em> (hierarchy, admonitions) and <em>segmentation</em> (slideshow, short blocks) principles.</span></p>
+          </li>
+          <li>
+            <a href="https://fr.wikipedia.org/wiki/Effet_de_test" target="_blank" rel="noopener"><span data-lang="fr">Effet de test</span><span data-lang="en">Testing effect</span></a>
+            <p><span data-lang="fr">Se remémorer avant de vérifier renforce la mémorisation : la solution d'un exercice reste masquée tant qu'aucune réponse n'est saisie.</span><span data-lang="en">Retrieving before checking strengthens memory: an exercise's solution stays hidden until an answer is entered.</span></p>
+          </li>
+          <li>
+            <a href="https://en.wikipedia.org/wiki/Readability" target="_blank" rel="noopener"><span data-lang="fr">Lisibilité &amp; longueur de ligne</span><span data-lang="en">Readability &amp; line length</span></a>
+            <p><span data-lang="fr">Une colonne de ~66 caractères soutient le suivi visuel ligne à ligne ; corps ≥ 18px, interligne 1,5–1,6.</span><span data-lang="en">A ~66-character column supports line-to-line tracking; body ≥ 18px, line height 1.5–1.6.</span></p>
+          </li>
+          <li>
+            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener">WCAG 2.1</a>
+            <p><span data-lang="fr">Conformité AA visée partout, AAA sur le corps. Voir <a href="https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html" target="_blank" rel="noopener">1.4.3</a>/<a href="https://www.w3.org/WAI/WCAG21/Understanding/contrast-enhanced.html" target="_blank" rel="noopener">1.4.6</a> (contraste), <a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">1.4.1</a> (couleur), <a href="https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html" target="_blank" rel="noopener">1.4.12</a> (espacement), <a href="https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html" target="_blank" rel="noopener">2.3.3</a> (animations).</span><span data-lang="en">AA targeted everywhere, AAA on body text. See <a href="https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html" target="_blank" rel="noopener">1.4.3</a>/<a href="https://www.w3.org/WAI/WCAG21/Understanding/contrast-enhanced.html" target="_blank" rel="noopener">1.4.6</a> (contrast), <a href="https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html" target="_blank" rel="noopener">1.4.1</a> (color), <a href="https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html" target="_blank" rel="noopener">1.4.12</a> (spacing), <a href="https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html" target="_blank" rel="noopener">2.3.3</a> (motion).</span></p>
+          </li>
+          <li>
+            <a href="https://en.wikipedia.org/wiki/Color_blindness" target="_blank" rel="noopener"><span data-lang="fr">Daltonisme</span><span data-lang="en">Color blindness</span></a>
+            <p><span data-lang="fr">L'information n'est jamais portée par la couleur seule : icône + libellé + soulignement systématiques.</span><span data-lang="en">Information is never carried by color alone: systematic icon + label + underline.</span></p>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — système de design pédagogique. Tokens, composants &amp; accessibilité.</span><span data-lang="en">Site Astro — pedagogical design system. Tokens, components &amp; accessibility.</span>
+    <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>

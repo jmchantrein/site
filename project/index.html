@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Site Astro — Conteneurisation sur GNU/Linux</title>
+<meta name="description" content="Cours techniques et blog scientifique sur la conteneurisation GNU/Linux. Un cadre pédagogique fondé sur les sciences cognitives de l'apprentissage.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .hero { padding-block: var(--space-8) var(--space-7); }
+  .hero h1 { font-size: clamp(2rem, 5.2vw, 3rem); max-width: 18ch; margin-top: var(--space-4); }
+  .hero .lead { margin-top: var(--space-5); max-width: 60ch; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .btn { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-semibold); text-decoration: none; border-radius: var(--radius-md); padding: var(--space-3) var(--space-5); }
+  .btn--primary { background: var(--color-accent-text); color: var(--color-on-accent); }
+  .btn--primary:hover { background: var(--color-accent-hover); color: var(--color-on-accent); }
+  .btn--ghost { border: 1px solid var(--color-border-strong); color: var(--color-text); }
+  .btn--ghost:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
+  .section-head h2 { margin: 0; }
+  .section-head .count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); margin-block: var(--space-6); max-width: none; }
+  .principle { padding-top: var(--space-4); border-top: 2px solid var(--color-accent); }
+  .principle h3 { font-size: var(--text-md); margin: 0 0 var(--space-2); }
+  .principle p { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 34ch; margin: 0; }
+  .principle code { font-size: 0.85em; }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html" aria-current="page"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+    <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+      <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+      <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+    </button>
+    <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+      <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+      <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero wrap">
+    <p class="kicker kicker--bar"><span data-lang="fr">Cours &amp; blog technique</span><span data-lang="en">Courses &amp; technical blog</span></p>
+    <h1><span data-lang="fr">La conteneurisation sur GNU/Linux, expliquée pour être retenue.</span><span data-lang="en">Containers on GNU/Linux, explained to be remembered.</span></h1>
+    <p class="lead"><span data-lang="fr">Des manuels techniques structurés et un blog scientifique (maths, code, exercices). Chaque décision de mise en forme sert un objectif : réduire la charge cognitive extrinsèque pour que l'attention aille au fond.</span><span data-lang="en">Structured technical manuals and a scientific blog (math, code, exercises). Every design decision serves one goal: cut extraneous cognitive load so attention goes to the substance.</span></p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="cours-conteneurisation.html"><span data-lang="fr">Commencer le cours</span><span data-lang="en">Start the course</span> →</a>
+      <a class="btn btn--ghost" href="design-system.html"><span data-lang="fr">Voir le système de design</span><span data-lang="en">See the design system</span></a>
+    </div>
+
+    <div class="principles" aria-label="Principes du cadre">
+      <div class="principle">
+        <h3><span data-lang="fr">Colonne ≤ 66 caractères</span><span data-lang="en">≤ 66-character column</span></h3>
+        <p><span data-lang="fr">La longueur de ligne optimale soutient le suivi visuel.</span><span data-lang="en">Optimal line length supports visual tracking.</span> <code>max-width: 66ch</code></p>
+      </div>
+      <div class="principle">
+        <h3><span data-lang="fr">Corps ≥ 18px, AAA</span><span data-lang="en">Body ≥ 18px, AAA</span></h3>
+        <p><span data-lang="fr">Contraste du corps visé à 7:1, jamais en dessous de 4,5:1.</span><span data-lang="en">Body contrast aims for 7:1, never below 4.5:1.</span></p>
+      </div>
+      <div class="principle">
+        <h3><span data-lang="fr">Signalement sobre</span><span data-lang="en">Plain signaling</span></h3>
+        <p><span data-lang="fr">Hiérarchie nette, mise en évidence discrète — pas d'esthétique « SaaS ».</span><span data-lang="en">Clear hierarchy, restrained highlighting — no "SaaS" aesthetic.</span></p>
+      </div>
+      <div class="principle">
+        <h3><span data-lang="fr">Réglable par le lecteur</span><span data-lang="en">Reader-adjustable</span></h3>
+        <p><span data-lang="fr">Taille, espacement, contraste, mouvement, police — persistants.</span><span data-lang="en">Size, spacing, contrast, motion, font — all persistent.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" style="margin-top: var(--space-7);">
+    <div class="section-head">
+      <h2><span data-lang="fr">Modules du cours</span><span data-lang="en">Course modules</span></h2>
+      <span class="count"><span data-lang="fr">6 modules · parcours progressif</span><span data-lang="en">6 modules · progressive path</span></span>
+    </div>
+
+    <div class="card-grid">
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">01</span><span class="module-card__meta">5 <span data-lang="fr">leçons</span><span data-lang="en">lessons</span> · 40 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Fondations : ce qu'est vraiment un conteneur</span><span data-lang="en">Foundations: what a container really is</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Namespaces, cgroups et isolation. Pourquoi un conteneur n'est pas une machine virtuelle.</span><span data-lang="en">Namespaces, cgroups and isolation. Why a container is not a virtual machine.</span></p>
+        <ul class="module-card__tags"><li>namespaces</li><li>cgroups</li><li>chroot</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">02</span><span class="module-card__meta">6 <span data-lang="fr">leçons</span><span data-lang="en">lessons</span> · 50 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Premiers pas : exécuter un conteneur</span><span data-lang="en">First steps: running a container</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Cycle de vie d'un conteneur avec Podman et Docker : run, exec, logs, stop.</span><span data-lang="en">Container lifecycle with Podman and Docker: run, exec, logs, stop.</span></p>
+        <ul class="module-card__tags"><li>podman</li><li>docker</li><li>run</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">03</span><span class="module-card__meta">7 <span data-lang="fr">leçons</span><span data-lang="en">lessons</span> · 65 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Images &amp; Containerfile</span><span data-lang="en">Images &amp; Containerfile</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Couches, cache de build, multi-stage. Construire des images petites et reproductibles.</span><span data-lang="en">Layers, build cache, multi-stage. Building small, reproducible images.</span></p>
+        <ul class="module-card__tags"><li>build</li><li>layers</li><li>OCI</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">04</span><span class="module-card__meta">4 <span data-lang="fr">leçons</span><span data-lang="en">lessons</span> · 35 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Stockage &amp; volumes</span><span data-lang="en">Storage &amp; volumes</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Systèmes de fichiers en couches, volumes nommés, montages bind et persistance.</span><span data-lang="en">Layered filesystems, named volumes, bind mounts and persistence.</span></p>
+        <ul class="module-card__tags"><li>overlayfs</li><li>volumes</li><li>bind</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+
+      <a class="module-card" href="cours-conteneurisation.html">
+        <div class="module-card__top"><span class="module-card__num">05</span><span class="module-card__meta">5 <span data-lang="fr">leçons</span><span data-lang="en">lessons</span> · 55 min</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Réseau des conteneurs</span><span data-lang="en">Container networking</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Bridges, espaces de noms réseau, ports publiés et résolution de noms.</span><span data-lang="en">Bridges, network namespaces, published ports and name resolution.</span></p>
+        <ul class="module-card__tags"><li>bridge</li><li>netns</li><li>DNS</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+      </a>
+
+      <a class="module-card" href="design-system.html">
+        <div class="module-card__top"><span class="module-card__num">06</span><span class="module-card__meta" data-lang="fr">bientôt</span><span class="module-card__meta" data-lang="en" hidden>soon</span></div>
+        <h3 class="module-card__title"><span data-lang="fr">Orchestration : premiers concepts</span><span data-lang="en">Orchestration: first concepts</span></h3>
+        <p class="module-card__desc"><span data-lang="fr">Pods, déclaratif vs impératif, et pourquoi on a inventé Kubernetes.</span><span data-lang="en">Pods, declarative vs imperative, and why Kubernetes was invented.</span></p>
+        <ul class="module-card__tags"><li>pods</li><li>k8s</li><li>declaratif</li></ul>
+        <span class="module-card__cta"><span data-lang="fr">En préparation</span><span data-lang="en">In preparation</span></span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — cadre pédagogique fondé sur les sciences cognitives de l'apprentissage (Sweller, Mayer).</span><span data-lang="en">Site Astro — a teaching framework grounded in the cognitive science of learning (Sweller, Mayer).</span>
+    <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
+    <button class="util-btn a11y-trigger" data-a11y-trigger type="button" aria-haspopup="dialog" style="margin-left:auto;">
+      <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+      <span data-lang="fr">Préférences d'accessibilité</span><span data-lang="en">Accessibility preferences</span>
+    </button>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>

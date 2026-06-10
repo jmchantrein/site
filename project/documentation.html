@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Aide & documentation — Site Astro</title>
+<meta name="description" content="Guide d'utilisation du site : lecture, accessibilité, annotations, terminal interactif, exercices et préférences.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .doc-hero { padding-block: var(--space-7) var(--space-5); border-bottom: 1px solid var(--color-border); }
+  .doc-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); max-width: 20ch; }
+  /* Sommaire : composant partagé .toc-layout / .toc (components.css · site.js) — espacement local */
+  .toc-layout { padding-block: var(--space-6); }
+  .doc-section { scroll-margin-top: 80px; padding-block: var(--space-5); border-top: 1px solid var(--color-border); }
+  .doc-section:first-child { border-top: none; }
+  .doc-section > h2 { display: flex; align-items: center; gap: var(--space-3); }
+  .doc-section > h2 svg { width: 24px; height: 24px; color: var(--color-accent-text); flex: none; }
+  .doc-steps { counter-reset: step; list-style: none; padding: 0; max-width: var(--measure); display: grid; gap: var(--space-3); }
+  .doc-steps li { counter-increment: step; display: grid; grid-template-columns: 30px 1fr; gap: var(--space-3); align-items: start; }
+  .doc-steps li::before { content: counter(step); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--color-accent-weak); color: var(--color-accent-text); font-family: var(--font-mono); font-weight: 700; font-size: var(--text-sm); }
+  .doc-key { display: inline-flex; gap: 4px; align-items: center; vertical-align: baseline; }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+<div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="read-progress__bar" data-read-progress></div></div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html" aria-current="page"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="doc-hero">
+    <p class="kicker"><span data-lang="fr">Guide d'utilisation</span><span data-lang="en">User guide</span></p>
+    <h1><span data-lang="fr">Prendre en main le site</span><span data-lang="en">Getting started</span></h1>
+    <p class="lead"><span data-lang="fr">Ce site est conçu pour rendre la lecture confortable et l'apprentissage actif. Voici, en clair, tout ce que vous pouvez régler et faire — la lecture, l'accessibilité, vos annotations personnelles et les outils interactifs des cours.</span><span data-lang="en">This site is built for comfortable reading and active learning. Here, in plain terms, is everything you can adjust and do — reading, accessibility, your personal annotations, and the courses' interactive tools.</span></p>
+  </div>
+
+  <div class="toc-layout" data-swap>
+    <nav class="toc" aria-label="Sommaire — glisser pour le déplacer à gauche ou à droite" data-swap-grip data-grip-loose role="button" tabindex="0">
+      <ol>
+        <li><a href="#demarrer"><i data-lucide="compass" aria-hidden="true"></i><span data-lang="fr">Se repérer</span><span data-lang="en">Find your way</span></a></li>
+        <li><a href="#accessibilite"><i data-lucide="eye" aria-hidden="true"></i><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></a></li>
+        <li><a href="#apparence"><i data-lucide="settings" aria-hidden="true"></i><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></a></li>
+        <li><a href="#notes"><i data-lucide="sticky-note" aria-hidden="true"></i><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></a></li>
+        <li><a href="#cours"><i data-lucide="book-open" aria-hidden="true"></i><span data-lang="fr">Outils des cours</span><span data-lang="en">Course tools</span></a></li>
+        <li><a href="#donnees"><i data-lucide="hard-drive" aria-hidden="true"></i><span data-lang="fr">Vos données</span><span data-lang="en">Your data</span></a></li>
+      </ol>
+    </nav>
+
+    <div class="prose" data-swap-grip data-grip-strict role="button" tabindex="0" aria-label="Déplacer la colonne de contenu à gauche ou à droite">
+      <!-- SE REPÉRER -->
+      <section class="doc-section" id="demarrer">
+        <h2><i data-lucide="compass" aria-hidden="true"></i><span data-lang="fr">Se repérer</span><span data-lang="en">Find your way</span></h2>
+        <p><span data-lang="fr">La barre du haut reste toujours visible. À gauche, la navigation entre les grandes parties ; à droite, quatre outils repérables par leur icône :</span><span data-lang="en">The top bar stays visible at all times. On the left, navigation between the main areas; on the right, four tools identifiable by their icon:</span></p>
+        <ul>
+          <li><span data-lang="fr"><i data-lucide="earth" class="ico-inline"></i> <strong>Langue</strong> — bascule entre français et anglais. Tout le site suit.</span><span data-lang="en"><i data-lucide="earth" class="ico-inline"></i> <strong>Language</strong> — switch between French and English. The whole site follows.</span></li>
+          <li><span data-lang="fr"><i data-lucide="sticky-note" class="ico-inline"></i> <strong>Mes notes</strong> — vos surlignages et questions (voir plus bas).</span><span data-lang="en"><i data-lucide="sticky-note" class="ico-inline"></i> <strong>My notes</strong> — your highlights and questions (see below).</span></li>
+          <li><span data-lang="fr"><i data-lucide="settings" class="ico-inline"></i> <strong>Paramètres</strong> — thème de couleurs, largeur, effet de plongée.</span><span data-lang="en"><i data-lucide="settings" class="ico-inline"></i> <strong>Settings</strong> — colour theme, width, depth effect.</span></li>
+          <li><span data-lang="fr"><i data-lucide="eye" class="ico-inline"></i> <strong>Accessibilité</strong> — taille du texte, espacements, contraste, police.</span><span data-lang="en"><i data-lucide="eye" class="ico-inline"></i> <strong>Accessibility</strong> — text size, spacing, contrast, font.</span></li>
+        </ul>
+        <p><span data-lang="fr">Un fin trait de <strong>progression</strong> en haut indique où vous en êtes dans la page.</span><span data-lang="en">A thin <strong>progress</strong> line at the top shows how far you are through the page.</span></p>
+        <p><span data-lang="fr">Quatre aides discrètes complètent la navigation : <span class="doc-key"><kbd>Ctrl</kbd><kbd>K</kbd></span> ouvre une <strong>recherche</strong> de toutes les sections du site ; un <strong>#</strong> apparaît au survol des titres pour copier le lien direct vers une section ; au retour sur une page longue, une puce propose de <strong>reprendre la lecture</strong> où vous l'aviez laissée ; et dans les sommaires, la section en cours de lecture reste signalée. Dans les cours, les <strong>termes soulignés en pointillé</strong> montrent leur définition au survol.</span><span data-lang="en">Four quiet helpers round out navigation: <span class="doc-key"><kbd>Ctrl</kbd><kbd>K</kbd></span> opens a <strong>search</strong> across every section of the site; a <strong>#</strong> appears when hovering headings to copy a direct link; returning to a long page, a chip offers to <strong>resume reading</strong> where you left off; and tables of contents keep the current section highlighted. In courses, <strong>dotted-underlined terms</strong> show their definition on hover.</span></p>
+      </section>
+
+      <!-- ACCESSIBILITÉ -->
+      <section class="doc-section" id="accessibilite">
+        <h2><i data-lucide="eye" aria-hidden="true"></i><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></h2>
+        <p><span data-lang="fr">Ouvrez le panneau avec le bouton <strong>Accessibilité</strong> (icône œil). Tous les réglages sont <strong>conservés</strong> d'une visite à l'autre.</span><span data-lang="en">Open the panel with the <strong>Accessibility</strong> button (eye icon). All settings are <strong>remembered</strong> between visits.</span></p>
+        <ul>
+          <li><span data-lang="fr"><strong>Taille du texte</strong> — de 90 % à 160 %.</span><span data-lang="en"><strong>Text size</strong> — from 90% to 160%.</span></li>
+          <li><span data-lang="fr"><strong>Interligne</strong> et <strong>espacement</strong> des lettres et des mots, pour aérer la lecture.</span><span data-lang="en"><strong>Line height</strong> and letter/word <strong>spacing</strong>, to open up the text.</span></li>
+          <li><span data-lang="fr"><strong>Contraste élevé</strong> — renforce le texte au-delà du seuil AAA.</span><span data-lang="en"><strong>High contrast</strong> — strengthens text beyond the AAA threshold.</span></li>
+          <li><span data-lang="fr"><strong>Réduire les animations</strong> — fige le terminal, l'effet de plongée et les transitions.</span><span data-lang="en"><strong>Reduce motion</strong> — freezes the terminal, the depth effect and transitions.</span></li>
+          <li><span data-lang="fr"><strong>Police de lecture</strong> — propose Atkinson Hyperlegible ou OpenDyslexic (utile en cas de dyslexie). Jamais imposée.</span><span data-lang="en"><strong>Reading font</strong> — offers Atkinson Hyperlegible or OpenDyslexic (helpful with dyslexia). Never forced.</span></li>
+        </ul>
+        <aside class="note note--info" role="note">
+          <div class="note__icon" aria-hidden="true">i</div>
+          <div class="note__body">
+            <p class="note__label"><span data-lang="fr">Bon à savoir</span><span data-lang="en">Good to know</span></p>
+            <p><span data-lang="fr">L'information n'est jamais portée par la couleur seule : chaque état est aussi signalé par une icône ou un libellé. Le site reste utilisable en cas de daltonisme.</span><span data-lang="en">Information is never carried by colour alone: every state also has an icon or label. The site stays usable with colour blindness.</span></p>
+          </div>
+        </aside>
+      </section>
+
+      <!-- APPARENCE -->
+      <section class="doc-section" id="apparence">
+        <h2><i data-lucide="settings" aria-hidden="true"></i><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></h2>
+        <p><span data-lang="fr">Le bouton <strong>Paramètres</strong> (roue crantée) regroupe les préférences visuelles :</span><span data-lang="en">The <strong>Settings</strong> button (gear) groups the visual preferences:</span></p>
+        <ul>
+          <li><span data-lang="fr"><strong>Thème de couleurs</strong> — <strong>Abysse</strong> (sombre, par défaut) et quatre thèmes clairs : Marine, Ardoise, Forêt, Aurore. Le contraste élevé reste prioritaire.</span><span data-lang="en"><strong>Colour theme</strong> — <strong>Abyss</strong> (dark, the default) and four light themes: Marine, Slate, Forest, Dawn. High contrast still takes priority.</span></li>
+          <li><span data-lang="fr"><strong>Largeur du site</strong> — du confort d'une colonne étroite à la pleine largeur. Vous pouvez aussi glisser le bord droit de la page.</span><span data-lang="en"><strong>Site width</strong> — from a narrow comfortable column to full width. You can also drag the right edge of the page.</span></li>
+          <li><span data-lang="fr"><strong>Effet de plongée</strong> — le fond s'assombrit doucement en descendant, comme une plongée. Purement décoratif et désactivable.</span><span data-lang="en"><strong>Depth effect</strong> — the background gently darkens as you scroll, like a dive. Purely decorative and switchable off.</span></li>
+        </ul>
+      </section>
+
+      <!-- MES NOTES -->
+      <section class="doc-section" id="notes">
+        <h2><i data-lucide="sticky-note" aria-hidden="true"></i><span data-lang="fr">Mes notes : surligner & questionner</span><span data-lang="en">My notes: highlight & question</span></h2>
+        <p><span data-lang="fr">Vous pouvez annoter <strong>n'importe où</strong> sur le site. C'est l'outil clé pour préparer vos questions avant de voir l'enseignant.</span><span data-lang="en">You can annotate <strong>anywhere</strong> on the site. This is the key tool for preparing your questions before meeting the teacher.</span></p>
+        <ol class="doc-steps">
+          <li><span data-lang="fr"><strong>Sélectionnez</strong> un passage avec la souris : une petite barre apparaît.</span><span data-lang="en"><strong>Select</strong> a passage with the mouse: a small toolbar appears.</span></li>
+          <li><span data-lang="fr">Choisissez une <strong>couleur</strong> pour surligner, ou cliquez <strong>Noter</strong> pour y attacher une question.</span><span data-lang="en">Pick a <strong>colour</strong> to highlight, or click <strong>Note</strong> to attach a question.</span></li>
+          <li><span data-lang="fr">Vos surlignages et notes apparaissent en <strong>post-it</strong> dans le panneau <strong>Mes notes</strong> (à droite).</span><span data-lang="en">Your highlights and notes appear as <strong>post-its</strong> in the <strong>My notes</strong> panel (on the right).</span></li>
+          <li><span data-lang="fr">Cliquez un surlignage pour retrouver sa note ; cliquez une citation du panneau pour revenir au texte.</span><span data-lang="en">Click a highlight to find its note; click a quote in the panel to jump back to the text.</span></li>
+        </ol>
+        <p><span data-lang="fr">Indiquez votre <strong>nom ou pseudonyme</strong> en haut du panneau : il est joint à vos notes (utile lorsqu'elles seront partagées avec l'enseignant).</span><span data-lang="en">Enter your <strong>name or pseudonym</strong> at the top of the panel: it is attached to your notes (useful when they are shared with the teacher).</span></p>
+
+        <h3><span data-lang="fr">Exporter & réimporter</span><span data-lang="en">Export & re-import</span></h3>
+        <ul>
+          <li><span data-lang="fr"><strong>Exporter</strong> — copie vos notes en texte lisible (presse-papier) <em>et</em> télécharge un fichier <code>.json</code> complet.</span><span data-lang="en"><strong>Export</strong> — copies your notes as readable text (clipboard) <em>and</em> downloads a complete <code>.json</code> file.</span></li>
+          <li><span data-lang="fr"><strong>Importer</strong> — relit un fichier <code>.json</code> exporté (par vous, ou transmis). Les notes sont fusionnées.</span><span data-lang="en"><strong>Import</strong> — reads back an exported <code>.json</code> file (yours, or shared). Notes are merged.</span></li>
+        </ul>
+        <aside class="note note--warning" role="note">
+          <div class="note__icon" aria-hidden="true">!</div>
+          <div class="note__body">
+            <p class="note__label"><span data-lang="fr">Si le cours a changé</span><span data-lang="en">If the course changed</span></p>
+            <p><span data-lang="fr">À la réimportation, si un passage a été modifié ou supprimé, la note correspondante n'est pas perdue : elle reste dans la liste, marquée « introuvable », et un message récapitule combien de notes ont été replacées.</span><span data-lang="en">On re-import, if a passage was changed or removed, its note is not lost: it stays in the list, marked “not found”, and a message summarises how many notes were placed back.</span></p>
+          </div>
+        </aside>
+      </section>
+
+      <!-- OUTILS DES COURS -->
+      <section class="doc-section" id="cours">
+        <h2><i data-lucide="book-open" aria-hidden="true"></i><span data-lang="fr">Les outils des cours</span><span data-lang="en">Course tools</span></h2>
+        <ul>
+          <li><span data-lang="fr"><strong>Terminal interactif</strong> — cliquez une commande dans le texte pour l'exécuter (en simulation), ou <strong>tapez la vôtre</strong> dans le terminal (essayez <code>help</code>). Les flèches <span class="doc-key"><kbd>↑</kbd><kbd>↓</kbd></span> rappellent l'historique. Une bascule <i data-lucide="sun" class="ico-inline"></i>/<i data-lucide="moon" class="ico-inline"></i> change son thème.</span><span data-lang="en"><strong>Interactive terminal</strong> — click a command in the text to run it (simulated), or <strong>type your own</strong> in the terminal (try <code>help</code>). The <span class="doc-key"><kbd>↑</kbd><kbd>↓</kbd></span> keys recall history. A <i data-lucide="sun" class="ico-inline"></i>/<i data-lucide="moon" class="ico-inline"></i> toggle switches its theme.</span></li>
+          <li><span data-lang="fr"><strong>Exercices</strong> — rédigez votre réponse dans le champ prévu ; la solution ne se révèle qu'ensuite (c'est volontaire : essayer d'abord aide à mémoriser).</span><span data-lang="en"><strong>Exercises</strong> — write your answer in the field; the solution only reveals afterwards (on purpose: trying first aids memory).</span></li>
+          <li><span data-lang="fr"><strong>Diaporamas</strong> — avancez avec les flèches <span class="doc-key"><kbd>←</kbd><kbd>→</kbd></span> ou les points. Boutons « vue étendue » et « plein écran » disponibles.</span><span data-lang="en"><strong>Slideshows</strong> — move with <span class="doc-key"><kbd>←</kbd><kbd>→</kbd></span> or the dots. “Expanded view” and “fullscreen” buttons available.</span></li>
+          <li><span data-lang="fr"><strong>Déplacer les colonnes</strong> — saisissez le bord d'une colonne (le curseur devient une main) pour intervertir la lecture et le terminal. Le séparateur central ajuste leur largeur.</span><span data-lang="en"><strong>Move the columns</strong> — grab a column's edge (the cursor becomes a hand) to swap the reading area and the terminal. The middle splitter adjusts their width.</span></li>
+        </ul>
+      </section>
+
+      <!-- VOS DONNÉES -->
+      <section class="doc-section" id="donnees">
+        <h2><i data-lucide="hard-drive" aria-hidden="true"></i><span data-lang="fr">Vos données &amp; votre vie privée</span><span data-lang="en">Your data &amp; privacy</span></h2>
+        <p><span data-lang="fr">Tout ce que vous réglez ou notez est enregistré <strong>localement dans votre navigateur</strong> — rien n'est envoyé sur Internet. En pratique :</span><span data-lang="en">Everything you set or note is stored <strong>locally in your browser</strong> — nothing is sent online. In practice:</span></p>
+        <ul>
+          <li><span data-lang="fr">Vos préférences et vos notes sont <strong>propres à cet appareil et ce navigateur</strong>.</span><span data-lang="en">Your preferences and notes are <strong>specific to this device and browser</strong>.</span></li>
+          <li><span data-lang="fr">Vider le cache du navigateur les efface. Pour les conserver ou les transférer, utilisez <strong>Exporter</strong>.</span><span data-lang="en">Clearing the browser cache erases them. To keep or transfer them, use <strong>Export</strong>.</span></li>
+          <li><span data-lang="fr">Le bouton <strong>Tout effacer</strong> du panneau supprime vos notes de la page courante.</span><span data-lang="en">The panel's <strong>Clear all</strong> button removes your notes for the current page.</span></li>
+        </ul>
+        <p><span data-lang="fr">Essayez dès maintenant : sélectionnez cette phrase, surlignez-la, et ouvrez « Mes notes ».</span><span data-lang="en">Try it now: select this sentence, highlight it, and open “My notes”.</span></p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — cadre pédagogique fondé sur les sciences cognitives de l'apprentissage.</span><span data-lang="en">Site Astro — a teaching framework grounded in the cognitive science of learning.</span>
+    <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+</body>
+</html>

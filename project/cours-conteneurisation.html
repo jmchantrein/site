@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="abysse">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var p=JSON.parse(localStorage.getItem("site-astro-prefs-v1")||"{}");var r=document.documentElement;if(p.theme)r.setAttribute("data-theme",p.theme);if(p.contrast)r.setAttribute("data-contrast","high");if(p.lang)r.setAttribute("lang",p.lang);if(p.readfont&&p.readfont!=="default")r.setAttribute("data-readfont",p.readfont);if(p.motion==="off")r.setAttribute("data-motion","off");if(p.width)r.style.setProperty("--page-max","min("+p.width+"rem, 98vw)");if(p.scale)r.style.fontSize=(p.scale*100)+"%";}catch(e){}})();</script>
+<title>Fondations des conteneurs — Site Astro</title>
+<meta name="description" content="Module 01 — Ce qu'est vraiment un conteneur : namespaces, cgroups et isolation, avec atelier terminal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/themes.css">
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/annotate.css">
+<link rel="stylesheet" href="styles/a11y-panel.css">
+<style>
+  .course-hero { padding-block: var(--space-6) 0; border-bottom: 1px solid var(--color-border); }
+  .course-hero h1 { font-size: clamp(1.9rem, 4vw, var(--text-2xl)); max-width: 24ch; margin-top: var(--space-3); }
+  .course-hero .lead { margin-top: var(--space-4); margin-bottom: var(--space-6); }
+  .kbd-cmp { display: inline-flex; gap: var(--space-2); align-items: center; }
+  /* widget de la trappe d'évasion (hors cadre) */
+  .bench { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+  .bench__row { display: grid; grid-template-columns: 9rem 1fr 5rem; align-items: center; gap: var(--space-3); }
+  .bench__track { height: 26px; background: var(--color-surface-sunken); border-radius: 999px; overflow: hidden; border: 1px solid var(--color-border); }
+  .bench__fill { height: 100%; width: 0; border-radius: 999px; transition: width 900ms var(--ease); }
+  .bench__fill.vm { background: #b1261f; }
+  .bench__fill.ct { background: #15692f; }
+  .bench__val { font-family: var(--font-mono); font-size: var(--text-sm); text-align: right; }
+  .bench button { cursor: pointer; justify-self: start; border: 1px solid var(--color-border-strong); background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-weight: 600; }
+  .bench button:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+</style>
+</head>
+<body data-depth-capable data-depth-scroll>
+<a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
+<div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="read-progress__bar" data-read-progress></div></div>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true">$_</span>
+      <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en" hidden>teaching framework</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
+      <a href="cours.html"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></a>
+      <a href="miscelanae.html"><span data-lang="fr">Miscelánea</span><span data-lang="en">Miscellanea</span></a>
+      <a href="documentation.html"><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+      <a href="design-system.html"><span data-lang="fr">Système</span><span data-lang="en">System</span></a>
+    </nav>
+    <div class="header-utils">
+      <button class="util-btn lang-toggle" data-lang-toggle type="button">
+        <i data-lucide="earth" class="util-btn__icon" aria-hidden="true"></i>
+        <span data-lang-cur>FR</span>
+      </button>
+      <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="sticky-note" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+        <span class="annot-count" data-annot-count data-n="0">0</span>
+      </button>
+      <button class="util-btn util-btn--icon settings-trigger" data-settings-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="settings" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></span>
+      </button>
+      <button class="util-btn util-btn--icon a11y-trigger" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+        <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+        <span class="util-btn__label"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="course-hero">
+    <div class="course-meta">
+      <span class="crumb"><a href="index.html">~</a> / <span data-lang="fr">module 01</span><span data-lang="en">module 01</span></span>
+      <span class="pill"><span data-lang="fr">Fondations</span><span data-lang="en">Foundations</span></span>
+      <span class="pill">≈ 12 min</span>
+    </div>
+    <h1><span data-lang="fr">Ce qu'est <em>vraiment</em> un conteneur</span><span data-lang="en">What a container <em>really</em> is</span></h1>
+    <p class="lead"><span data-lang="fr">Un conteneur n'est ni une machine virtuelle, ni de la magie : c'est un processus Linux ordinaire, à qui le noyau ment sur ce qu'il peut voir. Deux mécanismes suffisent à comprendre l'essentiel.</span><span data-lang="en">A container is neither a virtual machine nor magic: it is an ordinary Linux process the kernel lies to about what it can see. Two mechanisms explain almost everything.</span></p>
+  </div>
+
+  <div class="course">
+    <!-- COLONNE DE LECTURE ≤ 66ch -->
+    <article class="course__reading prose">
+      <div class="pane-grip">
+        <span class="pane-grip__edge t" data-pane-grip role="button" tabindex="0" aria-label="Déplacer la colonne de lecture à gauche ou à droite"><span class="pane-grip__tip"><span data-lang="fr">Glisser la bordure pour déplacer la colonne</span><span data-lang="en">Drag the border to move the column</span></span></span>
+        <span class="pane-grip__edge r" data-pane-grip aria-hidden="true"></span>
+        <span class="pane-grip__edge b" data-pane-grip aria-hidden="true"></span>
+        <span class="pane-grip__edge l" data-pane-grip aria-hidden="true"></span>
+      </div>
+
+      <h2><span data-lang="fr">1. Le partage du noyau</span><span data-lang="en">1. Sharing the kernel</span></h2>
+      <p><span data-lang="fr">Une machine virtuelle embarque un noyau complet par-dessus un hyperviseur. Un conteneur, lui, <strong>partage le noyau de l'hôte</strong> : il n'y a qu'un seul noyau pour tous les conteneurs. C'est ce qui rend le démarrage quasi instantané et l'empreinte mémoire minuscule.</span><span data-lang="en">A virtual machine ships a full kernel on top of a hypervisor. A container instead <strong>shares the host kernel</strong>: there is a single kernel for every container. That is what makes startup near-instant and the memory footprint tiny.</span></p>
+
+      <aside class="note note--info" role="note">
+        <div class="note__icon" aria-hidden="true">i</div>
+        <div class="note__body">
+          <p class="note__label"><span data-lang="fr">Prérequis</span><span data-lang="en">Prerequisites</span></p>
+          <p><span data-lang="fr">Les exemples utilisent <code>podman</code> en mode <em>rootless</em>. Tout fonctionne à l'identique avec <code>docker</code> : remplacez simplement le nom de la commande.</span><span data-lang="en">Examples use <code>podman</code> in <em>rootless</em> mode. Everything works the same with <code>docker</code>: just swap the command name.</span></p>
+        </div>
+      </aside>
+
+      <h2><span data-lang="fr">2. Les <code>namespaces</code> : mentir sur ce qu'on voit</span><span data-lang="en">2. <code>namespaces</code>: lying about what is visible</span></h2>
+      <p><span data-lang="fr">Un <dfn data-gloss="namespace"><em>namespace</em></dfn> (espace de noms) cloisonne une ressource du noyau. Le namespace <strong>PID</strong> donne au conteneur sa propre numérotation de processus : à l'intérieur, votre application est le processus n° 1, et elle ne voit aucun autre processus de l'hôte.</span><span data-lang="en">A <dfn data-gloss="namespace"><em>namespace</em></dfn> partitions a kernel resource. The <strong>PID</strong> namespace gives the container its own process numbering: inside, your application is process #1 and sees no other host process.</span></p>
+      <p><span data-lang="fr">Vérifions-le. Cliquez la commande pour l'exécuter dans le terminal →</span><span data-lang="en">Let's verify. Click the command to run it in the terminal →</span></p>
+
+      <button class="cmd" data-cmd="podman run --rm alpine ps -ef" data-term="#term-1">
+        <span class="cmd__prompt" aria-hidden="true">$</span><code>podman run --rm alpine ps -ef</code>
+        <span class="cmd__hint"><span data-lang="fr">exécuter</span><span data-lang="en">run</span></span>
+      </button>
+      <template class="cmd-out">
+        <div class="term-line term-line--out">PID   USER     TIME  COMMAND</div>
+        <div class="term-line term-line--out">    1 root      0:00 ps -ef</div>
+        <div class="term-line term-line--ok"><span class="tag">note</span><span data-lang="fr">un seul processus, PID 1 — l'hôte est invisible.</span><span data-lang="en">a single process, PID 1 — the host is invisible.</span></div>
+      </template>
+
+      <p><span data-lang="fr">Un seul processus, numéroté 1. Le conteneur ne perçoit pas les centaines de processus de la machine hôte : le namespace PID les a masqués.</span><span data-lang="en">A single process, numbered 1. The container cannot perceive the host's hundreds of processes: the PID namespace hid them.</span></p>
+
+      <h2><span data-lang="fr">3. Les <code>cgroups</code> : limiter ce qu'on consomme</span><span data-lang="en">3. <code>cgroups</code>: limiting what is consumed</span></h2>
+      <p><span data-lang="fr">Là où les namespaces gèrent la <em>visibilité</em>, les <dfn data-gloss="cgroups"><strong>control groups</strong></dfn> (cgroups) gèrent les <em>quantités</em> : CPU, mémoire, E/S. Le partage CPU est proportionnel à un poids. Pour un conteneur <span class="nowrap">\(i\)</span> de poids <span class="nowrap">\(w_i\)</span>, sa part garantie de CPU sous contention vaut :</span><span data-lang="en">Where namespaces govern <em>visibility</em>, <dfn data-gloss="cgroups"><strong>control groups</strong></dfn> (cgroups) govern <em>amounts</em>: CPU, memory, I/O. CPU sharing is proportional to a weight. For a container <span class="nowrap">\(i\)</span> with weight <span class="nowrap">\(w_i\)</span>, its guaranteed CPU share under contention is:</span></p>
+
+      <p style="text-align:center; margin-block: var(--space-4);">$$\text{part}_i \;=\; \frac{w_i}{\displaystyle\sum_{j} w_j}$$</p>
+
+      <p><span data-lang="fr">Avec deux conteneurs de poids 100 et 300, le second reçoit \(\frac{300}{400}=75\%\) du CPU <em>uniquement</em> lorsque la machine est saturée ; sinon, chacun prend ce qui est libre.</span><span data-lang="en">With two containers of weight 100 and 300, the second gets \(\frac{300}{400}=75\%\) of the CPU <em>only</em> when the machine is saturated; otherwise each takes whatever is free.</span></p>
+
+      <button class="cmd" data-cmd="podman run --rm -m 64m alpine free -m" data-term="#term-1">
+        <span class="cmd__prompt" aria-hidden="true">$</span><code>podman run --rm -m 64m alpine free -m</code>
+        <span class="cmd__hint"><span data-lang="fr">exécuter</span><span data-lang="en">run</span></span>
+      </button>
+      <template class="cmd-out">
+        <div class="term-line term-line--out">              total    used    free</div>
+        <div class="term-line term-line--out">Mem:             64       3      61</div>
+        <div class="term-line term-line--warn"><span class="tag"><span data-lang="fr">limite</span><span data-lang="en">limit</span></span><span data-lang="fr">la mémoire est plafonnée à 64 Mo par le cgroup.</span><span data-lang="en">memory is capped at 64 MB by the cgroup.</span></div>
+      </template>
+
+      <aside class="note note--warning" role="note">
+        <div class="note__icon" aria-hidden="true">!</div>
+        <div class="note__body">
+          <p class="note__label"><span data-lang="fr">Attention</span><span data-lang="en">Caution</span></p>
+          <p><span data-lang="fr">L'option <code>--privileged</code> et le drapeau <code>--pid=host</code> désactivent l'isolation. Pratiques pour le débogage, dangereux en production : un processus du conteneur peut alors agir sur tout l'hôte.</span><span data-lang="en">The <code>--privileged</code> option and the <code>--pid=host</code> flag disable isolation. Handy for debugging, dangerous in production: a container process can then act on the entire host.</span></p>
+        </div>
+      </aside>
+
+      <h2><span data-lang="fr">Récapitulatif</span><span data-lang="en">Recap</span></h2>
+      <ul>
+        <li><span data-lang="fr"><strong>Namespaces</strong> → ce que le conteneur <em>voit</em> (processus, réseau, montages…).</span><span data-lang="en"><strong>Namespaces</strong> → what the container <em>sees</em> (processes, network, mounts…).</span></li>
+        <li><span data-lang="fr"><strong>cgroups</strong> → ce que le conteneur <em>consomme</em> (CPU, mémoire, E/S).</span><span data-lang="en"><strong>cgroups</strong> → what the container <em>consumes</em> (CPU, memory, I/O).</span></li>
+        <li><span data-lang="fr"><strong>Noyau partagé</strong> → pourquoi c'est léger et rapide.</span><span data-lang="en"><strong>Shared kernel</strong> → why it is light and fast.</span></li>
+      </ul>
+
+      <!-- ÎLOT DIAPORAMA : slides classiques au sein du cours -->
+      <section class="slides" data-slides tabindex="0" aria-roledescription="diaporama" aria-label="Diaporama : cycle de vie d'un conteneur">
+        <div class="slides__head">
+          <span class="slides__tag"><i data-lucide="layers" aria-hidden="true"></i> <span data-lang="fr">Diaporama — cycle de vie</span><span data-lang="en">Slideshow — lifecycle</span></span>
+          <span class="slides__counter" data-slides-counter aria-hidden="true">1 / 3</span>
+        </div>
+        <div class="slides__viewport">
+          <div class="slides__track" data-slides-track>
+            <div class="slide">
+              <h3>1. <code>create</code></h3>
+              <p><span data-lang="fr">Le conteneur est <strong>préparé</strong> à partir d'une image : son système de fichiers en couches est monté, mais aucun processus ne tourne encore.</span><span data-lang="en">The container is <strong>prepared</strong> from an image: its layered filesystem is mounted, but no process runs yet.</span></p>
+            </div>
+            <div class="slide">
+              <h3>2. <code>start</code> / <code>run</code></h3>
+              <p><span data-lang="fr">Le noyau crée les <em>namespaces</em> et <em>cgroups</em>, puis lance le processus n° 1 du conteneur. C'est l'état <strong>actif</strong>.</span><span data-lang="en">The kernel creates the <em>namespaces</em> and <em>cgroups</em>, then launches the container's process #1. This is the <strong>running</strong> state.</span></p>
+            </div>
+            <div class="slide">
+              <h3>3. <code>stop</code> &amp; <code>rm</code></h3>
+              <p><span data-lang="fr">À l'arrêt, le processus 1 reçoit <code>SIGTERM</code>. La couche écriture subsiste jusqu'au <code>rm</code>, qui <strong>détruit</strong> le conteneur (mais pas l'image).</span><span data-lang="en">On stop, process 1 receives <code>SIGTERM</code>. The writable layer persists until <code>rm</code>, which <strong>destroys</strong> the container (but not the image).</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="slides__foot">
+          <button class="slides__btn" data-slides-prev type="button" aria-label="Diapositive précédente"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+          <span class="slides__dots" data-slides-dots role="tablist" aria-label="Diapositives"></span>
+          <button class="slides__btn" data-slides-next type="button" aria-label="Diapositive suivante"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        </div>
+      </section>
+
+      <!-- EXERCICE : énoncé → solution repliable (testing effect) -->
+      <section class="exercise" data-level="2" aria-label="Exercice">
+        <header class="exercise__head">
+          <span class="exercise__tag"><span data-lang="fr">Exercice</span><span data-lang="en">Exercise</span></span>
+          <span class="exercise__level"><span data-lang="fr">Niveau 2 · intermédiaire</span><span data-lang="en">Level 2 · intermediate</span></span>
+        </header>
+        <div class="exercise__prompt prose">
+          <p><span data-lang="fr">Vous lancez deux conteneurs de calcul, de poids CPU respectifs 256 et 768, sur une machine à un seul cœur entièrement saturée. Quelle fraction du CPU le premier conteneur reçoit-il ? Exprimez le calcul.</span><span data-lang="en">You start two compute containers with CPU weights 256 and 768 on a single fully-saturated core. What fraction of the CPU does the first container receive? Show the computation.</span></p>
+        </div>
+        <div class="exercise__answer" data-exercise-answer>
+          <label class="exercise__answer-label" for="ex1-ans">
+            <span data-lang="fr">Votre réponse</span><span data-lang="en">Your answer</span>
+            <span class="req"><span data-lang="fr">requise</span><span data-lang="en">required</span></span>
+          </label>
+          <textarea id="ex1-ans" class="exercise__answer-field" rows="2" placeholder="Posez votre raisonnement ici avant d'afficher la solution…"></textarea>
+          <p class="exercise__answer-hint">
+            <span data-lang="fr">Rédigez une réponse pour débloquer la solution (effet de test).</span><span data-lang="en">Write an answer to unlock the solution (testing effect).</span>
+          </p>
+        </div>
+        <details class="exercise__solution">
+          <summary>
+            <span class="lock" aria-hidden="true"><i data-lucide="lock"></i></span>
+            <span class="label-show"><span data-lang="fr">Afficher la solution</span><span data-lang="en">Show the solution</span></span>
+            <span class="label-hide"><span data-lang="fr">Masquer la solution</span><span data-lang="en">Hide the solution</span></span>
+            <span class="label-locked"><span data-lang="fr">Renseignez votre réponse pour débloquer</span><span data-lang="en">Fill in your answer to unlock</span></span>
+          </summary>
+          <div class="exercise__solution-body prose">
+            <p><span data-lang="fr">On applique la formule de partage proportionnel :</span><span data-lang="en">Apply the proportional-share formula:</span></p>
+            <p style="text-align:center;">$$\text{part}_1 = \frac{256}{256+768} = \frac{256}{1024} = \frac{1}{4} = 25\%$$</p>
+            <p><span data-lang="fr">Le premier conteneur reçoit <strong>25 %</strong> du cœur, le second <strong>75 %</strong> — mais seulement sous contention. À vide, chacun peut atteindre 100 %.</span><span data-lang="en">The first container gets <strong>25%</strong> of the core, the second <strong>75%</strong> — but only under contention. When idle, each can reach 100%.</span></p>
+          </div>
+        </details>
+      </section>
+
+      <!-- TRAPPE D'ÉVASION : le cadre se désactive, contenu arbitraire (JS custom) -->
+      <section class="escape">
+        <span class="escape__tab" aria-hidden="true">⤣ <span data-lang="fr">Hors cadre — pleine liberté</span><span data-lang="en">Off-frame — full freedom</span></span>
+        <div class="escape__body">
+          <h3 style="margin-top:0;"><span data-lang="fr">Démarrage : VM contre conteneur</span><span data-lang="en">Boot time: VM vs container</span></h3>
+          <p style="color:var(--color-text-muted); max-width:60ch;"><span data-lang="fr">Visualisation interactive libre, hors du gabarit pédagogique standard.</span><span data-lang="en">A free interactive visualization, outside the standard teaching template.</span></p>
+          <div class="bench" id="bench">
+            <div class="bench__row">
+              <span><span data-lang="fr">Machine virtuelle</span><span data-lang="en">Virtual machine</span></span>
+              <span class="bench__track"><span class="bench__fill vm" data-target="100"></span></span>
+              <span class="bench__val" data-for="vm">0 s</span>
+            </div>
+            <div class="bench__row">
+              <span><span data-lang="fr">Conteneur</span><span data-lang="en">Container</span></span>
+              <span class="bench__track"><span class="bench__fill ct" data-target="4"></span></span>
+              <span class="bench__val" data-for="ct">0 s</span>
+            </div>
+          </div>
+          <button id="bench-go" type="button"><span data-lang="fr">Mesurer le démarrage</span><span data-lang="en">Measure boot</span></button>
+        </div>
+      </section>
+
+    </article>
+
+    <div class="course__resizer" data-term-resizer role="separator" aria-orientation="vertical" tabindex="0" aria-label="Redimensionner la colonne de lecture et le terminal (flèches gauche/droite)">
+      <span class="knob rz-knob" aria-hidden="true"><i></i><i></i></span>
+    </div>
+
+    <!-- PANNEAU TERMINAL (droite par défaut ; déplaçable à gauche) -->
+    <aside class="course__aside" aria-label="Atelier terminal">
+      <div class="terminal" id="term-1" data-terminal>
+        <div class="pane-grip">
+          <span class="pane-grip__edge t" data-pane-grip aria-hidden="true"></span>
+          <span class="pane-grip__edge r" data-pane-grip aria-hidden="true"></span>
+          <span class="pane-grip__edge b" data-pane-grip aria-hidden="true"></span>
+          <span class="pane-grip__edge l" data-pane-grip aria-hidden="true"></span>
+        </div>
+        <div class="terminal__bar" data-pane-grip role="button" tabindex="0" aria-label="Déplacer le terminal à gauche ou à droite">
+          <span class="terminal__glyph" aria-hidden="true">❯_</span>
+          <span class="terminal__title">bash — atelier-conteneurs</span>
+          <span class="terminal__actions">
+            <button class="term-icon-btn" data-term-theme-btn type="button" aria-pressed="false">
+              <span class="to-light" aria-hidden="true"><i data-lucide="sun"></i></span>
+              <span class="to-dark" aria-hidden="true"><i data-lucide="moon"></i></span>
+              <span class="term-tip"><span class="to-light"><span data-lang="fr">Mode clair</span><span data-lang="en">Light mode</span></span><span class="to-dark"><span data-lang="fr">Mode sombre</span><span data-lang="en">Dark mode</span></span></span>
+            </button>
+            <button class="term-icon-btn" data-term-replay type="button" aria-label="Réinitialiser le terminal">
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+              <span class="term-tip"><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></span>
+            </button>
+          </span>
+        </div>
+        <div class="terminal__screen" role="log" aria-live="polite" aria-label="Sortie du terminal"></div>
+        <template class="term-initial">
+          <div class="term-line term-line--out"><span data-lang="fr"># atelier conteneurs — tapez « help » pour la liste des commandes</span><span data-lang="en"># containers workshop — type "help" for the command list</span></div>
+        </template>
+        <form class="terminal__input" data-term-input>
+          <span class="p" aria-hidden="true">$</span>
+          <input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Saisir une commande, puis Entrée. Tapez help pour la liste." placeholder="help · ls · podman ps">
+        </form>
+        <div class="terminal__hint">
+          <span aria-hidden="true">▶</span>
+          <span data-lang="fr">Démo simulée — tapez une commande ou cliquez-en une.</span><span data-lang="en">Simulated demo — type a command or click one.</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <nav class="course-nav" aria-label="Navigation du cours" style="display:flex; justify-content:space-between; gap:var(--space-4); margin-top:var(--space-7); padding-top:var(--space-5); border-top:1px solid var(--color-border);">
+    <a class="btn btn--ghost" href="index.html" style="text-decoration:none; border:1px solid var(--color-border-strong); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;">← <span data-lang="fr">Tous les modules</span><span data-lang="en">All modules</span></a>
+    <a class="btn btn--primary" href="cours-masquage-ip.html" style="text-decoration:none; background:var(--color-accent-text); color:var(--color-on-accent); border-radius:var(--radius-md); padding:var(--space-3) var(--space-5); font-weight:600;"><span data-lang="fr">Cours suivant : Masquage d'adresse IP</span><span data-lang="en">Next course: IP address masking</span> →</a>
+  </nav>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Cloud Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+    <span data-lang="fr">Site Astro — cadre pédagogique fondé sur les sciences cognitives de l'apprentissage.</span><span data-lang="en">Site Astro — a teaching framework grounded in the cognitive science of learning.</span>
+    <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
+    <button class="util-btn a11y-trigger" data-a11y-trigger type="button" aria-haspopup="dialog" style="margin-left:auto;">
+      <i data-lucide="eye" class="util-btn__icon" aria-hidden="true"></i>
+      <span data-lang="fr">Préférences d'accessibilité</span><span data-lang="en">Accessibility preferences</span>
+    </button>
+  </div>
+</footer>
+
+<div id="tweaks-root"></div>
+
+<script>
+/* Widget de la trappe d'évasion — code arbitraire, hors cadre pédagogique */
+(function () {
+  var go = document.getElementById("bench-go");
+  if (!go) return;
+  go.addEventListener("click", function () {
+    var reduced = document.documentElement.getAttribute("data-motion") === "off";
+    document.querySelectorAll("#bench .bench__fill").forEach(function (f) {
+      var target = parseFloat(f.getAttribute("data-target"));
+      var label = document.querySelector('#bench [data-for="' + (f.classList.contains("vm") ? "vm" : "ct") + '"]');
+      var secs = (target / 100 * 30).toFixed(1); // 100% ≈ 30 s pour la VM
+      f.style.width = target + "%";
+      if (reduced) { label.textContent = secs + " s"; return; }
+      var start = null, dur = 900;
+      function tick(ts) {
+        if (!start) start = ts;
+        var p = Math.min(1, (ts - start) / dur);
+        label.textContent = (secs * p).toFixed(1) + " s";
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="scripts/site-data.js"></script>
+<script src="scripts/site.js"></script>
+<script src="scripts/annotate.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="scripts/tweaks-panel.jsx"></script>
+<script type="text/babel" src="scripts/tweaks-app.jsx"></script>
+</body>
+</html>
