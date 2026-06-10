@@ -10,6 +10,9 @@ import Slide from "./Slide.astro";
 import Escape from "./Escape.astro";
 import IpSim from "./IpSim.astro";
 import BootBench from "./BootBench.astro";
+import ArchiStack from "./ArchiStack.astro";
+import LayerStack from "./LayerStack.astro";
+import BuildStack from "./BuildStack.astro";
 
 export const mdxComponents = {
   Note,
@@ -21,4 +24,7 @@ export const mdxComponents = {
   Escape,
   IpSim,
   BootBench,
+  ArchiStack,
+  LayerStack,
+  BuildStack,
 };

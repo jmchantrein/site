@@ -1,0 +1,32 @@
+# Image de départ
+FROM debian:testing-slim
+
+# Variables d'environnement
+ENV VERSION=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Metadonnées de l'image
+LABEL maintainer="Jean-Mathieu Chantrein" \
+    maintainer_email="jean-mathieu.chantrein@univ-angers.fr" \
+    version="${VERSION}"
+
+# Création d'un utilisateur lambda
+RUN useradd lambda --create-home --shell /bin/bash && \
+    echo "lambda:password" | chpasswd 
+
+# Installation des packages, suppression du cache apt
+RUN apt update && \
+    apt install -yq openssh-server && \
+    rm -rf /varlib/apt/lists/* && \
+    mkdir /var/run/sshd
+
+# setuid sur le démon ssh
+RUN chmod u+s /usr/sbin/sshd && \
+	echo "Une modification de cette instruction"
+
+# root => lambda
+USER lambda
+
+# Commande par défaut au lancement du conteneur
+CMD ["/usr/sbin/sshd", "-D"]
+

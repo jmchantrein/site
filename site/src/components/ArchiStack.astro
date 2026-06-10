@@ -1,0 +1,79 @@
+---
+/**
+ * ARCHITECTURE EN PILE — schéma statique « machine physique / OS / charges ».
+ * Deux variantes : modèle VM/hyperviseur et modèle conteneur/OS.
+ * Remplace les figures bitmap du cours d'origine (accessible, thémable).
+ *
+ * Usage MDX :
+ *   <ArchiStack kind="vm" />
+ *   <ArchiStack kind="conteneur" />
+ */
+interface Props {
+  kind: "vm" | "conteneur";
+}
+const { kind } = Astro.props;
+const isVm = kind === "vm";
+const label = isVm
+  ? "Architecture du modèle VM / hyperviseur : trois machines virtuelles, chacune avec son OS invité et ses applications, au-dessus de l'hyperviseur et de la machine physique."
+  : "Architecture du modèle conteneur / OS : trois conteneurs, chacun avec ses seules applications, au-dessus du noyau partagé de l'hôte et de la machine physique.";
+---
+<figure class="archi" role="img" aria-label={label}>
+  <div class="archi__guests">
+    {[1, 2, 3].map(() => (
+      <div class="archi__guest">
+        <span class="archi__guest-name">{isVm ? "VM" : "Conteneur"}</span>
+        <span class="archi__box archi__box--apps">Apps</span>
+        {isVm && <span class="archi__box archi__box--os">OS invité</span>}
+      </div>
+    ))}
+  </div>
+  <div class="archi__box archi__box--host">{isVm ? "Hyperviseur / OS" : "OS hôte (noyau partagé)"}</div>
+  <div class="archi__box archi__box--hw">Machine physique</div>
+</figure>
+
+<style>
+  .archi {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    max-width: 34rem;
+    font-size: var(--text-sm);
+  }
+  .archi__guests {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+  }
+  .archi__guest {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-weak);
+  }
+  .archi__guest-name {
+    font-weight: 700;
+    color: var(--color-text-strong);
+  }
+  .archi__box {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    background: var(--color-surface);
+  }
+  .archi__box--apps { background: var(--color-info-weak); }
+  .archi__box--os { background: var(--color-warning-weak); }
+  .archi__box--host {
+    background: var(--color-warning-weak);
+    border-color: var(--color-border-strong);
+    font-weight: 600;
+  }
+  .archi__box--hw {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-strong);
+    font-weight: 600;
+  }
+</style>

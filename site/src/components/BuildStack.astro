@@ -1,0 +1,90 @@
+---
+/**
+ * CONSTRUCTION D'IMAGE — schéma « docker build » pas à pas (constructeur
+ * classique) : à chaque instruction, un conteneur temporaire est exécuté
+ * (run) depuis l'image du dessus de pile, puis committé en nouvelle image
+ * intermédiaire et supprimé. La pile d'images grandit instruction par
+ * instruction.
+ *
+ * Usage MDX (dans un <Slides>) :
+ *   <BuildStack images={["f2020c7a5565", "e3ef9a7b6a23"]} container="358b9c6ec81e" />
+ *   <BuildStack images={[…]} final  />   — état final, plus de conteneur
+ */
+interface Props {
+  /** Identifiants des images intermédiaires, de la plus ancienne (bas) à la plus récente (haut). */
+  images: string[];
+  /** Identifiant du conteneur temporaire qui a produit l'image du dessus. */
+  container?: string;
+  /** État final : met en avant la top level image. */
+  final?: boolean;
+}
+const { images, container, final = false } = Astro.props;
+const topDown = [...images].reverse();
+const step = images.length;
+const label = final
+  ? `Pile finale de ${step} images intermédiaires ; l'image du dessus est la top level image.`
+  : `Étape ${step} : le conteneur temporaire ${container ?? ""} est exécuté depuis l'image précédente, puis committé en image ${topDown[0]} et supprimé.`;
+---
+<figure class="bstack" role="img" aria-label={label}>
+  <div class="bstack__col">
+    {topDown.map((id, i) => (
+      <span class:list={["bstack__img", i === 0 && "bstack__img--top", i === 0 && final && "bstack__img--final"]}>
+        {id}
+        {i === 0 && final && <em class="bstack__tag">top level image</em>}
+      </span>
+    ))}
+  </div>
+  {container && (
+    <div class="bstack__side">
+      <span class="bstack__arrow">run ⟶</span>
+      <span class="bstack__container">{container}</span>
+      <span class="bstack__arrow">⟵ commit, puis suppression</span>
+    </div>
+  )}
+</figure>
+
+<style>
+  .bstack {
+    display: grid;
+    grid-template-columns: minmax(11rem, 16rem) auto;
+    align-items: start;
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
+    font-size: var(--text-sm);
+  }
+  .bstack__col { display: grid; gap: var(--space-1); }
+  .bstack__img {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-info-weak);
+    text-align: center;
+    font-family: var(--font-mono);
+  }
+  .bstack__img--top { border-color: var(--color-accent); }
+  .bstack__img--final { background: var(--color-success-weak); border-color: var(--color-success); }
+  .bstack__tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+  .bstack__side {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: start;
+    padding-top: var(--space-2);
+  }
+  .bstack__container {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border: 1px dashed var(--color-warning);
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-weak);
+    font-family: var(--font-mono);
+  }
+  .bstack__arrow { color: var(--color-text-muted); font-weight: 600; }
+</style>
