@@ -38,6 +38,24 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <Base title={title} description={description} progress locale={locale} altUrl={altUrl}>
   <main id="main" class="wrap">
+    {/* Le héro est un bandeau pleine largeur AU-DESSUS du sommaire et du
+        contenu : son bord gauche est celui de l'enveloppe, insensible aux
+        redimensionnements des colonnes en dessous. */}
+    <div class="course-hero">
+      <div class="course-meta">
+        <span class="crumb"><a href={`${base}/`}>~</a> / <a href={crumb.href}>{crumb.label}</a></span>
+        {badges.map((b) => <span class="pill">{b}</span>)}
+      </div>
+      {topics.length > 0 && (
+        <ul class="article-tags" aria-label="Thématiques">
+          {topics.length > 1 && <li class="multi">↔ {topics.length} thématiques</li>}
+          {topics.map((t) => <li>{t}</li>)}
+        </ul>
+      )}
+      <h1>{title}</h1>
+      {lead && <p class="lead">{lead}</p>}
+    </div>
+
     <div class:list={[toc.length > 1 && "toc-layout"]} data-swap={toc.length > 1 ? "" : undefined}>
       {toc.length > 1 && (
         <nav
@@ -66,22 +84,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         </nav>
       )}
       <div class="toc-layout__body">
-        {/* Le héro vit DANS la colonne de contenu : il reste aligné sur elle,
-            quels que soient le sommaire, le terminal et leurs largeurs. */}
-        <div class:list={["course-hero", !terminal && "article"]}>
-          <div class="course-meta">
-            <span class="crumb"><a href={`${base}/`}>~</a> / <a href={crumb.href}>{crumb.label}</a></span>
-            {badges.map((b) => <span class="pill">{b}</span>)}
-          </div>
-          {topics.length > 0 && (
-            <ul class="article-tags" aria-label="Thématiques">
-              {topics.length > 1 && <li class="multi">↔ {topics.length} thématiques</li>}
-              {topics.map((t) => <li>{t}</li>)}
-            </ul>
-          )}
-          <h1>{title}</h1>
-          {lead && <p class="lead">{lead}</p>}
-        </div>
         {terminal ? (
           <div class="course">
             <article class="course__reading prose">
