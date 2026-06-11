@@ -248,3 +248,37 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---- IMPRESSION — papier blanc, encre noire, chrome masqué --------------- */
+/* base.css est chargé après themes.css : à spécificité égale, ces valeurs
+   priment sur tout thème. Les solutions d'exercices sont dépliées par
+   site.js (beforeprint). */
+@media print {
+  html, html[data-theme] {
+    --color-bg: #ffffff; --color-surface: #ffffff; --color-surface-sunken: #f2f2f2;
+    --color-text: #000000; --color-text-strong: #000000;
+    --color-text-muted: #222222; --color-text-faint: #333333;
+    --color-border: #999999; --color-border-strong: #555555;
+    --color-accent: #000000; --color-accent-text: #000000;
+    --color-accent-hover: #000000; --color-accent-weak: #f2f2f2; --color-on-accent: #ffffff;
+    --color-info: #000000; --color-info-weak: #f2f2f2;
+    --color-success: #000000; --color-success-weak: #f2f2f2;
+    --color-warning: #000000; --color-warning-weak: #f2f2f2;
+    --color-danger: #000000; --color-danger-weak: #f2f2f2;
+    --term-bg: #ffffff; --term-bg-raised: #f2f2f2; --term-fg: #000000;
+    --term-dim: #333333; --term-prompt: #000000; --term-ok: #000000;
+    --term-warn: #000000; --term-border: #999999;
+  }
+  .site-header, .site-footer, .read-progress, .skip-link,
+  .course__aside, .course-nav, .toc, .toc-m,
+  .cmd__hint, .slides__foot, .slides__tools, .h-anchor,
+  .exercise__answer, .a11y-panel, .cmdk { display: none !important; }
+  body { background: #ffffff; }
+  pre, .note, .exercise, .slide { break-inside: avoid; }
+  /* L'URL des liens externes est imprimée à côté du libellé. */
+  .prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #333; }
+  /* Toutes les diapositives s'impriment, empilées. */
+  .slides__viewport { overflow: visible; }
+  .slides__track { display: block; transform: none !important; }
+  .slide { display: block; border-top: 1px dashed #999; }
+}

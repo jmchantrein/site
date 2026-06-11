@@ -719,6 +719,23 @@ function wireSlides() {
   });
 }
 
+/* ---- IMPRESSION : déplier solutions et diapos masquées pour le papier ------- */
+function wirePrint() {
+  window.addEventListener("beforeprint", () => {
+    document.querySelectorAll(".exercise__solution, .toc-m").forEach((d) => {
+      d.setAttribute("data-was-open", d.open ? "1" : "");
+      d.open = true;
+    });
+    document.querySelectorAll(".slide").forEach((s) => { s.removeAttribute("aria-hidden"); s.removeAttribute("inert"); });
+  });
+  window.addEventListener("afterprint", () => {
+    document.querySelectorAll("[data-was-open]").forEach((d) => {
+      d.open = d.getAttribute("data-was-open") === "1";
+      d.removeAttribute("data-was-open");
+    });
+  });
+}
+
 /* ---- INIT -------------------------------------------------------------------- */
 apply(); // applique tôt (évite le flash entre l'anti-FOUC inline et le bundle)
 function init() {
@@ -733,6 +750,7 @@ function init() {
   wireAnchors();
   wireSearch();
   wireSlides();
+  wirePrint();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();

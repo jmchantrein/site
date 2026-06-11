@@ -1,6 +1,5 @@
 # Déploiement du site Astro sur GitHub Pages.
-# Build avec --site/--base passés en CLI : la config locale reste inchangée
-# (npm run build continue de produire un site servable à la racine).
+# site/base vivent dans astro.config.mjs (requis par sitemap + RSS).
 name: Déployer sur GitHub Pages
 
 on:
@@ -35,7 +34,7 @@ jobs:
         run: npm ci
         working-directory: site
       - name: Construire le site
-        run: npx astro build --site "https://jmchantrein.github.io" --base "/site"
+        run: npm run build
         working-directory: site
       # Prérequis (une fois) : Settings → Pages → Source : « GitHub Actions ».
       # Le GITHUB_TOKEN n'a pas le droit d'activer Pages lui-même.
