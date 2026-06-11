@@ -10,9 +10,10 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const d = entry.data;
+const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
 ---
 <Reading
   title={d.title}
@@ -21,6 +22,7 @@ const d = entry.data;
   badges={d.duration ? [`≈ ${d.duration} min`] : []}
   topics={d.topics.map((t) => TOPICS[t])}
   lead={d.description}
+  toc={toc}
   prev={{ href: `${base}/miscelanea/`, label: "Tous les articles" }}
 >
   <Content components={mdxComponents} />

@@ -52,7 +52,7 @@ const isCurrent = (href: string) =>
   href === `${base}/` ? path === href : path.startsWith(href);
 ---
 <!doctype html>
-<html lang="fr" data-theme="abysse">
+<html lang="fr" data-theme="marine">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,12 +62,14 @@ const isCurrent = (href: string) =>
         try {
           var p = JSON.parse(localStorage.getItem("site-astro-prefs-v1") || "{}");
           var r = document.documentElement;
-          if (p.theme) r.setAttribute("data-theme", p.theme);
+          var sys = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "abysse" : "marine";
+          r.setAttribute("data-theme", p.theme || sys);
           if (p.contrast) r.setAttribute("data-contrast", "high");
           if (p.lang) r.setAttribute("lang", p.lang);
           if (p.readfont && p.readfont !== "default") r.setAttribute("data-readfont", p.readfont);
           if (p.motion === "off") r.setAttribute("data-motion", "off");
           if (p.width) r.style.setProperty("--page-max", "min(" + p.width + "rem, 98vw)");
+          if (p.measure) r.style.setProperty("--measure", p.measure + "ch");
           if (p.scale) r.style.fontSize = p.scale * 100 + "%";
         } catch (e) {}
       })();

@@ -117,6 +117,12 @@ import Icon from "./Icon.astro";
     </div>
 
     <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Largeur de la colonne de lecture</span><span data-lang="en">Reading column width</span></span><span class="a11y-field__value" data-a11y-measureval>66 ch</span></span>
+      <input class="a11y-range" type="range" min="56" max="96" step="2" data-a11y-measure aria-label="Largeur de la colonne de lecture" />
+      <p class="a11y-field__help"><span data-lang="fr">En caractères par ligne — 66 est le défaut typographique, augmentez pour exploiter l'écran.</span><span data-lang="en">In characters per line — 66 is the typographic default; increase to use more of the screen.</span></p>
+    </div>
+
+    <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Langue</span><span data-lang="en">Language</span></span>
       <div class="a11y-seg" data-a11y-lang role="group" aria-label="Langue">
         <button data-set-lang="fr">Français</button>

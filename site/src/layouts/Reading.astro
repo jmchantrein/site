@@ -10,6 +10,7 @@ import Base from "./Base.astro";
 import Terminal from "../components/Terminal.astro";
 
 interface NavLink { href: string; label: string }
+interface TocItem { slug: string; text: string }
 interface Props {
   title: string;
   description?: string;
@@ -21,12 +22,14 @@ interface Props {
   terminal?: boolean;
   terminalTitle?: string;
   terminalComment?: string;
+  /** Sommaire (h2 extraits au rendu) — colonne latérale + double mobile (site.js). */
+  toc?: TocItem[];
   prev?: NavLink;
   next?: NavLink;
 }
 const {
   title, description, crumb, badges = [], topics = [], lead,
-  terminal = false, terminalTitle, terminalComment, prev, next,
+  terminal = false, terminalTitle, terminalComment, toc = [], prev, next,
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
@@ -47,20 +50,37 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       {lead && <p class="lead">{lead}</p>}
     </div>
 
-    {terminal ? (
-      <div class="course">
-        <article class="course__reading prose">
-          <slot />
-        </article>
-        <aside class="course__aside" aria-label="Atelier terminal">
-          <Terminal id="term-1" title={terminalTitle} comment={terminalComment} />
-        </aside>
+    <div class:list={[toc.length > 1 && "toc-layout"]}>
+      {toc.length > 1 && (
+        <nav class="toc" aria-label="Sommaire">
+          <ol>
+            {toc.map((h, i) => (
+              <li>
+                <a href={`#${h.slug}`}>
+                  <span class="num">{String(i + 1).padStart(2, "0")}</span> {h.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      <div class="toc-layout__body">
+        {terminal ? (
+          <div class="course">
+            <article class="course__reading prose">
+              <slot />
+            </article>
+            <aside class="course__aside" aria-label="Atelier terminal">
+              <Terminal id="term-1" title={terminalTitle} comment={terminalComment} />
+            </aside>
+          </div>
+        ) : (
+          <article class="article course__reading prose">
+            <slot />
+          </article>
+        )}
       </div>
-    ) : (
-      <article class="article course__reading prose">
-        <slot />
-      </article>
-    )}
+    </div>
 
     {(prev || next) && (
       <nav class="course-nav wrap-flush" aria-label="Navigation du cours">

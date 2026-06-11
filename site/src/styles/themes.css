@@ -1,10 +1,10 @@
 /* =============================================================================
    THÈMES DE COULEURS — couche tokens, sélectionnables par le lecteur
    (panneau « Confort », persistants). Chaque thème ne redéfinit que les tokens
-   de couleur + les couleurs de profondeur ; tout le reste suit automatiquement.
+   de couleur ; tout le reste suit automatiquement.
 
-   DÉFAUT : ABYSSE (sombre) — déclaré dans tokens.css :root et repris ici pour
-   l'usage explicite html[data-theme="abysse"].
+   DÉFAUT : suivant la préférence système (prefers-color-scheme) — Marine en
+   clair, Abysse en sombre (choisi par l'anti-FOUC de Base.astro et site.js).
    Les 4 thèmes clairs partagent un même modèle (texte foncé sur fond clair) :
    les contrastes AAA/AA restent valables sur TOUS les composants.
    Le mode contraste élevé (panneau a11y) prime sur le thème choisi.
@@ -22,7 +22,6 @@ html[data-theme="marine"] {
   --color-success: #15692f; --color-success-weak: #e0f0e6;
   --color-warning: #8a5a00; --color-warning-weak: #f5ecd6;
   --color-danger: #b1261f; --color-danger-weak: #f7e2e0;
-  --depth-shallow: #f2f6f8; --depth-deep: #d6e3ea; --depth-panel: #ffffff;
 }
 
 /* ARDOISE — neutre gris-bleu (sobre, faible température) */
@@ -37,7 +36,6 @@ html[data-theme="ardoise"] {
   --color-success: #15692f; --color-success-weak: #e3f3e8;
   --color-warning: #8a5a00; --color-warning-weak: #f7eed9;
   --color-danger: #b1261f; --color-danger-weak: #fbe6e4;
-  --depth-shallow: #fbfcfe; --depth-deep: #e2e8ef; --depth-panel: #ffffff;
 }
 
 /* FORÊT — vert calme (canopée → sous-bois) */
@@ -52,7 +50,6 @@ html[data-theme="foret"] {
   --color-success: #15692f; --color-success-weak: #dcefe1;
   --color-warning: #8a5a00; --color-warning-weak: #f3ecd6;
   --color-danger: #b1261f; --color-danger-weak: #f7e2e0;
-  --depth-shallow: #f6faf6; --depth-deep: #dce8dc; --depth-panel: #ffffff;
 }
 
 /* AURORE — papier chaud (lumière basse) */
@@ -67,33 +64,13 @@ html[data-theme="aurore"] {
   --color-success: #15692f; --color-success-weak: #e6efd9;
   --color-warning: #8a5a00; --color-warning-weak: #f1e6cf;
   --color-danger: #b1261f; --color-danger-weak: #f6e2dd;
-  --depth-shallow: #fffdf8; --depth-deep: #ece0cb; --depth-panel: #ffffff;
 }
 
-/* ABYSSE — thème SOMBRE des grands fonds, DÉFAUT du site (= tokens.css :root).
-   Texte clair sur fond très sombre. Les aplats (boutons, pastilles de note)
-   utilisent --color-on-accent (sombre) pour rester lisibles.
-   Le mode contraste élevé prime toujours. */
+/* ABYSSE — thème SOMBRE des grands fonds (DRY : source unique = tokens.css).
+   Ce bloc n'existe que pour la sélection explicite html[data-theme="abysse"] :
+   aucune redéclaration — les tokens couleur héritent de :root (tokens.css),
+   que les autres thèmes ne surchargent que lorsque leur attribut est posé. */
 html[data-theme="abysse"] {
   color-scheme: dark;
-  --color-bg:            #0b1a26;  /* grand fond, bleu-vert très sombre              */
-  --color-surface:       #162c3e;  /* cartes/panneaux — nettement détachés du fond   */
-  --color-surface-sunken:#102333;  /* zones en retrait                               */
-  --color-text:          #e8eef4;  /* corps — ~14:1 → AAA                            */
-  --color-text-strong:   #f6fafc;  /* titres — ~17:1 → AAA                           */
-  --color-text-muted:    #aab8c4;  /* méta — ~8:1 → AAA                              */
-  --color-text-faint:    #7f8f9c;  /* hints — ~5:1 → AA                              */
-  --color-border:        #294056;  /* bordures fines, visibles sur le fond           */
-  --color-border-strong: #3e5970;
-  --color-accent:        #3aa6cd;  /* focus / UI — ~6:1 → AA                         */
-  --color-accent-text:   #79cfee;  /* liens & texte — ~9:1 → AAA                     */
-  --color-accent-hover:  #a8e2f5;
-  --color-accent-weak:   #12313f;  /* aplat de note (teinte profonde)                */
-  --color-on-accent:     #05151e;  /* texte sombre sur aplats clairs                 */
-  --color-info:          #79cfee; --color-info-weak: #12313f;
-  --color-success:       #79d28f; --color-success-weak: #0f3322;
-  --color-warning:       #e6b653; --color-warning-weak: #2f2712;
-  --color-danger:        #f1928b; --color-danger-weak: #371a1c;
-  --depth-shallow: #1d4257; --depth-deep: #07131c; --depth-panel: #1d3346;
 }
 
