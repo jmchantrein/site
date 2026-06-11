@@ -29,6 +29,7 @@ import "../styles/themes.css";
 import "../styles/base.css";
 import "../styles/components.css";
 import "../styles/a11y-panel.css";
+import "../styles/annotate.css";
 import Icon from "../components/Icon.astro";
 import Panels from "../components/Panels.astro";
 
@@ -104,6 +105,11 @@ const isCurrent = (href: string) =>
             <Icon name="earth" class="util-btn__icon" />
             <span data-lang-cur>FR</span>
           </button>
+          <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+            <Icon name="pen-line" class="util-btn__icon" />
+            <span class="annot-count" data-annot-count aria-hidden="true">0</span>
+            <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
+          </button>
           <button class="util-btn util-btn--icon" data-search-trigger type="button" aria-label="Rechercher (Ctrl+K)">
             <Icon name="search" class="util-btn__icon" />
             <span class="util-btn__label"><span data-lang="fr">Rechercher</span><span data-lang="en">Search</span> <kbd>Ctrl K</kbd></span>
@@ -136,8 +142,19 @@ const isCurrent = (href: string) =>
 
     <Panels />
     <script src="../scripts/site.js"></script>
+    <script src="../scripts/annotate.js"></script>
     <style>
       .footer-a11y { margin-left: auto; }
+      .annot-trigger { position: relative; }
+      .annot-count {
+        position: absolute; top: -6px; right: -6px;
+        min-width: 18px; height: 18px; padding: 0 4px;
+        display: grid; place-items: center;
+        border-radius: 999px; font-family: var(--font-mono);
+        font-size: 11px; font-weight: 700; line-height: 1;
+        background: var(--color-accent-text); color: var(--color-on-accent);
+      }
+      .annot-count[data-n="0"] { display: none; }
     </style>
   </body>
 </html>
