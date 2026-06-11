@@ -4,15 +4,17 @@ import Reading from "../../layouts/Reading.astro";
 import { mdxComponents } from "../../components/mdx";
 
 export async function getStaticPaths() {
-  const cours = (await getCollection("cours", ({ data }) => !data.draft))
-    .sort((a, b) => a.data.order - b.data.order);
+  const all = await getCollection("cours", ({ data }) => !data.draft);
+  // FR à la racine de la collection ; les traductions vivent sous en/ (routes /en/).
+  const cours = all.filter((c) => !c.id.startsWith("en/")).sort((a, b) => a.data.order - b.data.order);
+  const enIds = new Set(all.filter((c) => c.id.startsWith("en/")).map((c) => c.id.slice(3)));
   return cours.map((entry, i) => ({
     params: { slug: entry.id },
-    props: { entry, prevEntry: cours[i - 1] ?? null, nextEntry: cours[i + 1] ?? null },
+    props: { entry, prevEntry: cours[i - 1] ?? null, nextEntry: cours[i + 1] ?? null, hasEn: enIds.has(entry.id) },
   }));
 }
 
-const { entry, prevEntry, nextEntry } = Astro.props;
+const { entry, prevEntry, nextEntry, hasEn } = Astro.props;
 const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const d = entry.data;
@@ -29,6 +31,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
   terminalTitle={d.terminalTitle}
   terminalComment={d.terminalComment}
   toc={toc}
+  altUrl={hasEn ? `${base}/en/cours/${entry.id}/` : undefined}
   prev={prevEntry
     ? { href: `${base}/cours/${prevEntry.id}/`, label: prevEntry.data.title }
     : { href: `${base}/cours/`, label: "Tous les cours" }}

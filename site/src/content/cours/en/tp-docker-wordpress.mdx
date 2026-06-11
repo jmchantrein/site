@@ -1,0 +1,642 @@
+---
+title: "Containerizing a WordPress Service"
+description: "Guided lab: from a handcrafted Dockerfile to Swarm orchestration, containerizing a complete WordPress service step by step."
+order: 4
+topics: [linux]
+badge: "Lab"
+tags: [docker, dockerfile, compose, swarm]
+terminal: false
+---
+
+## Introduction
+
+<Note type="warning" title="To experienced readers">
+  The way our first section is handled does not reflect good working practice. This section nevertheless has the advantage of giving a solid understanding of certain Docker mechanisms, of the various possible uses, and of the problems encountered. It will also help us understand why, when using Docker, it is better to build a microservices architecture rather than a monolithic one.
+</Note>
+
+First of all, the **Dockerfile** section aims to lead us, step by step, towards the use of docker-compose. We will install an entire WordPress service in a single image. This will let us get to grips with writing a Dockerfile. As we go along, we will reflect on establishing good practices for writing Dockerfiles. We will point out the problems that arise when several processes run inside a single container, and we will propose a microservices architecture that overcomes these problems. We will get there step by step. **It is completely pointless to try to skip a step: each higher step builds on the understanding and completion of the steps below it.**
+
+Next, in the **Docker Compose** section, we will look at working methods that are better suited and simpler for deploying a Docker service into production on a server. In this case, it will still be a WordPress service.
+
+Finally, in the **Docker Swarm** section, we will see how Docker Swarm works in general, briefly present its load-balancing and scaling features, and then orchestrate our WordPress microservices architecture in a cluster of Docker machines.
+
+## Dockerfile: from the Dockerfile to the compose file, by example
+
+### Step 1: basic creation of a Dockerfile
+
+<Note title="Methodology tip">
+  While working through this step, feel free to make heavy use of the context notion that `docker build` provides (the cache mechanism). To do so, remember to put the most expensive instructions at the beginning of the Dockerfile (i.e. the lowest layers), and the instructions most likely to change at the end of the Dockerfile (i.e. the highest layers). That way, any change in the upper layers will not affect the lower layers, which will be reused by the `docker build` cache. Also, do not try to minimize the number of intermediate images for now; we will do that in the next step.
+</Note>
+
+You will work in a directory named `1_wordpress_multiservice_dirty`.
+
+Remember to test your container at [http://localhost:80/wordpress](http://localhost:80/wordpress).
+
+#### A few constraints
+
+- The base image is the official `debian:latest` image.
+- Installing the `wordpress` package is forbidden.
+- You must install the packages required to use WordPress (replace `mysql-server` with `mariadb-server`).
+- You must download the [sources](https://wordpress.org/latest.zip) in zip format.
+- The sources must be placed in the `/var/www/html` directory.
+- The password, the MySQL administrator name and the database name must be defined in environment variables (`ENV` keyword in a single instruction).
+- The MySQL user will have the username `admin`, the password `tempo` and full privileges on a `wordpress` database.
+- The default command must run Apache and MySQL.
+- The image will be tagged `mon_image_wordpress` and the running container will be named `mon_conteneur_wordpress`.
+- The end of the Dockerfile must contain, as comments, the instructions for building and instantiating the image.
+
+#### A few tips and food for thought
+
+- MariaDB is a fork of MySQL: the historical MySQL commands still work, and the `mysql` executables are actually symbolic links to MariaDB executables.
+- `apt-get install -s` or `apt install -s` lets you simulate the installation of a package.
+- `apt depends` tells you what the dependencies of a package are.
+- Contrary to what you can see everywhere, including in my course, you should not declare a `DEBIAN_FRONTEND=noninteractive` environment variable but rather ([see the GitHub issue](https://github.com/moby/moby/issues/4032)):
+
+```bash
+RUN DEBIAN_FRONTEND=noninteractive apt install package1 package2 ...
+```
+
+- If you only need to change directory for one or a few commands, do not use the `WORKDIR` keyword (its scope extends to all subsequent instructions, including the container's default command). Prefer:
+
+```bash
+RUN cd /mon/chemin && mes_commandes
+```
+
+- Creating a MySQL user `username` with password `userpassword` having full privileges, and creating a `userbase` database:
+
+```bash
+mysql -u root --execute="CREATE USER 'username'@'%' IDENTIFIED BY 'userpassword'"
+mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO 'username'@'%' WITH GRANT OPTION"
+mysql -u root --execute="FLUSH PRIVILEGES"
+mysql --user=username --password=userpassword --execute="CREATE DATABASE userbase"
+```
+
+<Note title="N.B.">
+  For the commands above to work, do not forget to start the MariaDB server. To do so, make sure the `/run/mysqld` directory actually exists in the container and that `mysql` is indeed the owner of `/run/mysqld`.
+</Note>
+
+- Do not forget that instructions are executed by the `root` user by default. This could cause permission problems later on.
+- You are going to run a container hosting several services: I suggest you read this [article](https://docs.docker.com/engine/containers/multi-service_container/).
+- When you run your container, it will have to communicate from its own network (by default, the *bridge* network, which "NATs" container traffic towards the outside) to the host's network. You will therefore have to map/bind a host port to a container port. This is done via the `-p` option of `docker run`. For example, the following command maps port 8000 of the host to port 80 of the nginx image's container:
+
+```bash
+docker run -p 8000:80 nginx
+# You will be able to watch the logs here when you connect to http://localhost:8000
+```
+
+#### A few questions and remarks
+
+Here, you are running several processes in one container. Docker's philosophy is to containerize only one process. This is a debatable choice, but if you really want to run more than one process in a container in production, you should then use [supervisord](http://supervisord.org/). We will not use it in this course.
+
+<Exercise id="mode-detache" level={2}>
+  How do you launch the container in detached mode (`-d` instead of `-it`)?
+
+  Before looking at the solution, try the following commands and observe what happens:
+
+  ```bash
+  docker run -it --rm --hostname test --name test ubuntu /bin/bash
+  docker run -it --rm --hostname test --name test ubuntu /bin/bash -c "sleep infinity"
+  docker run -it --rm --hostname test --name test ubuntu /bin/bash -c "sleep infinity & ps -eflH"
+  docker run -d --rm --hostname test --name test ubuntu /bin/bash
+  ```
+
+  Why does the container from the last command not stay running?
+
+  <Fragment slot="solution">
+    We instantiate an Ubuntu container in interactive mode and run the `/bin/bash` command:
+
+    ```console
+    jmc@laptop ~ $ docker run -it --rm --hostname test --name test ubuntu /bin/bash
+    root@test:/# exit
+    jmc@laptop ~ $
+    ```
+
+    We get the expected result. We now instantiate an Ubuntu container in interactive mode and run the command `/bin/bash -c "sleep infinity"`:
+
+    ```console
+    jmc@laptop ~ $ docker run -it --rm --hostname test --name test ubuntu /bin/bash -c "sleep infinity"
+    ```
+
+    We get the expected behavior: the container does not give control back, since the `sleep infinity` command runs in *foreground* mode. From another terminal, run:
+
+    ```bash
+    docker container rm -f test
+    ```
+
+    We instantiate an Ubuntu container in interactive mode and run the command `/bin/bash -c "sleep infinity & ps -eflH"`:
+
+    ```console
+    jmc@laptop ~ $ docker run -it --rm --hostname test --name test ubuntu /bin/bash -c "sleep infinity & ps -eflH"
+    F S UID        PID  PPID  C PRI  NI ADDR SZ WCHAN  STIME TTY          TIME CMD
+    4 S root         1     0  0  80   0 -  4507 wait   15:51 pts/0    00:00:00 /bin/
+    0 S root         7     1  0  80   0 -  1096 hrtime 15:51 pts/0    00:00:00   sle
+    0 R root         8     1  0  80   0 -  8607 -      15:51 pts/0    00:00:00   ps
+    jmc@laptop ~ $
+    ```
+
+    The container stops even though we would like it to run the `sleep infinity` command. This is explained by the fact that `sleep infinity` is run as a background task (use of `&`). Then the `ps -eflH` command runs... and there is no longer any task in *foreground* mode. Yet containers are designed so that there is a [task running in *foreground* mode](https://docs.docker.com/engine/containers/run/#foreground-and-background).
+
+    When you run a container in detached mode (`--detach`, `-d`), there is no interaction with the container: `/bin/bash` therefore cannot stay in *foreground* mode:
+
+    ```console
+    jmc@laptop ~ $ docker run -d --rm --hostname test --name test ubuntu /bin/bash
+    6e15d2da91b77de6dea905f00b14877352d50e0fdd3e747e99147a923037e63d
+    jmc@laptop ~ $ docker container ls -a
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    ```
+
+    `/bin/bash`, having no interaction, switched to *background* mode; the `test` container became inactive and was removed since the `--rm` option was enabled. To keep the container running, there absolutely must be a task in *foreground* mode inside the container. Yet this is rarely the case for server daemons (apache2, mysql, nginx...), which we usually ask to run precisely in *background* mode! So we have to find the options needed to run our servers in *foreground* mode (for example: `nginx -g 'daemon off;'`).
+
+    What about running several servers in one container? You then need servers in *background* mode and one server in *foreground* mode, which is neither consistent nor practical. Moreover, the `docker logs` command will only give us the logs of the server running in *foreground* mode, not the logs of the servers running in *background* mode.
+
+    One last point: you can get interaction with a container in detached mode as follows:
+
+    ```console
+    jmc@laptop ~ $ docker run -d --rm --hostname test --name test ubuntu /bin/bash -c "sleep infinity"
+    c08701adde66f6316399989fd37d83e71acec35e7564444f1afbdf675a76c08b
+    jmc@laptop ~ $ docker container exec -it test /bin/bash
+    root@test:/# exit
+    jmc@laptop ~ $ docker container stop test
+    ```
+  </Fragment>
+</Exercise>
+
+Can we write this more cleanly? What are the best practices for writing a Dockerfile? That is exactly what we will see in the next step.
+
+### Step 2: putting best practices in place
+
+<Note title="Multi-stage build">
+  In this lab we will not use the *multi-stage build* concept that will be presented to you in the best practices, but take the time to go look at and understand this concept.
+</Note>
+
+#### A few constraints
+
+- Copy your `1_wordpress_multiservice_dirty` directory to `2_wordpress_multiservice_better`.
+- Modify your Dockerfile so that it follows the [best practices](https://docs.docker.com/build/building/best-practices/).
+- Perform a no-cache build of the Dockerfile you modified.
+- Check that your WordPress service works correctly.
+
+#### A few tips and food for thought
+
+- In the `FROM` instruction: using the `latest` tag can be useful if you plan an automatic update mechanism for your image and the containers derived from it. This option is only reasonable if you are the one in control of updating the image in question.
+- In all other cases, for a production image, you should always specify an explicit tag to version the image, or better still, the sha256 signature of the image manifest.
+
+#### A few questions and remarks
+
+Which user is behind the execution of apache2, of mysql, and of the command that will run when the container starts?
+
+- Is it a problem for apache2?
+- Is it a problem for mysql?
+- Is it a problem for the command that will run when the container starts?
+  - Which command is it?
+  - Are you sure?
+- If it is a problem for at least one of the three processes, what do you propose?
+
+### Step 3: the root user problem
+
+First of all, some [reading](https://docs.docker.com/engine/security/) about security when using a Docker environment, or go straight to the [conclusions](https://docs.docker.com/engine/security/#conclusions).
+
+#### A few constraints
+
+- Copy your `2_wordpress_multiservice_better` directory to `3_wordpress_multiservice_noroot`.
+- Modify your Dockerfile so that the user inside the container is the `mysql` user (and not `root`).
+- To do this, you will need to find a mechanism to run the apache2 server as the `mysql` user.
+
+#### A few tips and food for thought
+
+- Are you familiar with the [setuid](https://en.wikipedia.org/wiki/Setuid) mechanism?
+
+#### A few questions and remarks
+
+- Knowing that when apache2 runs natively on a server it is also initially executed by `root`, should we strictly forbid a process launched by the `root` user inside a container?
+- In our case, after changing the setuid, which user is running Apache?
+
+<Exercise id="image-lamp-generique" level={2}>
+  Could we not instead build a LAMP (Linux Apache MySQL PHP) image and mount the web source code (PHP, HTML, CSS...) through a volume located on the host? Would that not be more generic?
+
+  <Fragment slot="solution">
+    Indeed, our image is only suitable for a WordPress site, whereas we should be able to build an image capable of handling any classic PHP/HTML/CSS website. We could, but it would not necessarily be a better method: it would just be a different one. In fact, it all depends on our needs. For example, do we have to provide N WordPress instances or N LAMP server instances? Depending on the answer, we must choose the architecture best suited to our need.
+  </Fragment>
+</Exercise>
+
+All your important data lives inside the container: what about its durability? What solutions do you propose to address this issue?
+
+### Step 4: making data persistent
+
+#### A few constraints
+
+- Copy your `3_wordpress_multiservice_noroot` directory to `4_wordpress_multiservice_persistant`.
+- Modify your Dockerfile and/or your container launch command so that the data in `/var/lib/mysql` and `/var/www/html` persists.
+- Explicitly modify your Dockerfile to expose port 80 of future containers.
+
+#### A few tips and food for thought
+
+- Here we will use the `VOLUME` instruction in our Dockerfile.
+
+#### Methods for data persistence
+
+1. We have found a method to persist our data in a volume. When this volume lives inside Docker's filesystem tree (Docker has its own [storage backend (overlay2 by default nowadays)](https://docs.docker.com/engine/storage/drivers/select-storage-driver/)), the data initially contained in the image is copied into the volume on the first launch. After that, data is added to the volume.
+
+2. We could create a mount point for `/var/lib/mysql` in our own filesystem (for example: `/data`). However, on the first mount, all the data contained in the image's `/var/lib/mysql` is inaccessible, because the mounted `/data` folder is initially empty: the container would be unusable since MySQL would no longer even have the information about its own users. We can work around this problem by running a script at container startup that checks whether the `/data` mount point is empty or not. If it is empty, we initialize MySQL; otherwise we do nothing. Initialization therefore happens only once, at the container's first startup, and not in the image. You can look at this [example](https://web.archive.org/web/2017/http://txt.fliglio.com/2013/11/creating-a-mysql-docker-container/) (an archive of an article from 2013). Perhaps you find this rather complicated and constraining? However, one huge advantage of this method, besides storing your data wherever you want, is the ability to pass your own environment variables when instantiating the container: for instance, you choose the user password at container launch rather than having it baked into the image. This method therefore gives us much more flexibility in managing our containers. We will not implement this method in this part. But keep in mind that this kind of mechanism may be included in images you might use. This will in fact be the case for the official MySQL microservice that we will use in the next part.
+
+   One could also point out that putting such complexity in place is only worthwhile for massive instantiation of WordPress containers, not for just a few instances. That is true, but keep in mind that we are in a lab designed to understand Docker's mechanisms: the official images implement this very kind of mechanism themselves, and far more efficiently than what we are doing here. Thus, a microservice should be deployable just as easily sporadically as massively.
+
+3. Another alternative would be an ad hoc mount point. We mount a `/backup` directory of the host onto a `/backup` directory inside the container. A cron job on the host regularly dumps the database via a command along the lines of:
+
+   ```bash
+   docker exec -it my_wordpress_container mysqldump --all-databases > /backup/$(date)_dump.sql
+   ```
+
+   Note that the cron job would run on the host, not inside the container: minimizing the number of processes in the container.
+
+4. We could also persist the sources (`/var/www/html`) with a mount on the host. In the case of a mount outside Docker's filesystem (cf. our solution number 2), this would require writing a bootstrap script on which we would set a setuid bit; the bootstrap would change the owner of the mounted directory to `www-data:www-data` with `chown`; you therefore need to be `root` for this execution (hence the use of setuid).
+
+**Conclusion.** Method 1 is the easiest to implement. It is the official method recommended by Docker, but it takes away our freedom to choose where we store our data. Method 2 is the hardest to implement but offers more flexibility in managing our services; however, unlike method 1, we cannot manage the data through the Docker CLI (`docker volume cmd`). Methods 3 and 4 are, in my opinion, to be avoided. You will find more information on method 1 [here](https://docs.docker.com/engine/storage/volumes/) and on method 2 [here](https://docs.docker.com/engine/storage/bind-mounts/).
+
+<Note type="warning" title="Name your volumes">
+  When using method 1, you must [name your volumes](https://docs.docker.com/engine/storage/volumes/). Indeed, anonymous volumes are deleted when the container is removed (`--rm` option) or when the `docker volume prune` command is used.
+</Note>
+
+<Note type="danger" title="Beware of docker volume prune">
+  Historically, `docker volume prune` **also** removed named volumes that were not used by any container. Since Docker 23, by default the command only removes **anonymous** volumes; unused named volumes are only removed with `docker volume prune --all`. In any case, an unused named volume is not safe from a prune: naming is not enough — back up your data.
+</Note>
+
+<Note title="N.B.">
+  If you need to handle temporary data, it is better to use the [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) directive rather than using your container's writable layer.
+</Note>
+
+### Step 5: towards a microservices architecture
+
+#### A few constraints
+
+- Copy your `4_wordpress_multiservice_persistant` directory to `5_wordpress_microservice_persistant`.
+- Create 2 subdirectories `apache_wordpress` and `mysql_wordpress`.
+- Starting from your initial Dockerfile, create 2 new Dockerfiles, one in each of the new subdirectories.
+- Write your 2 new Dockerfiles so as to obtain 2 microservices: an Apache microservice, which will contain the WordPress sources, and a MySQL microservice managing the database, which must still be persistent.
+- Write a bash script `build_and_launch.sh` that runs the commands needed to build and run the 2 microservices.
+- Check that your WordPress service (made up of 2 microservices) works properly.
+
+#### A few tips and food for thought
+
+- Since we are now going to work with 2 containers that must communicate with each other, remember to tell MariaDB that it can be accessed from a network other than the local one:
+
+```bash
+RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.cnf
+```
+
+- Although deprecated, you will use here the historical `--link` option to link your 2 containers (a legacy mechanism that only works on the default *bridge* network — kept here for pedagogical purposes).
+- With Docker's networking features, we should instead create our own network for our service (`docker network create`). And this shows us that it is entirely possible to have a dedicated network for each service! More information [here (legacy links)](https://docs.docker.com/engine/network/links/) and [here (networks)](https://docs.docker.com/engine/network/).
+
+#### A few questions and remarks
+
+- In production, avoid using the `--link` option, which is most certainly bound to disappear. Ideally, you should create a dedicated subnet for each service you set up with Docker. This can be done via the `docker network` command, but we will see later how to automate this process.
+- Note that we did not expose the MySQL container's port to the outside: only the Apache container has access to it.
+- We now have an architecture of 2 microservices: what do you think of the `build_and_launch.sh` script mechanism?
+- And if we had an architecture of 25 microservices, what would you think of the `build_and_launch.sh` script mechanism?
+- Docker goes further than just writing Dockerfiles: Docker also lets us manage the way containers interact with each other. For this, Docker provides us with the Docker Compose tool. That is the subject of our next part.
+
+## Docker Compose, or the art of orchestrating our containers on a single machine
+
+<Note title="Installing Docker Compose">
+  Docker Compose (v2) is nowadays a **plugin** of the Docker client, provided by the `docker-compose-plugin` package of the official repository ([documentation](https://docs.docker.com/compose/install/linux/)):
+
+  ```bash
+  sudo apt update && sudo apt install docker-compose-plugin
+  docker compose version
+  ```
+
+  The command is written `docker compose` (with a space). The old standalone `docker-compose` binary (v1), which this lab used to install via curl back in the day, has been end-of-life since 2023.
+</Note>
+
+### Step 6: a microservices architecture described in a compose file
+
+#### A few constraints
+
+- Read the documentation presenting an [overview of Docker Compose features](https://docs.docker.com/compose/).
+- Copy your `5_wordpress_microservice_persistant` directory to `6_wordpress_microservice_compose`.
+- Replace your `build_and_launch.sh` script with a compose file (`compose.yaml`; the `version:` key seen in old tutorials is now obsolete) that gives you a configuration equivalent to the script.
+- There will be one service (microservice) named `apache_wordpress` and one service (microservice) `mysql_wordpress`.
+- Check that your service works correctly.
+
+#### A few questions and remarks
+
+- List the networks with `docker network ls`. What do you notice?
+- Let's try removing the `link` option. Why does it still work?
+- Did you notice that during the WordPress installation, you could use the database service's name instead of the hostname? How is this possible? Go take a look at the `docker container inspect nom_du_conteneur_mysql` command.
+- Take a good look at all the [parameters](https://docs.docker.com/reference/compose-file/) you can set for your containers in the compose file; among the most interesting: `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`... Among these options, two catch my attention: `deploy` and `overlay`, which only work when using Docker Swarm; we will look at these two commands later in the Docker Swarm part.
+
+You have reached the end of your learning path through Docker's fundamentals. It may have been long and difficult. It is now time for you to know that everything we just did by hand, other people have already done, much better, and for our use. We are therefore now going to make use of their work; but we now know which mechanisms the official images we are going to use will employ (environment variables, bootstrap file, setuid, volume). There is no shadow of magic left in Docker; we now know, broadly, how it all fits together.
+
+### Step 7: a microservices architecture described in a compose file provided by the community
+
+#### A few constraints
+
+- Create a directory named `7_wordpress_official_stack`.
+- Create a `stack_wordpress.yml` file with this content:
+
+```yaml
+services:
+
+  wordpress:
+    image: wordpress
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: exampleuser
+      WORDPRESS_DB_PASSWORD: examplepass
+      WORDPRESS_DB_NAME: exampledb
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepass
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+```
+
+- Run the service, watch the logs, test the service.
+
+#### A few questions and remarks
+
+- You did not have to write a single Dockerfile.
+- By default, you have no data persistence: our next step will be to see whether we can set up this persistence on a directory in our home (rather than Docker's default volumes).
+
+### Step 8: a microservices architecture provided by the community, which you will adapt to your needs
+
+#### A few constraints
+
+- Copy the `7_wordpress_official_stack` directory to `8_my_final_wordpress`.
+- Make sure the database is persistent.
+- Check that your service works correctly:
+  - Change the location of the database persistence by placing it in `/home/$USER/data_wordpress`.
+  - Take the opportunity to persist the source code of `/var/www/html` in `/home/$USER/source_code_wordpress`.
+  - Update WordPress through the administration interface.
+  - Delete the service.
+  - Rebuild the same service.
+  - Check the WordPress version.
+
+#### A few questions and remarks
+
+- You still did not have to write a single Dockerfile.
+- How long did this take you?
+- If you had had to write a Dockerfile, it would only contain tiny modifications, because you would start from the official base image.
+- The persistence of the database and of the source code is handled very well by the official image, even though it would have been very complicated for you to achieve it this way yourself!
+
+#### Conclusions
+
+That's it! You can stop here. However:
+
+- If you are a systems and/or network administrator, then the next and final part should also interest you.
+- If you are a developer, you have everything you need to deliver an application and its dependencies to anyone who knows how to type `docker compose up` in a terminal.
+- If you are a researcher, you have here a mechanism that lets you place your work within a reproducible research approach: you want to test my revolutionary algorithm? Sure, just run `docker run super-chercheur/super-algo`. And there you go!
+
+We have not mentioned here Docker's potential and effectiveness regarding continuous integration techniques and software factories. Docker cannot provide this functionality all by itself. For simple tests, just know that you can already work wonders with a GitLab and a GitHub repository. As icing on the cake, you can use the official images of these services to implement your tests.
+
+To go further, I recommend following Docker's official courses on the excellent site [training.play-with-docker.com](http://training.play-with-docker.com/). Whether you are a system administrator or a developer, you will find what you need there and an excellent complement to what we have just done here.
+
+## Docker Swarm, or the art of orchestrating our containers on a cluster of Docker machines
+
+<Note title="Prerequisites">
+  You need a [Docker account](https://hub.docker.com/) to be able to complete this part.
+</Note>
+
+### Introduction
+
+Docker Swarm is an orchestrator. It is a tool for managing your images, containers and virtual networks across a set of machines running Docker (a cluster). Here are the main features of Docker Swarm:
+
+- Management of a cluster of Docker daemons.
+- Decentralized execution (a container `a` on a machine A can communicate with a container `b` on a machine B).
+- Use of a compose-format file for deployment (declarative model).
+- Scaling: for each service, you can declare the number of containers you want to run. When you increase or decrease this number of containers, Docker Swarm adapts automatically by adding or removing containers to maintain the desired state. This does, however, require having designed a microservices architecture for your service.
+- Adaptation of the overall cluster state: if one of the cluster's nodes goes down, Swarm automatically redeploys the lost containers onto the remaining active nodes.
+- Virtual networks shared across several machines (*overlay network*).
+- Load balancing: each service in the swarm has a unique DNS name and Docker Swarm balances the load among the running containers. You can query every container running in the cluster through a built-in DNS server. You can also expose service ports to an external load balancer. But internally, Docker Swarm lets you specify how to distribute a service's containers among the cluster's nodes.
+- Communication between nodes secured by default via TLS.
+- Rolling updates and rollback: when you need to update a service, you can apply these service updates to the nodes incrementally. If something goes wrong, you can roll a service back to a previous version.
+
+<Note title="Vocabulary">
+  In Swarm, we will introduce a new term: the *stack*. The stack corresponds to what we call the service as a whole (in our previous example, we would speak of the WordPress stack); the service corresponds to what we used to call the microservice; the containers, for their part, are called *tasks*. A microservice replicated n times corresponds to the instantiation of n containers.
+</Note>
+
+<Note title="Kubernetes">
+  There is a very serious competitor to Swarm: the [Kubernetes](https://kubernetes.io/) orchestrator. It is more mature, more stable and offers more features than Docker Swarm. Furthermore, it has been massively adopted by the industry. Docker Swarm has the advantage of being easier to get started with, but the features presented here are also present in Kubernetes. Since then, the market has decided: Kubernetes has established itself as the orchestration standard and Swarm, while still functional, hardly evolves anymore — it remains an excellent conceptual stepping stone.
+</Note>
+
+### Native load-balancing management of a service
+
+- Go to the [play-with-docker](https://labs.play-with-docker.com) website.
+- Add 3 instances: these 3 instances correspond to 3 Alpine servers with Docker installed.
+- We are now going to create a cluster of Docker servers (a *swarm*):
+
+```bash
+docker swarm init --advertise-addr $(hostname -i)
+```
+
+- From the output of the command above, copy the `join` command (watch out for line breaks) and paste it into the terminals of the 2 other instances.
+- And there is our cluster of Docker servers! Doubtful? Go to your first instance (the *manager*) and run the following command:
+
+```bash
+docker node ls
+```
+
+- Nodes 2 and 3 are considered *workers*. The command above does not work on workers.
+- Go to the first instance and run the following command:
+
+```bash
+for ((i=1;i<10;i++)); do docker service create --name service_${i} --replicas 1 alpine ping localhost; done
+```
+
+- Now let's observe where these various services are running:
+
+```bash
+for ((i=1;i<10;i++)); do docker service ps service_${i}; done
+```
+
+- There you go!
+
+### An introduction to Docker Swarm
+
+The part below is an introduction to Docker Swarm available as a course on the [play-with-docker](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/_posts/2017-01-28-swarm-stack-intro.markdown) GitHub repository. As this course is under the [Apache 2](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/LICENSE) license, and in order not to reinvent the wheel, I present here a translation of the original course. To put this course into practice, the easiest way is either to use the official English version [online](http://training.play-with-docker.com/swarm-stack-intro/), or to follow this version using the [play-with-docker](https://labs.play-with-docker.com) website.
+
+#### Goal
+
+Deploy a *stack* of a voting application (*voting app*) with Docker Swarm. The goal of this lab is to illustrate how to deploy a stack (a multi-(micro)service application) with Swarm, starting from a compose file.
+
+#### The application
+
+The voting app is a very handy multi-container application, often used for demonstration purposes during meetups and conferences.
+
+It essentially lets users vote between cat and dog (but it could just as well be "space" or "tab" if you feel like it).
+
+This application is available on GitHub and updated very frequently as new features are developed.
+
+#### Initializing Docker Swarm
+
+First of all, we are going to create a Docker cluster (Docker Swarm, also called a swarm):
+
+```bash
+docker swarm init --advertise-addr $(hostname -i)
+```
+
+From the output above, copy the `join` command (watch out for line breaks) and paste it into the terminal of another instance.
+
+#### Showing the swarm members
+
+From the first terminal, check the number of nodes in the swarm (running this command from the second terminal — a *worker* — will fail, since swarm-related commands must be issued by a swarm *manager*):
+
+```bash
+docker node ls
+```
+
+The command above should list 2 nodes, the first being the *manager*, and the second a *worker*.
+
+#### Cloning the voting app
+
+Let's get the voting app's code from GitHub and go into the application's folder. Make sure you are in the first terminal and do the following:
+
+```bash
+git clone https://github.com/docker/example-voting-app
+cd example-voting-app
+```
+
+#### Deploying a stack
+
+A stack is a group of (micro)services deployed together. The `docker-stack.yml` file in the current folder will be used to deploy the voting app (the service) as a stack. (Translator's note: take the time to read through the instructions in this file.)
+
+Make sure you are in the first terminal and do the following:
+
+```bash
+docker stack deploy --compose-file=docker-stack.yml voting_stack
+```
+
+Note: being able to deploy a stack from a compose file is a nice feature added in Docker 1.13.
+
+Check the deployed stack from the first terminal:
+
+```bash
+docker stack ls
+```
+
+The output should be as follows. It indicates that the 6 services of the voting app's stack (named `voting_stack`) have been deployed:
+
+```console
+NAME          SERVICES
+voting_stack  6
+```
+
+Let's check the services within the stack:
+
+```bash
+docker stack services voting_stack
+```
+
+The output should be similar to this one (modulo the IDs, of course):
+
+```console
+ID            NAME                     MODE        REPLICAS  IMAGE
+10rt1wczotze  voting_stack_visualizer  replicated  1/1       dockersamples/visualizer:stable
+8lqj31k3q5ek  voting_stack_redis       replicated  2/2       redis:alpine
+nhb4igkkyg4y  voting_stack_result      replicated  2/2       dockersamples/examplevotingapp_result:before
+nv8d2z2qhlx4  voting_stack_db          replicated  1/1       postgres:9.4
+ou47zdyf6cd0  voting_stack_vote        replicated  2/2       dockersamples/examplevotingapp_vote:before
+rpnxwmoipagq  voting_stack_worker      replicated  1/1       dockersamples/examplevotingapp_worker:latest
+```
+
+List the tasks (containers — translator's note: and therefore the microservices) of the vote service:
+
+```bash
+docker service ps voting_stack_vote
+```
+
+You should get an output similar to the one below, where the service's 2 tasks (replicas) are listed:
+
+```console
+ID            NAME                 IMAGE                                        NODE   DESIRED STATE  CURRENT STATE
+my7jqgze7pgg  voting_stack_vote.1  dockersamples/examplevotingapp_vote:before   node1  Running        Running 56 seconds ago
+3jzgk39dyr6d  voting_stack_vote.2  dockersamples/examplevotingapp_vote:before   node2  Running        Running 58 seconds ago
+```
+
+In the NODE column, we can see that one task is running on each node.
+
+(Translator's note: you should be able to check that your service is up by clicking on the link showing the open port — normally 8080 — at the top of the page.)
+
+#### Conclusion
+
+Using just a few commands lets you deploy a stack of services on a Docker Swarm using the excellent Docker Compose file format.
+
+#### Translator's bonus: scaling and updating
+
+A very interesting feature is scaling our application. Suppose the flow of visitors to our voting app suddenly becomes very heavy; we can then do:
+
+```console
+docker service scale voting_stack_vote=6
+# Let's observe what happens
+docker service ps voting_stack_vote
+ID                  NAME                  IMAGE                                        NODE                DESIRED STATE       CURRENT STATE
+zjg727lj1t6j        voting_stack_vote.1   dockersamples/examplevotingapp_vote:before   node1               Running             Running 6 minutes ago
+pwf7797wj68h        voting_stack_vote.2   dockersamples/examplevotingapp_vote:before   node2               Running             Running 6 minutes ago
+s7ns1nk6fz2d        voting_stack_vote.3   dockersamples/examplevotingapp_vote:before   node2               Running             Running 43 seconds ago
+iw5yja1o5s27        voting_stack_vote.4   dockersamples/examplevotingapp_vote:before   node1               Running             Running 43 seconds ago
+gf2bb9vl60mv        voting_stack_vote.5   dockersamples/examplevotingapp_vote:before   node2               Running             Running 42 seconds ago
+9csix895fldt        voting_stack_vote.6   dockersamples/examplevotingapp_vote:before   node1               Running             Running 43 seconds ago
+```
+
+<Note title="N.B.">
+  Had there been more nodes, the load would have been automatically distributed across all the nodes.
+</Note>
+
+Now suppose the flow of visitors drops:
+
+```console
+docker service scale voting_stack_vote=3
+# Let's observe what happens
+docker service ps voting_stack_vote
+ID                  NAME                  IMAGE                                        NODE                DESIRED STATE       CURRENT STATE
+iw5yja1o5s27        voting_stack_vote.4   dockersamples/examplevotingapp_vote:before   node1               Running             Running 54 seconds ago
+gf2bb9vl60mv        voting_stack_vote.5   dockersamples/examplevotingapp_vote:before   node2               Running             Running 53 seconds ago
+9csix895fldt        voting_stack_vote.6   dockersamples/examplevotingapp_vote:before   node1               Running             Running 54 seconds ago
+```
+
+You can change the number of replicas by updating your (micro)service:
+
+```bash
+docker service update --replicas 2 voting_stack_vote
+# If you ever want to roll back
+docker service rollback voting_stack_vote
+```
+
+Depending on what has been defined in the compose file and on any available updates, you can update the stack (the service as a whole) like this:
+
+```bash
+docker stack deploy --compose-file docker-stack.yml
+```
+
+You could try changing the mapping of port 5000 to 6000 if you want to see a change. With the command:
+
+```console
+docker service ps voting_stack_vote
+ID                  NAME                      IMAGE                                        NODE                DESIRED STATE       CURRENT STATE
+xb0xbq451yh5        voting_stack_vote.4       dockersamples/examplevotingapp_vote:before   node2               Running             Running 2 seconds ago
+5szo5dbt4zeu         \_ voting_stack_vote.4   dockersamples/examplevotingapp_vote:before   node1               Shutdown            Shutdown 4 seconds ago
+tdicx6w98ugk        voting_stack_vote.8       dockersamples/examplevotingapp_vote:before   node1               Running             Running 2 seconds ago
+e7l8luq3zfoc         \_ voting_stack_vote.8   dockersamples/examplevotingapp_vote:before   node2               Shutdown            Shutdown 4 seconds ago
+```
+
+We notice that this microservice was interrupted for 2 seconds and that there are leftovers. These leftovers can be used to roll back in case of a problem. The service interruption can be avoided by using the `delay` keyword in the docker-compose file, which specifies a delay between the updates of each container: this means that, for a brief moment, there will be 2 different versions of the same microservice online. You will find more information [here](https://docs.docker.com/engine/swarm/swarm-tutorial/rolling-update/).
+
+### Step 9: a WordPress microservices architecture deployed in a Swarm cluster
+
+#### A few constraints
+
+- Copy the `8_my_final_wordpress` directory into a [play-with-docker](http://play-with-docker.com) instance.
+- Deploy your microservices architecture with `docker stack`.
+- Scale your Apache microservice (2 replicas).
+- Check that your service works correctly.
+
+#### A few questions and remarks
+
+- Take a good look at your play-with-docker instance. Did you notice that it was a Docker container? [dind](https://sreeninet.wordpress.com/2016/12/23/docker-in-docker-and-play-with-docker/)

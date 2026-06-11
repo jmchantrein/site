@@ -1,13 +1,13 @@
 ---
 import { getCollection } from "astro:content";
-import Base from "../../layouts/Base.astro";
-import TopicIndex from "../../components/TopicIndex.astro";
+import Base from "../../../layouts/Base.astro";
+import TopicIndex from "../../../components/TopicIndex.astro";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const cours = (await getCollection("cours", ({ data, id }) => !data.draft && !id.startsWith("en/")))
+const cours = (await getCollection("cours", ({ data, id }) => !data.draft && id.startsWith("en/")))
   .sort((a, b) => a.data.order - b.data.order);
 const items = cours.map((c) => ({
-  href: `${base}/cours/${c.id}/`,
+  href: `${base}/en/cours/${c.id.slice(3)}/`,
   title: c.data.title,
   description: c.data.description,
   topics: c.data.topics,
@@ -16,14 +16,14 @@ const items = cours.map((c) => ({
   tags: c.data.tags,
 }));
 ---
-<Base title="Cours" description="Les cours, classés par thématique : un parcours progressif, du fondamental à l'avancé." altUrl={`${base}/en/cours/`}>
+<Base title="Courses" description="Technical courses organised by topic: a progressive path, from fundamentals to advanced." locale="en" altUrl={`${base}/cours/`}>
   <main id="main" class="wrap">
     <div class="page-hero">
       <p class="kicker"><span data-lang="fr">Manuels structurés</span><span data-lang="en">Structured manuals</span></p>
       <h1><span data-lang="fr">Cours</span><span data-lang="en">Courses</span></h1>
       <p class="lead"><span data-lang="fr">Des cours techniques structurés, classés par thématiques. Chaque cours impose la même hygiène de lecture : colonne courte, exercices, atelier pratique.</span><span data-lang="en">Structured technical courses, organised by topic. Every course enforces the same reading hygiene: short column, exercises, hands-on workshop.</span></p>
     </div>
-    <TopicIndex items={items} flatLabel="Par cours" />
+    <TopicIndex items={items} flatLabel="By course" />
   </main>
 </Base>
 

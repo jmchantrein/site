@@ -21,14 +21,18 @@ const label = isVm
   <div class="archi__guests">
     {[1, 2, 3].map(() => (
       <div class="archi__guest">
-        <span class="archi__guest-name">{isVm ? "VM" : "Conteneur"}</span>
+        <span class="archi__guest-name">{isVm ? "VM" : <><span data-lang="fr">Conteneur</span><span data-lang="en">Container</span></>}</span>
         <span class="archi__box archi__box--apps">Apps</span>
-        {isVm && <span class="archi__box archi__box--os">OS invité</span>}
+        {isVm && <span class="archi__box archi__box--os"><span data-lang="fr">OS invité</span><span data-lang="en">Guest OS</span></span>}
       </div>
     ))}
   </div>
-  <div class="archi__box archi__box--host">{isVm ? "Hyperviseur / OS" : "OS hôte (noyau partagé)"}</div>
-  <div class="archi__box archi__box--hw">Machine physique</div>
+  <div class="archi__box archi__box--host">
+    {isVm
+      ? <><span data-lang="fr">Hyperviseur / OS</span><span data-lang="en">Hypervisor / OS</span></>
+      : <><span data-lang="fr">OS hôte (noyau partagé)</span><span data-lang="en">Host OS (shared kernel)</span></>}
+  </div>
+  <div class="archi__box archi__box--hw"><span data-lang="fr">Machine physique</span><span data-lang="en">Physical machine</span></div>
 </figure>
 
 <style>

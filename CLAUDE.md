@@ -22,6 +22,15 @@ Mayer), WCAG AA (corps AAA).
   à l'auteur** plutôt que de trancher seul.
 - Maths : `$…$` en ligne, `$$` **sur leurs propres lignes** pour le mode
   display (sinon micromark les traite en ligne).
+- **Traduction anglaise systématique** : tout contenu français (cours,
+  articles) a sa traduction anglaise dans le sous-dossier `en/` de sa
+  collection (`site/src/content/cours/en/`, `…/miscelanea/en/`), servie
+  sous les routes `/en/…`. **À chaque création ou modification d'un contenu
+  français, c'est à l'agent de créer/mettre à jour la version anglaise**
+  dans le même lot de travail — jamais de contenu FR sans son pendant EN.
+  On traduit la prose, les titres et le frontmatter (title, description) ;
+  on ne traduit pas les commandes, les sorties de terminal capturées, ni
+  les identifiants (`id` d'exercice, slugs des autres pages).
 
 ## Structure
 

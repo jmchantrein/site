@@ -16,7 +16,13 @@ pouvoir citer le principe cognitif ou la règle WCAG qu'elle sert.
 
 ## Contraintes de lisibilité (encodées comme contraintes, pas comme suggestions)
 
-- Colonne de lecture ≤ **66 caractères/ligne** (`max-width: 66ch`).
+- Colonne de lecture : **66 caractères/ligne par défaut** (`--measure`),
+  **réglable par le lecteur** (56–96 ch, panneau Paramètres), comme la
+  largeur globale du site (60–160 rem, défaut 84). Décision révisée
+  (juin 2026) : la mesure typographique idéale est un défaut, pas un
+  carcan — l'écran large est exploité par les colonnes périphériques
+  (sommaire, terminal, rail de notes) et par le contrôle donné au lecteur,
+  pas en étirant la ligne de texte au-delà du confortable.
 - Corps ≥ **18 px**, interligne 1,5–1,6, sans-serif à forte hauteur d'x.
 - Hiérarchie typographique nette (principe de signalement de Mayer) ;
   mise en évidence sobre des termes-clés.
@@ -59,9 +65,12 @@ jamais imposée. Toutes les préférences persistent (`localStorage`).
 ## Décisions prises en session (avec leur justification)
 
 - **Tonalité froide** (gris-bleu), accent bleu encre ; thèmes : Marine,
-  Ardoise, Forêt, Aurore, **Abysse** (sombre, choisi par défaut) — la
-  métaphore marine/profondeur structure l'identité ; le thème sombre
-  passe par un token `--color-on-accent` pour tenir les contrastes.
+  Ardoise, Forêt, Aurore, Abysse (sombre) — la métaphore marine/profondeur
+  structure l'identité ; le sombre passe par un token `--color-on-accent`
+  pour tenir les contrastes. **Défaut révisé (juin 2026)** : le thème suit
+  la préférence système (`prefers-color-scheme`) — Marine en clair, Abysse
+  en sombre. La lecture longue se fait mieux en polarité positive ; le
+  sombre par défaut était un choix d'identité, pas de lisibilité.
 - **Maths : KaTeX** (rendu LaTeX réel, requis pour un blog scientifique).
 - **Bilingue**, français par défaut.
 - **Terminal pédagogique** : démo « live » — commandes cliquables à
@@ -75,8 +84,16 @@ jamais imposée. Toutes les préférences persistent (`localStorage`).
   exploration design).
 - **« Miscelánea »** : nom retenu pour la partie blog multi-thématiques
   (avec nuage de tags et bascule par thématique / par article).
-- **Annotations de l'apprenant** : surlignage + notes post-it en rail
-  latéral, persistance `localStorage` par page, ancrage par
-  citation + offset (modèle W3C Web Annotation, robuste au rechargement),
-  export des notes — pour que l'étudiant arrive en TP avec ses questions
-  déjà formulées (apprentissage actif).
+- **Annotations de l'apprenant** (implémentées — `annotate.js`) :
+  surlignage 4 couleurs + notes post-it en rail latéral, persistance
+  `localStorage` par page, ancrage par citation + offset (modèle W3C Web
+  Annotation, robuste au rechargement), export/import JSON, identité
+  locale, backend enfichable — pour que l'étudiant arrive en TP avec ses
+  questions déjà formulées (apprentissage actif).
+- **Sommaire latéral généré** (h2) sur cours et articles, avec scrollspy
+  et double mobile ; **recherche plein texte** Ctrl+K ou « / » (index
+  construit au build, corps de texte inclus).
+- **Impression** : feuille `@media print` (papier blanc quel que soit le
+  thème, chrome masqué, URL des liens imprimées, solutions dépliées).
+- **Abandonné** : l'effet de « plongée » au scroll (tokens retirés —
+  décoration sans bénéfice pédagogique démontré).

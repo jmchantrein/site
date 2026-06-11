@@ -1,0 +1,170 @@
+---
+title: "Container or virtual machine?"
+description: "Physical machine, hypervisors, virtualization and containerization: what sets them apart, and different technologies for different goals."
+order: 1
+topics: [linux]
+duration: 15
+badge: "Foundations"
+tags: [virtualization, VM, containers, chroot]
+terminal: false
+---
+
+## Introduction
+
+In this section, we will define a few concepts that will help us better grasp the main differences between a physical (real) machine, a virtual machine and a container.
+
+## In the beginning there was... the physical machine
+
+The computer (server, PC, Mac...):
+
+- it is built mainly from electronic components;
+- it is programmable (we can make it run programs);
+- it is very powerful at performing binary computations (but that is all it knows how to do).
+
+An **operating system** (abbreviated OS) is a program whose purpose is:
+
+- to handle communication between software and the various components of a machine (RAM, disks, network card...);
+- to organize and schedule the execution of other programs.
+
+## Then came virtualization... of machines
+
+The virtual machine (abbreviated VM):
+
+- a virtual machine is a machine **emulated** by software;
+- the emulation software simulates the presence of hardware resources such as memory, processor(s), hard drive(s): it is able to simulate a complete computer;
+- the software in charge of managing VMs is called a **hypervisor** (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen, Proxmox...);
+- there are 2 types of hypervisors:
+  - **type 1** (*bare metal*, native): the hypervisor is the OS, best performance (Xen, QEMU/KVM);
+  - **type 2** (*hosted*): hypervisor installed on top of an OS (VirtualBox).
+
+<ArchiStack kind="vm" />
+
+<Note type="success" title="Advantages of the VM model">
+  - VM portability.
+  - Application isolation.
+  - Resource pooling (several VMs on a single real machine).
+  - On-demand resources (adjustable memory, CPU).
+  - Faster startup than a real machine.
+</Note>
+
+<Note type="warning" title="Drawbacks of the VM model">
+  - Lower performance than native (also called *bare metal*) execution.
+  - High RAM consumption (for the VM itself).
+  - High storage consumption: 15 Linux VMs = 15 installations of the Linux kernel.
+  - Slower than a container.
+</Note>
+
+## ... and environment virtualization: containerization
+
+<Note type="warning" title="Terminology: 'lightweight virtualization'">
+  Containerization is often referred to as *lightweight virtualization*. The term is well suited when contrasting containerization with virtualization (then called "heavyweight virtualization"). But in general, the term is poorly chosen: when we use containerization techniques, **there is no virtualization**. For this reason, we will no longer use the term virtualization when talking about containerization in the rest of this course.
+</Note>
+
+Containerization:
+
+- a container provides an **isolated execution environment** for one or more applications;
+- a container **shares the kernel** of the host's operating system;
+- isolation is performed by kernel features (cgroups, namespaces, capabilities);
+- there are different types of containers (chroot, Docker, Podman, LXC, systemd-nspawn...);
+- the software that runs containers is called a **container runtime** (Docker, Podman, containerd...) and the one that manages them at scale is called an **orchestrator** (Docker Swarm, Kubernetes, LXD/Incus, Proxmox...).
+
+<ArchiStack kind="conteneur" />
+
+<Note type="success" title="Advantages of the container model">
+  - Container portability (more or less).
+  - Application isolation (more or less).
+  - Resource pooling, on-demand resources.
+  - Startup almost as fast as a native application.
+  - Unlike VMs, no overhead: savings on hardware resources.
+</Note>
+
+<Note type="warning" title="Drawbacks of the container model">
+  - Can only run applications compatible with the host system's kernel.
+  - Can be stateless, volatile (depending on the technologies used): no snapshot including RAM, no native data persistence.
+  - Slightly steeper learning curve than for VMs.
+  - Fast-moving ecosystem (though now stabilized around the OCI standard, *Open Container Initiative*).
+</Note>
+
+Note: several VMs or several containers can be nested inside one another (*nested virtualization / nested containers*).
+
+<Escape>
+  ### Startup: VM versus container
+
+  Free-form interactive visualization, outside the standard pedagogical template.
+
+  <BootBench />
+</Escape>
+
+## chroot: the beginnings of containerization
+
+<Exercise id="chroot-new-root" level={2}>
+  Set up a chroot for a user with UID 2000 on a directory named `new_root`. You will need:
+
+  - `chroot` (and `man chroot`);
+  - `cp`;
+  - `ldd`;
+  - `mkdir`.
+
+  <Fragment slot="solution">
+    First attempt:
+
+    ```console
+    jmc@laptop ~ $ mkdir new_root
+    jmc@laptop ~ $ cp -r /bin/ new_root/
+    jmc@laptop ~ $ sudo chroot new_root /bin/bash
+    # Darn!
+    ```
+
+    The binary is not enough: its dynamic libraries are also needed, which `ldd` can list:
+
+    ```console
+    jmc@laptop ~ $ ldd /bin/bash
+    jmc@laptop ~ $ cp -r /lib new_root/
+    jmc@laptop ~ $ cp -r /lib64 new_root/
+    jmc@laptop ~ $ sudo chroot new_root /bin/bash
+    bash-4.3# pwd
+    /
+    bash-4.3# echo $UID
+    0
+    bash-4.3# exit
+    ```
+
+    Then with the user with UID 2000:
+
+    ```console
+    jmc@laptop ~ $ sudo chroot --userspec 2000:2000 new_root /bin/bash
+    bash-4.3# echo $UID
+    2000
+    bash-4.3# ls -l /        # See for yourself
+    bash-4.3# rm -r --no-preserve-root /   # What do you think? And what if the --userspec option is omitted?
+    bash-4.3# exit
+    ```
+  </Fragment>
+</Exercise>
+
+## Different containerization technologies for different goals
+
+### Application containers
+
+These are containers whose goal is to run only one application, one service, or even a single process. The two main runtimes are:
+
+- **Docker** (Docker Inc.);
+- **Podman** (Red Hat), compatible with Docker commands and images, daemonless and *rootless* by design.
+
+These technologies are highly valued in the DevOps world (the relationship between developers and system/network administrators).
+
+Using these technologies brings **microservice** architectures to the forefront (1 container = 1 microservice, multi-containerization of the service). These are **stateless** containers: there is no data persistence by default, because these containers are volatile.
+
+### Containers for system administration
+
+These are containers whose goal is to replace VMs. They differ from application containers in that they can provide a **set** of (micro)services. They are **stateful** containers: they offer data persistence and they are meant to be handled like VMs (snapshot, backup, live migration). The main solutions are:
+
+- LXC, via **Incus** (community fork of LXD) or via **LXD** (Canonical);
+- LXC, via **Proxmox** (`pct`);
+- OpenVZ (historical, now Virtuozzo).
+
+LXC containers are able to host Docker containers (under certain conditions: see [this article](https://stgraber.org/2016/04/13/lxd-2-0-docker-in-lxd-712/)).
+
+### Containers for high-performance computing
+
+The idea is to use the container mechanism to provide isolated yet high-performing environments for high-performance computing (HPC, used on compute clusters). **Apptainer** (formerly Singularity) enables the use of containers for HPC. Apptainer containers are able to run Docker containers. They are also more secure natively (no root daemon, the user remains themselves inside the container) and allow native use of certain protocols (InfiniBand, OpenMPI...).

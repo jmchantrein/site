@@ -26,14 +26,17 @@ interface Props {
   toc?: TocItem[];
   prev?: NavLink;
   next?: NavLink;
+  locale?: "fr" | "en";
+  altUrl?: string;
 }
 const {
   title, description, crumb, badges = [], topics = [], lead,
   terminal = false, terminalTitle, terminalComment, toc = [], prev, next,
+  locale = "fr", altUrl,
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
-<Base title={title} description={description} progress>
+<Base title={title} description={description} progress locale={locale} altUrl={altUrl}>
   <main id="main" class="wrap">
     <div class:list={["course-hero", !terminal && "article"]}>
       <div class="course-meta">

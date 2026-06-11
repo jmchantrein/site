@@ -1,7 +1,7 @@
 /* =============================================================================
    SITE.JS — runtime partagé (chargé par Base.astro, bundlé par Astro)
    - Tiroirs Accessibilité + Paramètres (persistants via localStorage)
-   - Bascule de langue FR/EN (chrome bilingue)
+   - Langue par route (FR à la racine, EN sous /en/) — la bascule est un lien
    - Terminal « live » : commandes cliquables, saisie directe, thème local
    - Exercices : verrou de la solution tant que la réponse est vide
    - Sommaires (.toc) : double mobile généré + scrollspy
@@ -25,7 +25,6 @@ const DEFAULTS = {
   requireAnswer: true, // exiger une réponse avant d'afficher la solution
   width: 84,       // largeur globale du site en rem (60..160), bornée à 98vw
   measure: 66,     // largeur de la colonne de lecture en ch (56..96)
-  lang: "fr",
 };
 
 function load() {
@@ -63,23 +62,11 @@ function apply() {
 
   root.setAttribute("data-require-answer", prefs.requireAnswer === false ? "off" : "on");
   document.dispatchEvent(new CustomEvent("sa:require-answer"));
-
-  root.setAttribute("lang", prefs.lang);
-  syncLangButtons();
 }
 
-/* ---- Bascule de langue ---------------------------------------------------- */
-function setLang(l) { prefs.lang = l; save(prefs); apply(); }
-function syncLangButtons() {
-  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
-    const cur = btn.querySelector("[data-lang-cur]");
-    if (cur) cur.textContent = prefs.lang.toUpperCase();
-    btn.setAttribute("aria-label", prefs.lang === "fr" ? "Langue : Français — basculer en anglais" : "Language: English — switch to French");
-  });
-  document.querySelectorAll("[data-a11y-lang] button").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.getAttribute("data-set-lang") === prefs.lang));
-  });
-}
+/* La langue est portée par la ROUTE (une page = une langue, contenu EN sous
+   /en/) : html[lang] est posé au build, la bascule d'en-tête est un lien. */
+const curLang = () => (root.getAttribute("lang") === "en" ? "en" : "fr");
 
 /* ---- Tiroirs Accessibilité + Paramètres ----------------------------------- */
 let lastFocus = null, openName = null;
@@ -135,7 +122,7 @@ function syncControls() {
   if (q("[data-a11y-width]")) {
     q("[data-a11y-width]").value = prefs.width || 84;
     const wv = q("[data-a11y-widthval]");
-    if (wv) wv.textContent = prefs.width >= 160 ? (prefs.lang === "en" ? "full" : "plein") : (prefs.width || 84) + " rem";
+    if (wv) wv.textContent = prefs.width >= 160 ? (curLang() === "en" ? "full" : "plein") : (prefs.width || 84) + " rem";
   }
   if (q("[data-a11y-measure]")) {
     q("[data-a11y-measure]").value = prefs.measure || 66;
@@ -151,7 +138,6 @@ function syncControls() {
   const sc = document.querySelector('[data-a11y-scale="-1"]'), si = document.querySelector('[data-a11y-scale="1"]');
   if (sc) sc.disabled = prefs.scale <= 0.9;
   if (si) si.disabled = prefs.scale >= 1.6;
-  syncLangButtons();
 }
 
 function wirePanel() {
@@ -191,16 +177,10 @@ function wirePanel() {
   document.querySelectorAll("[data-a11y-theme] button").forEach((b) => {
     b.addEventListener("click", () => { prefs.theme = b.getAttribute("data-set-theme"); save(prefs); apply(); syncControls(); });
   });
-  document.querySelectorAll("[data-a11y-lang] button").forEach((b) => {
-    b.addEventListener("click", () => { setLang(b.getAttribute("data-set-lang")); syncControls(); });
-  });
   document.querySelectorAll("[data-a11y-reset]").forEach((b) => {
     b.addEventListener("click", () => {
-      prefs = Object.assign({}, DEFAULTS, { lang: prefs.lang }); save(prefs); apply(); syncControls();
+      prefs = Object.assign({}, DEFAULTS); save(prefs); apply(); syncControls();
     });
-  });
-  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => { setLang(prefs.lang === "fr" ? "en" : "fr"); syncControls(); });
   });
   syncControls();
 }
@@ -556,7 +536,6 @@ function wireSearch() {
   let INDEX = null;
   let ui = null, input, list, items = [], sel = 0, prevFocus = null;
   const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const curLang = () => (root.getAttribute("lang") === "en" ? "en" : "fr");
   function build() {
     ui = document.createElement("div");
     ui.className = "cmdk";
@@ -755,4 +734,4 @@ function init() {
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();
 
-window.SiteAstro = { open: openPanel, close: closePanel, setLang };
+window.SiteAstro = { open: openPanel, close: closePanel };

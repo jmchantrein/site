@@ -8,7 +8,7 @@ local** : polices, icônes et maths sont résolus au build — aucun CDN.
 ```bash
 npm install     # une fois
 npm run dev     # développement (http://localhost:4321)
-npm run build   # production → dist/ (à servir tel quel)
+npm run build   # production → dist/ (servi sous /site/ — GitHub Pages)
 ```
 
 ## Architecture en couches (séparation stricte contenu / forme)
@@ -60,6 +60,11 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants.
+
+**Traduction anglaise (règle projet)** : chaque contenu FR a son pendant EN
+dans le sous-dossier `en/` de sa collection (`src/content/cours/en/…`),
+servi sous `/en/…` — l'en-tête propose la bascule quand la traduction
+existe. À chaque modification d'un contenu FR, mettre à jour la version EN.
 
 Un article se crée de la même façon dans `src/content/miscelanea/`
 (frontmatter : `title`, `description`, `topics` — multi-thématiques possibles —,

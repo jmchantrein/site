@@ -6,9 +6,9 @@ import { getCollection } from "astro:content";
     et articles Miscelánea (datés quand le frontmatter le précise). */
 export async function GET(context: APIContext) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const cours = (await getCollection("cours", ({ data }) => !data.draft))
+  const cours = (await getCollection("cours", ({ data, id }) => !data.draft && !id.startsWith("en/")))
     .sort((a, b) => a.data.order - b.data.order);
-  const articles = await getCollection("miscelanea", ({ data }) => !data.draft);
+  const articles = await getCollection("miscelanea", ({ data, id }) => !data.draft && !id.startsWith("en/"));
 
   return rss({
     title: "Site Astro — cadre pédagogique",

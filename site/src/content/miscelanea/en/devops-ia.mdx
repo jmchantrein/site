@@ -1,0 +1,32 @@
+---
+title: "DevOps & AI"
+description: "Bringing a model into a continuous integration pipeline: reproducibility, cost and safety."
+topics: [linux, sciences]
+duration: 11
+---
+
+## 1. Reproducibility: pinning the environment
+
+A model is only reproducible if its environment is. We **pin** versions (libraries, CUDA drivers, model weights) and build an immutable container image — exactly the principles covered in the [containerization course](/cours/conteneurisation/).
+
+<Note type="success" title="Tip">
+  Version the model *weights* as artifacts (in a dedicated registry), not in the Git repository: they are large and binary.
+</Note>
+
+## 2. Putting the cost into an equation
+
+An inference step in CI has a cost that can be estimated. For $n$ test requests, a unit cost $c$ per thousand tokens and $t$ tokens per request:
+
+$$
+C \;=\; n \cdot t \cdot \frac{c}{1000}
+$$
+
+With $n=200$ tests, $t=1500$ tokens and $c=0{,}50$ €, each run costs $200 \cdot 1500 \cdot 0{,}0005 = 150$ € — hence the value of running these tests only on the branches concerned.
+
+## 3. Guardrails
+
+A model is non-deterministic: a test cannot demand an exact output. Instead, we evaluate **properties** (valid format, no secret leakage, score above a threshold) and set a cost budget per run.
+
+<Note type="danger" title="Pitfall">
+  Never put a model API key in plain text in the CI configuration: use the runner's encrypted secrets, and make them expire.
+</Note>

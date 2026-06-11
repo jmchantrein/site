@@ -48,7 +48,9 @@ export const GET: APIRoute = async () => {
   const cours = (await getCollection("cours", ({ data }) => !data.draft))
     .sort((a, b) => a.data.order - b.data.order);
   for (const c of cours) {
-    const page = `${base}/cours/${c.id}/`;
+    const page = c.id.startsWith("en/")
+      ? `${base}/en/cours/${c.id.slice(3)}/`
+      : `${base}/cours/${c.id}/`;
     index.push({ p: c.data.title, t: c.data.title, page, b: c.data.description });
     for (const h of sectionsOf(c.body ?? "")) {
       index.push({ p: c.data.title, t: h.text, page, hash: h.slug, b: h.body });
@@ -57,7 +59,9 @@ export const GET: APIRoute = async () => {
 
   const articles = await getCollection("miscelanea", ({ data }) => !data.draft);
   for (const a of articles) {
-    const page = `${base}/miscelanea/${a.id}/`;
+    const page = a.id.startsWith("en/")
+      ? `${base}/en/miscelanea/${a.id.slice(3)}/`
+      : `${base}/miscelanea/${a.id}/`;
     index.push({ p: a.data.title, t: a.data.title, page, b: a.data.description });
     for (const h of sectionsOf(a.body ?? "")) {
       index.push({ p: a.data.title, t: h.text, page, hash: h.slug, b: h.body });

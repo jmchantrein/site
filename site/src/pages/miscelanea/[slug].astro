@@ -5,11 +5,13 @@ import { mdxComponents } from "../../components/mdx";
 import { TOPICS } from "../../data/topics";
 
 export async function getStaticPaths() {
-  const articles = await getCollection("miscelanea", ({ data }) => !data.draft);
-  return articles.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+  const all = await getCollection("miscelanea", ({ data }) => !data.draft);
+  const articles = all.filter((a) => !a.id.startsWith("en/"));
+  const enIds = new Set(all.filter((a) => a.id.startsWith("en/")).map((a) => a.id.slice(3)));
+  return articles.map((entry) => ({ params: { slug: entry.id }, props: { entry, hasEn: enIds.has(entry.id) } }));
 }
 
-const { entry } = Astro.props;
+const { entry, hasEn } = Astro.props;
 const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const d = entry.data;
@@ -23,6 +25,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
   topics={d.topics.map((t) => TOPICS[t])}
   lead={d.description}
   toc={toc}
+  altUrl={hasEn ? `${base}/en/miscelanea/${entry.id}/` : undefined}
   prev={{ href: `${base}/miscelanea/`, label: "Tous les articles" }}
 >
   <Content components={mdxComponents} />
