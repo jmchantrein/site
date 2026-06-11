@@ -698,6 +698,63 @@ function wireSlides() {
   });
 }
 
+/* ---- PORTABILITÉ DES DONNÉES LOCALES (règle projet) -------------------------
+   Tout ce qui est persisté en local doit pouvoir être exporté et réimporté :
+   préférences, thème du terminal, réponses d'exercices, annotations, identité.
+   Un seul fichier JSON couvre l'ensemble des clés du site. */
+const DATA_PREFIXES = ["site-astro-", "annot:"];
+function wireDataPortability() {
+  const exportBtn = qp("[data-data-export]"), importBtn = qp("[data-data-import]");
+  if (!exportBtn || !importBtn) return;
+  const msg = qp("[data-data-msg]");
+  const say = (fr, en) => { if (msg) msg.innerHTML = '<span data-lang="fr">' + fr + '</span><span data-lang="en">' + en + "</span>"; };
+
+  exportBtn.addEventListener("click", () => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (DATA_PREFIXES.some((p) => k.startsWith(p))) data[k] = localStorage.getItem(k);
+    }
+    const payload = { schema: "site-astro/local-data@1", exportedAt: new Date().toISOString(), data };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "site-astro-donnees-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    say("Fichier téléchargé (" + Object.keys(data).length + " clés).", "File downloaded (" + Object.keys(data).length + " keys).");
+  });
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = "application/json,.json"; fileInput.hidden = true;
+  document.body.appendChild(fileInput);
+  importBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let n = 0;
+      try {
+        const obj = JSON.parse(String(rd.result));
+        if (!obj || obj.schema !== "site-astro/local-data@1" || typeof obj.data !== "object") throw new Error("schema");
+        for (const k of Object.keys(obj.data)) {
+          // seules les clés du site sont acceptées (pas d'écriture arbitraire)
+          if (DATA_PREFIXES.some((p) => k.startsWith(p)) && typeof obj.data[k] === "string") {
+            localStorage.setItem(k, obj.data[k]); n++;
+          }
+        }
+      } catch (e) {
+        say("Fichier illisible — export attendu : site-astro/local-data@1.", "Unreadable file — expected export: site-astro/local-data@1.");
+        fileInput.value = ""; return;
+      }
+      say(n + " clés importées — rechargement…", n + " keys imported — reloading…");
+      fileInput.value = "";
+      setTimeout(() => location.reload(), 600);
+    };
+    rd.readAsText(f);
+  });
+}
+
 /* ---- IMPRESSION : déplier solutions et diapos masquées pour le papier ------- */
 function wirePrint() {
   window.addEventListener("beforeprint", () => {
@@ -729,6 +786,7 @@ function init() {
   wireAnchors();
   wireSearch();
   wireSlides();
+  wireDataPortability();
   wirePrint();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

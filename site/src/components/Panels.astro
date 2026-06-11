@@ -122,6 +122,15 @@ import Icon from "./Icon.astro";
       <p class="a11y-field__help"><span data-lang="fr">En caractères par ligne — 66 est le défaut typographique, augmentez pour exploiter l'écran.</span><span data-lang="en">In characters per line — 66 is the typographic default; increase to use more of the screen.</span></p>
     </div>
 
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span data-lang="fr">Mes données locales</span><span data-lang="en">My local data</span></span>
+      <div class="a11y-data-btns">
+        <button class="annot-btn" data-data-export type="button"><span data-lang="fr">Exporter</span><span data-lang="en">Export</span></button>
+        <button class="annot-btn" data-data-import type="button"><span data-lang="fr">Importer</span><span data-lang="en">Import</span></button>
+      </div>
+      <p class="a11y-field__help" data-data-msg><span data-lang="fr">Tout ce que ce site garde dans votre navigateur — préférences, réponses d'exercices, annotations — dans un fichier JSON réimportable ici ou sur une autre machine.</span><span data-lang="en">Everything this site keeps in your browser — preferences, exercise answers, annotations — as a JSON file you can re-import here or on another machine.</span></p>
+    </div>
+
   </div>
   <div class="a11y-panel__foot">
     <button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button>
@@ -132,4 +141,5 @@ import Icon from "./Icon.astro";
 <style>
   .panel-head-ico { width: 24px; height: 24px; flex: none; color: var(--color-accent-text); display: inline-block; }
   .panel-head-ico :global(svg) { width: 100%; height: 100%; }
+  .a11y-data-btns { display: flex; gap: var(--space-3); }
 </style>
