@@ -41,11 +41,6 @@
   --color-danger:        #f1928b;  /* rouge rosé — ~7:1 → AAA                         */
   --color-danger-weak:   #371a1c;
 
-  /* Profondeur (effet « plongée » au scroll) — interpolé de la surface au fond. */
-  --depth-shallow: #1d4257;  /* eau de surface (plus claire que le fond) */
-  --depth-deep:    #07131c;  /* assombrissement des grands fonds */
-  --depth-panel:   #1d3346;  /* le panneau de lecture dérive vers cet extrême (inverse du fond) */
-
   /* ---- TERMINAL SOMBRE — blanc cassé sur quasi-noir (jamais #fff sur #000) -- */
   --term-bg:        #1a1a1a;  /* quasi-noir                                          */
   --term-bg-raised: #242424;  /* barre de titre / lignes actives                     */
@@ -96,10 +91,10 @@
   --space-9: 6rem;     /* 96px */
 
   /* ---- LARGEURS DE COLONNE (lisibilité : 66 caractères max) -------------- */
-  --measure:        66ch;  /* colonne de lecture — plafond strict   */
+  --measure:        66ch;  /* colonne de lecture — défaut, réglable  */
   --measure-narrow: 52ch;  /* notes, légendes                        */
   --measure-wide:   78ch;  /* zones techniques (tableaux, code)      */
-  --page-max:       72rem; /* largeur enveloppe (cours = 2 colonnes) */
+  --page-max:       84rem; /* largeur enveloppe — réglable (panneau Paramètres) */
 
   /* ---- RAYONS & ÉLÉVATION (sobre — décoration fonctionnelle seulement) --- */
   --radius-sm: 3px;
@@ -141,9 +136,6 @@ html[data-contrast="high"][data-contrast="high"] {
   --color-accent-hover:  #07237a;
   --color-accent-weak:   #e4e9f7;
   --color-on-accent:     #ffffff;
-  --depth-shallow:       #ffffff;
-  --depth-deep:          #eef1f5;
-  --depth-panel:         #ffffff;
   --term-fg:             #f2f2f2;
   --term-dim:            #c2c8cf;
   --color-info:          #0a2f9c; --color-info-weak: #e7ebf8;

@@ -29,6 +29,7 @@ import "../styles/themes.css";
 import "../styles/base.css";
 import "../styles/components.css";
 import "../styles/a11y-panel.css";
+import "../styles/annotate.css";
 import Icon from "../components/Icon.astro";
 import Panels from "../components/Panels.astro";
 
@@ -37,14 +38,19 @@ interface Props {
   description?: string;
   /** Affiche le fil de progression de lecture (pages longues). */
   progress?: boolean;
+  /** Langue de la page (une langue = une route ; le contenu EN vit sous /en/). */
+  locale?: "fr" | "en";
+  /** URL de la même page dans l'autre langue — affiche la bascule FR/EN. */
+  altUrl?: string;
 }
-const { title, description, progress = false } = Astro.props;
+const { title, description, progress = false, locale = "fr", altUrl } = Astro.props;
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const nav = [
   { href: `${base}/`, fr: "Accueil", en: "Home" },
-  { href: `${base}/cours/`, fr: "Cours", en: "Courses" },
-  { href: `${base}/miscelanea/`, fr: "Miscelánea", en: "Miscellanea" },
+  { href: `${cpfx}/cours/`, fr: "Cours", en: "Courses" },
+  { href: `${cpfx}/miscelanea/`, fr: "Miscelánea", en: "Miscellanea" },
   { href: `${base}/aide/`, fr: "Aide", en: "Help" },
   { href: `${base}/systeme/`, fr: "Système", en: "System" },
 ];
@@ -52,7 +58,7 @@ const isCurrent = (href: string) =>
   href === `${base}/` ? path === href : path.startsWith(href);
 ---
 <!doctype html>
-<html lang="fr" data-theme="abysse">
+<html lang={locale} data-theme="marine">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,12 +68,13 @@ const isCurrent = (href: string) =>
         try {
           var p = JSON.parse(localStorage.getItem("site-astro-prefs-v1") || "{}");
           var r = document.documentElement;
-          if (p.theme) r.setAttribute("data-theme", p.theme);
+          var sys = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "abysse" : "marine";
+          r.setAttribute("data-theme", p.theme || sys);
           if (p.contrast) r.setAttribute("data-contrast", "high");
-          if (p.lang) r.setAttribute("lang", p.lang);
           if (p.readfont && p.readfont !== "default") r.setAttribute("data-readfont", p.readfont);
           if (p.motion === "off") r.setAttribute("data-motion", "off");
           if (p.width) r.style.setProperty("--page-max", "min(" + p.width + "rem, 98vw)");
+          if (p.measure) r.style.setProperty("--measure", p.measure + "ch");
           if (p.scale) r.style.fontSize = p.scale * 100 + "%";
         } catch (e) {}
       })();
@@ -98,9 +105,16 @@ const isCurrent = (href: string) =>
           ))}
         </nav>
         <div class="header-utils">
-          <button class="util-btn lang-toggle" data-lang-toggle type="button">
-            <Icon name="earth" class="util-btn__icon" />
-            <span data-lang-cur>FR</span>
+          {altUrl && (
+            <a class="util-btn lang-toggle" href={altUrl} aria-label={locale === "fr" ? "Read this page in English" : "Lire cette page en français"}>
+              <Icon name="earth" class="util-btn__icon" />
+              <span data-lang-cur>{locale === "fr" ? "EN" : "FR"}</span>
+            </a>
+          )}
+          <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+            <Icon name="pen-line" class="util-btn__icon" />
+            <span class="annot-count" data-annot-count aria-hidden="true">0</span>
+            <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
           </button>
           <button class="util-btn util-btn--icon" data-search-trigger type="button" aria-label="Rechercher (Ctrl+K)">
             <Icon name="search" class="util-btn__icon" />
@@ -134,8 +148,19 @@ const isCurrent = (href: string) =>
 
     <Panels />
     <script src="../scripts/site.js"></script>
+    <script src="../scripts/annotate.js"></script>
     <style>
       .footer-a11y { margin-left: auto; }
+      .annot-trigger { position: relative; }
+      .annot-count {
+        position: absolute; top: -6px; right: -6px;
+        min-width: 18px; height: 18px; padding: 0 4px;
+        display: grid; place-items: center;
+        border-radius: 999px; font-family: var(--font-mono);
+        font-size: 11px; font-weight: 700; line-height: 1;
+        background: var(--color-accent-text); color: var(--color-on-accent);
+      }
+      .annot-count[data-n="0"] { display: none; }
     </style>
   </body>
 </html>

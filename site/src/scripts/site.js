@@ -1,7 +1,7 @@
 /* =============================================================================
    SITE.JS — runtime partagé (chargé par Base.astro, bundlé par Astro)
    - Tiroirs Accessibilité + Paramètres (persistants via localStorage)
-   - Bascule de langue FR/EN (chrome bilingue)
+   - Langue par route (FR à la racine, EN sous /en/) — la bascule est un lien
    - Terminal « live » : commandes cliquables, saisie directe, thème local
    - Exercices : verrou de la solution tant que la réponse est vide
    - Sommaires (.toc) : double mobile généré + scrollspy
@@ -21,10 +21,10 @@ const DEFAULTS = {
   contrast: false,
   motion: "auto",  // "auto" | "on" | "off"
   readfont: "default", // default | atkinson | dyslexic
-  theme: "abysse", // abysse | marine | ardoise | foret | aurore
+  theme: "",       // "" = suivre la préférence système (marine/abysse)
   requireAnswer: true, // exiger une réponse avant d'afficher la solution
-  width: 72,       // largeur globale du site en rem (60..160), bornée à 98vw
-  lang: "fr",
+  width: 84,       // largeur globale du site en rem (60..160), bornée à 98vw
+  measure: 66,     // largeur de la colonne de lecture en ch (56..96)
 };
 
 function load() {
@@ -36,6 +36,10 @@ function save(p) { try { localStorage.setItem(STORE, JSON.stringify(p)); } catch
 
 let prefs = load();
 const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Thème par défaut : la préférence système (lisibilité d'abord — clair en
+   polarité positive), Abysse seulement si le système est en sombre. */
+const systemTheme = () =>
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "abysse" : "marine";
 
 function apply() {
   root.style.fontSize = (prefs.scale * 100).toFixed(0) + "%";
@@ -50,30 +54,19 @@ function apply() {
   if (prefs.readfont && prefs.readfont !== "default") root.setAttribute("data-readfont", prefs.readfont);
   else root.removeAttribute("data-readfont");
 
-  root.setAttribute("data-theme", prefs.theme || "abysse");
+  root.setAttribute("data-theme", prefs.theme || systemTheme());
 
-  const w = prefs.width || 72;
+  const w = prefs.width || 84;
   root.style.setProperty("--page-max", "min(" + w + "rem, 98vw)");
+  root.style.setProperty("--measure", (prefs.measure || 66) + "ch");
 
   root.setAttribute("data-require-answer", prefs.requireAnswer === false ? "off" : "on");
   document.dispatchEvent(new CustomEvent("sa:require-answer"));
-
-  root.setAttribute("lang", prefs.lang);
-  syncLangButtons();
 }
 
-/* ---- Bascule de langue ---------------------------------------------------- */
-function setLang(l) { prefs.lang = l; save(prefs); apply(); }
-function syncLangButtons() {
-  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
-    const cur = btn.querySelector("[data-lang-cur]");
-    if (cur) cur.textContent = prefs.lang.toUpperCase();
-    btn.setAttribute("aria-label", prefs.lang === "fr" ? "Langue : Français — basculer en anglais" : "Language: English — switch to French");
-  });
-  document.querySelectorAll("[data-a11y-lang] button").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.getAttribute("data-set-lang") === prefs.lang));
-  });
-}
+/* La langue est portée par la ROUTE (une page = une langue, contenu EN sous
+   /en/) : html[lang] est posé au build, la bascule d'en-tête est un lien. */
+const curLang = () => (root.getAttribute("lang") === "en" ? "en" : "fr");
 
 /* ---- Tiroirs Accessibilité + Paramètres ----------------------------------- */
 let lastFocus = null, openName = null;
@@ -127,20 +120,24 @@ function syncControls() {
   if (q("[data-a11y-motion]")) q("[data-a11y-motion]").checked = motionOff;
   if (q("[data-a11y-require]")) q("[data-a11y-require]").checked = prefs.requireAnswer !== false;
   if (q("[data-a11y-width]")) {
-    q("[data-a11y-width]").value = prefs.width || 72;
+    q("[data-a11y-width]").value = prefs.width || 84;
     const wv = q("[data-a11y-widthval]");
-    if (wv) wv.textContent = prefs.width >= 160 ? (prefs.lang === "en" ? "full" : "plein") : (prefs.width || 72) + " rem";
+    if (wv) wv.textContent = prefs.width >= 160 ? (curLang() === "en" ? "full" : "plein") : (prefs.width || 84) + " rem";
+  }
+  if (q("[data-a11y-measure]")) {
+    q("[data-a11y-measure]").value = prefs.measure || 66;
+    const mv = q("[data-a11y-measureval]");
+    if (mv) mv.textContent = (prefs.measure || 66) + " ch";
   }
   document.querySelectorAll("[data-a11y-font] button").forEach((b) => {
     b.setAttribute("aria-pressed", String(b.getAttribute("data-set-font") === prefs.readfont));
   });
   document.querySelectorAll("[data-a11y-theme] button").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.getAttribute("data-set-theme") === (prefs.theme || "abysse")));
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-set-theme") === (prefs.theme || systemTheme())));
   });
   const sc = document.querySelector('[data-a11y-scale="-1"]'), si = document.querySelector('[data-a11y-scale="1"]');
   if (sc) sc.disabled = prefs.scale <= 0.9;
   if (si) si.disabled = prefs.scale >= 1.6;
-  syncLangButtons();
 }
 
 function wirePanel() {
@@ -169,6 +166,7 @@ function wirePanel() {
   bind("[data-a11y-letter]", "letter", parseFloat);
   bind("[data-a11y-word]", "word", parseFloat);
   bind("[data-a11y-width]", "width", parseFloat);
+  bind("[data-a11y-measure]", "measure", parseFloat);
 
   qp("[data-a11y-contrast]").addEventListener("change", (e) => { prefs.contrast = e.target.checked; save(prefs); apply(); syncControls(); });
   qp("[data-a11y-motion]").addEventListener("change", (e) => { prefs.motion = e.target.checked ? "off" : "on"; save(prefs); apply(); syncControls(); });
@@ -179,16 +177,10 @@ function wirePanel() {
   document.querySelectorAll("[data-a11y-theme] button").forEach((b) => {
     b.addEventListener("click", () => { prefs.theme = b.getAttribute("data-set-theme"); save(prefs); apply(); syncControls(); });
   });
-  document.querySelectorAll("[data-a11y-lang] button").forEach((b) => {
-    b.addEventListener("click", () => { setLang(b.getAttribute("data-set-lang")); syncControls(); });
-  });
   document.querySelectorAll("[data-a11y-reset]").forEach((b) => {
     b.addEventListener("click", () => {
-      prefs = Object.assign({}, DEFAULTS, { lang: prefs.lang }); save(prefs); apply(); syncControls();
+      prefs = Object.assign({}, DEFAULTS); save(prefs); apply(); syncControls();
     });
-  });
-  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => { setLang(prefs.lang === "fr" ? "en" : "fr"); syncControls(); });
   });
   syncControls();
 }
@@ -242,6 +234,9 @@ function revealOutput(screen, html, done) {
 
 function runCommand(cmd) {
   const term = getTerminal(cmd); if (!term) return;
+  // Terminal hors écran (mobile : l'atelier est sous l'article) → l'amener en vue.
+  const r = term.getBoundingClientRect();
+  if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
   const screen = term.querySelector(".terminal__screen");
   const text = cmd.getAttribute("data-cmd") || (cmd.querySelector("code") ? cmd.querySelector("code").textContent : "");
   const tpl = cmd.parentNode.querySelector(".cmd-out") ||
@@ -424,15 +419,27 @@ function refreshExercise(ex) {
   if (summary) summary.setAttribute("aria-disabled", String(locked));
   if (locked && details.open) details.open = false;
 }
+/* Réponses persistées par page (l'élève retrouve son brouillon au rechargement). */
+const ANSWERS_KEY = "site-astro-answers:" + location.pathname;
+function loadAnswers() { try { return JSON.parse(localStorage.getItem(ANSWERS_KEY) || "{}"); } catch (e) { return {}; } }
+function saveAnswer(id, text) {
+  try {
+    const all = loadAnswers();
+    if (text.trim()) all[id] = text; else delete all[id];
+    localStorage.setItem(ANSWERS_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
 function wireExercises() {
   const list = document.querySelectorAll(".exercise");
+  const answers = loadAnswers();
   list.forEach((ex) => {
     const field = ex.querySelector("[data-exercise-answer] textarea, [data-exercise-answer] input");
     const details = ex.querySelector(".exercise__solution");
     if (!details) return;
     const summary = details.querySelector("summary");
+    if (field && field.id && answers[field.id] && !field.value) field.value = answers[field.id];
     refreshExercise(ex);
-    if (field) field.addEventListener("input", () => refreshExercise(ex));
+    if (field) field.addEventListener("input", () => { refreshExercise(ex); if (field.id) saveAnswer(field.id, field.value); });
     if (summary) {
       summary.addEventListener("click", (e) => {
         if (ex.getAttribute("data-locked") === "true") { e.preventDefault(); if (field) field.focus(); }
@@ -529,7 +536,6 @@ function wireSearch() {
   let INDEX = null;
   let ui = null, input, list, items = [], sel = 0, prevFocus = null;
   const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const curLang = () => (root.getAttribute("lang") === "en" ? "en" : "fr");
   function build() {
     ui = document.createElement("div");
     ui.className = "cmdk";
@@ -541,6 +547,9 @@ function wireSearch() {
     document.body.appendChild(ui);
     input = ui.querySelector("input"); list = ui.querySelector(".cmdk__list");
     ui.querySelector(".cmdk__backdrop").addEventListener("click", close);
+    // Piège à focus : le dialogue est modal, Tab reste sur le champ de saisie
+    // (les résultats se parcourent aux flèches, comme dans toute palette).
+    ui.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); input.focus(); } });
     input.addEventListener("input", () => render(input.value));
     input.addEventListener("keydown", (e) => {
       if (e.key === "ArrowDown") { move(1); e.preventDefault(); }
@@ -550,7 +559,7 @@ function wireSearch() {
   }
   function render(q) {
     const nq = norm(q || "");
-    const res = (INDEX || []).filter((en) => !nq || norm(en.t + " " + en.p).indexOf(nq) !== -1).slice(0, 14);
+    const res = (INDEX || []).filter((en) => !nq || norm(en.t + " " + en.p + " " + (en.b || "")).indexOf(nq) !== -1).slice(0, 14);
     list.innerHTML = ""; items = []; sel = 0;
     let lastPage = null;
     res.forEach((en) => {
@@ -604,6 +613,11 @@ function wireSearch() {
     if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
       e.preventDefault();
       if (ui && ui.getAttribute("data-open") === "true") close(); else open();
+    } else if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // « / » : convention répandue (Wikipédia, GitHub) — jamais quand on tape du texte.
+      const t = e.target;
+      const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      if (!typing && !(ui && ui.getAttribute("data-open") === "true")) { e.preventDefault(); open(); }
     } else if (e.key === "Escape" && ui && ui.getAttribute("data-open") === "true") { close(); e.preventDefault(); }
   });
   document.querySelectorAll("[data-search-trigger]").forEach((b) => b.addEventListener("click", open));
@@ -658,6 +672,12 @@ function wireSlides() {
     function go(n) {
       i = Math.max(0, Math.min(slides.length - 1, n));
       track.style.transform = "translateX(" + -i * 100 + "%)";
+      // Les diapos hors écran sont retirées de l'arbre d'accessibilité et du
+      // parcours clavier (inert) — seul le contenu visible est atteignable.
+      slides.forEach((s, k) => {
+        if (k === i) { s.removeAttribute("aria-hidden"); s.removeAttribute("inert"); }
+        else { s.setAttribute("aria-hidden", "true"); s.setAttribute("inert", ""); }
+      });
       dots.forEach((d, k) => d.setAttribute("aria-current", String(k === i)));
       if (prev) prev.disabled = i === 0;
       if (next) next.disabled = i === slides.length - 1;
@@ -678,6 +698,80 @@ function wireSlides() {
   });
 }
 
+/* ---- PORTABILITÉ DES DONNÉES LOCALES (règle projet) -------------------------
+   Tout ce qui est persisté en local doit pouvoir être exporté et réimporté :
+   préférences, thème du terminal, réponses d'exercices, annotations, identité.
+   Un seul fichier JSON couvre l'ensemble des clés du site. */
+const DATA_PREFIXES = ["site-astro-", "annot:"];
+function wireDataPortability() {
+  const exportBtn = qp("[data-data-export]"), importBtn = qp("[data-data-import]");
+  if (!exportBtn || !importBtn) return;
+  const msg = qp("[data-data-msg]");
+  const say = (fr, en) => { if (msg) msg.innerHTML = '<span data-lang="fr">' + fr + '</span><span data-lang="en">' + en + "</span>"; };
+
+  exportBtn.addEventListener("click", () => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (DATA_PREFIXES.some((p) => k.startsWith(p))) data[k] = localStorage.getItem(k);
+    }
+    const payload = { schema: "site-astro/local-data@1", exportedAt: new Date().toISOString(), data };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "site-astro-donnees-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    say("Fichier téléchargé (" + Object.keys(data).length + " clés).", "File downloaded (" + Object.keys(data).length + " keys).");
+  });
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = "application/json,.json"; fileInput.hidden = true;
+  document.body.appendChild(fileInput);
+  importBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let n = 0;
+      try {
+        const obj = JSON.parse(String(rd.result));
+        if (!obj || obj.schema !== "site-astro/local-data@1" || typeof obj.data !== "object") throw new Error("schema");
+        for (const k of Object.keys(obj.data)) {
+          // seules les clés du site sont acceptées (pas d'écriture arbitraire)
+          if (DATA_PREFIXES.some((p) => k.startsWith(p)) && typeof obj.data[k] === "string") {
+            localStorage.setItem(k, obj.data[k]); n++;
+          }
+        }
+      } catch (e) {
+        say("Fichier illisible — export attendu : site-astro/local-data@1.", "Unreadable file — expected export: site-astro/local-data@1.");
+        fileInput.value = ""; return;
+      }
+      say(n + " clés importées — rechargement…", n + " keys imported — reloading…");
+      fileInput.value = "";
+      setTimeout(() => location.reload(), 600);
+    };
+    rd.readAsText(f);
+  });
+}
+
+/* ---- IMPRESSION : déplier solutions et diapos masquées pour le papier ------- */
+function wirePrint() {
+  window.addEventListener("beforeprint", () => {
+    document.querySelectorAll(".exercise__solution, .toc-m").forEach((d) => {
+      d.setAttribute("data-was-open", d.open ? "1" : "");
+      d.open = true;
+    });
+    document.querySelectorAll(".slide").forEach((s) => { s.removeAttribute("aria-hidden"); s.removeAttribute("inert"); });
+  });
+  window.addEventListener("afterprint", () => {
+    document.querySelectorAll("[data-was-open]").forEach((d) => {
+      d.open = d.getAttribute("data-was-open") === "1";
+      d.removeAttribute("data-was-open");
+    });
+  });
+}
+
 /* ---- INIT -------------------------------------------------------------------- */
 apply(); // applique tôt (évite le flash entre l'anti-FOUC inline et le bundle)
 function init() {
@@ -692,8 +786,10 @@ function init() {
   wireAnchors();
   wireSearch();
   wireSlides();
+  wireDataPortability();
+  wirePrint();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();
 
-window.SiteAstro = { open: openPanel, close: closePanel, setLang };
+window.SiteAstro = { open: openPanel, close: closePanel };

@@ -22,13 +22,14 @@ const LABELS = {
   partage: "Les images x (couches 1 à n) et y (couches 1 à n+1) coexistent et partagent n couches.",
 };
 
-const L_N = "Couche n : z3d56…";
-const L_DOTS = "…";
-const L_1 = "Couche 1 : a8ze4…";
-const L_RW = "Couche RW (lecture/écriture)";
-const L_NP1 = "Couche n+1 : d32…";
-const IMG_X = "image x\nlecture seule";
-const IMG_Y = "image y\nlecture seule";
+/* Libellés bilingues — [fr, en] ; rendus en doubles <span data-lang>. */
+const L_N = ["Couche n : z3d56…", "Layer n: z3d56…"];
+const L_DOTS = ["…", "…"];
+const L_1 = ["Couche 1 : a8ze4…", "Layer 1: a8ze4…"];
+const L_RW = ["Couche RW (lecture/écriture)", "RW layer (read/write)"];
+const L_NP1 = ["Couche n+1 : d32…", "Layer n+1: d32…"];
+const IMG_X = ["image x\nlecture seule", "image x\nread-only"];
+const IMG_Y = ["image y\nlecture seule", "image y\nread-only"];
 
 /* Couches du haut vers le bas + crochets (from/to en lignes de grille, col 2 ou 3). */
 const STATES = {
@@ -40,7 +41,7 @@ const STATES = {
     layers: [L_RW, L_N, L_DOTS, L_1],
     braces: [
       { label: IMG_X, from: 2, to: 5, col: 2 },
-      { label: "conteneur x", from: 1, to: 5, col: 3 },
+      { label: ["conteneur x", "container x"], from: 1, to: 5, col: 3 },
     ],
   },
   commit: {
@@ -67,12 +68,13 @@ const { layers, braces } = STATES[state];
       ]}
       style={`grid-row: ${i + 1};`}
     >
-      {label}
+      <span data-lang="fr">{label[0]}</span><span data-lang="en">{label[1]}</span>
     </span>
   ))}
   {braces.map((b) => (
     <span class="lstack__brace" style={`grid-row: ${b.from} / ${b.to}; grid-column: ${b.col};`} aria-hidden="true">
-      {b.label.split("\n").map((line, i) => (i === 0 ? line : [<br />, line]))}
+      <span data-lang="fr">{b.label[0].split("\n").map((line, i) => (i === 0 ? line : [<br />, line]))}</span>
+      <span data-lang="en">{b.label[1].split("\n").map((line, i) => (i === 0 ? line : [<br />, line]))}</span>
     </span>
   ))}
 </figure>

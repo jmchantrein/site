@@ -1,0 +1,44 @@
+---
+title: "WireGuard, the modern VPN"
+description: "Keys instead of accounts: the essentials of WireGuard, from the principle to a minimal configuration."
+topics: [linux]
+duration: 8
+---
+
+## 1. The principle: keys, not accounts
+
+WireGuard works like SSH: each machine (*peer*) has a **key pair**. You exchange the *public* keys, and the tunnel is established as soon as two peers recognize each other. No sessions, no complex negotiation.
+
+<Note title="Good to know">
+  WireGuard has lived in the Linux kernel since version 5.6: no heavy dependencies to install on a recent kernel.
+</Note>
+
+## 2. Generating the keys
+
+```
+$ wg genkey | tee privkey | wg pubkey > pubkey
+$ cat privkey   # private key — keep it secret
+$ cat pubkey    # public key — share it
+```
+
+## 3. A minimal configuration
+
+The file `/etc/wireguard/wg0.conf` describes the local interface and each remote peer:
+
+```
+[Interface]
+PrivateKey = <local private key>
+Address    = 10.0.0.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey  = <peer's public key>
+AllowedIPs = 10.0.0.2/32
+Endpoint   = vpn.exemple.org:51820
+```
+
+You bring it all up with `wg-quick up wg0`. The `AllowedIPs` field plays a dual role: routing *and* filtering of the addresses allowed inside the tunnel.
+
+<Note type="warning">
+  Setting `AllowedIPs = 0.0.0.0/0` routes **all** traffic through the tunnel. Handy for a "full" VPN, but to be avoided if you only wanted access to a subnet.
+</Note>
