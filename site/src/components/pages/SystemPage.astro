@@ -1,0 +1,184 @@
+---
+/**
+ * Page « Système de design » — partagée entre les routes /systeme/ (FR)
+ * et /en/systeme/ (EN). Le contenu visible est doublé FR/EN via le motif
+ * <span data-lang="…"> ; seules les props chaîne (méta, aria-label, titres
+ * de composants) dépendent de `locale`.
+ */
+import Base from "../../layouts/Base.astro";
+import Note from "../Note.astro";
+import Exercise from "../Exercise.astro";
+import Cmd from "../Cmd.astro";
+import TermLine from "../TermLine.astro";
+import Terminal from "../Terminal.astro";
+import Slides from "../Slides.astro";
+import Slide from "../Slide.astro";
+import Escape from "../Escape.astro";
+
+interface Props {
+  locale?: "fr" | "en";
+}
+const { locale = "fr" } = Astro.props;
+const fr = locale === "fr";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const altUrl = fr ? `${base}/en/systeme/` : `${base}/systeme/`;
+
+/* Pastilles de couleurs annotées (ratios calculés sur le fond Abysse, défaut). */
+const swatches = [
+  { v: "--color-bg", name: "bg", fr: "fond — bleu-vert très sombre", en: "background — very dark blue-green" },
+  { v: "--color-surface", name: "surface", fr: "cartes / panneaux", en: "cards / panels" },
+  { v: "--color-text", name: "text", fr: "corps · ~14:1 → AAA", en: "body · ~14:1 → AAA" },
+  { v: "--color-text-muted", name: "text-muted", fr: "méta · ~8:1 → AAA", en: "meta · ~8:1 → AAA" },
+  { v: "--color-accent-text", name: "accent-text", fr: "liens · ~9:1 → AAA", en: "links · ~9:1 → AAA" },
+  { v: "--color-success", name: "success", fr: "~10:1 → AAA (toujours doublé d'un label)", en: "~10:1 → AAA (always paired with a label)" },
+  { v: "--color-warning", name: "warning", fr: "~9:1 → AAA (idem)", en: "~9:1 → AAA (likewise)" },
+  { v: "--color-danger", name: "danger", fr: "~7:1 → AAA (idem)", en: "~7:1 → AAA (likewise)" },
+];
+const refs = [
+  { fr: "Théorie de la charge cognitive (Sweller)", en: "Cognitive load theory (Sweller)", url: "https://fr.wikipedia.org/wiki/Th%C3%A9orie_de_la_charge_cognitive" },
+  { fr: "Apprentissage multimédia (Mayer)", en: "Multimedia learning (Mayer)", url: "https://en.wikipedia.org/wiki/E-learning_(theory)" },
+  { fr: "Effet de test (testing effect)", en: "Testing effect", url: "https://fr.wikipedia.org/wiki/Effet_de_test" },
+  { fr: "WCAG 2.1 — 1.4.3 / 1.4.6 (contraste)", en: "WCAG 2.1 — 1.4.3 / 1.4.6 (contrast)", url: "https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html" },
+  { fr: "WCAG 2.1 — 1.4.12 (espacement du texte)", en: "WCAG 2.1 — 1.4.12 (text spacing)", url: "https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html" },
+  { fr: "WCAG 2.1 — 2.3.3 (animations)", en: "WCAG 2.1 — 2.3.3 (animation)", url: "https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html" },
+];
+---
+<Base
+  title={fr ? "Système de design" : "Design system"}
+  description={fr
+    ? "Tokens annotés, composants contraints et leurs variantes : le cadre pédagogique documenté, avec ses fondements scientifiques."
+    : "Annotated tokens, constrained components and their variants: the documented teaching framework, with its scientific grounding."}
+  progress
+  locale={locale}
+  altUrl={altUrl}
+>
+  <main id="main" class="wrap">
+    <div class="ds-hero">
+      <p class="kicker kicker--bar"><span data-lang="fr">Système de design — co-conçu avec <a href="https://claude.ai" target="_blank" rel="noopener">Claude Design</a></span><span data-lang="en">Design system — co-designed with <a href="https://claude.ai" target="_blank" rel="noopener">Claude Design</a></span></p>
+      <h1><span data-lang="fr">Le design comme cadre pédagogique</span><span data-lang="en">Design as a teaching framework</span></h1>
+      <p class="lead"><span data-lang="fr">La forme agit sur l'apprentissage : tout ce qui coûte de l'attention sans servir le fond (décor, incohérences, lignes trop longues) est de la charge cognitive extrinsèque. Ce système encode les bonnes pratiques dans des composants contraints : écrire un cours respecte automatiquement les recommandations.</span><span data-lang="en">Form acts on learning: anything that costs attention without serving substance is extraneous cognitive load. This system encodes good practice into constrained components: writing a course automatically follows the recommendations.</span></p>
+      <p><span data-lang="fr">Un <strong>token</strong> est une variable de design nommée — couleur, taille, espacement, largeur — définie en un seul endroit et réutilisée partout : la changer propage l'effet à tout le site sans toucher au contenu.</span><span data-lang="en">A <strong>token</strong> is a named design variable — colour, size, spacing, width — defined in one place and reused everywhere: changing it propagates to the whole site without touching content.</span></p>
+    </div>
+
+    <div class="toc-layout" style="--toc-col: 230px">
+      <nav class="toc" aria-label={fr ? "Sommaire" : "Contents"}>
+        <ol>
+          <li><a href="#couleurs"><span class="num">01</span><span data-lang="fr">Couleurs</span><span data-lang="en">Colours</span></a></li>
+          <li><a href="#typo"><span class="num">02</span><span data-lang="fr">Typographie &amp; colonnes</span><span data-lang="en">Typography &amp; columns</span></a></li>
+          <li><a href="#notes"><span class="num">03</span>Notes</a></li>
+          <li><a href="#exercices"><span class="num">04</span><span data-lang="fr">Exercices</span><span data-lang="en">Exercises</span></a></li>
+          <li><a href="#terminal"><span class="num">05</span><span data-lang="fr">Commande &amp; terminal</span><span data-lang="en">Command &amp; terminal</span></a></li>
+          <li><a href="#diaporama"><span class="num">06</span><span data-lang="fr">Diaporama</span><span data-lang="en">Slideshow</span></a></li>
+          <li><a href="#trappe"><span class="num">07</span><span data-lang="fr">Trappe d'évasion</span><span data-lang="en">Escape hatch</span></a></li>
+          <li><a href="#reglages"><span class="num">08</span><span data-lang="fr">Accessibilité &amp; réglages</span><span data-lang="en">Accessibility &amp; settings</span></a></li>
+          <li><a href="#references"><span class="num">09</span><span data-lang="fr">Références</span><span data-lang="en">References</span></a></li>
+        </ol>
+      </nav>
+
+      <div class="prose ds-body">
+        <section class="ds-section" id="couleurs">
+          <h2><span data-lang="fr">01 · Couleurs</span><span data-lang="en">01 · Colours</span></h2>
+          <p><span data-lang="fr">Cinq thèmes ne redéfinissent <em>que</em> les tokens de couleur (<code>themes.css</code>) ; tout le reste suit. Défaut : <strong>Abysse</strong> (sombre). Chaque valeur est annotée de son ratio de contraste WCAG dans <code>tokens.css</code>. L'information n'est <strong>jamais portée par la couleur seule</strong> : chaque état sémantique est doublé d'une icône et d'un libellé.</span><span data-lang="en">Five themes redefine <em>only</em> the colour tokens (<code>themes.css</code>); everything else follows. Default: <strong>Abysse</strong> (dark). Every value is annotated with its WCAG contrast ratio in <code>tokens.css</code>. Information is <strong>never carried by colour alone</strong>: each semantic state is paired with an icon and a label.</span></p>
+          <div class="ds-swatches">
+            {swatches.map((s) => (
+              <div class="ds-swatch">
+                <span class="chip" style={`background: var(${s.v})`}></span>
+                <code>{s.name}</code>
+                <small><span data-lang="fr">{s.fr}</span><span data-lang="en">{s.en}</span></small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section class="ds-section" id="typo">
+          <h2><span data-lang="fr">02 · Typographie &amp; colonnes</span><span data-lang="en">02 · Typography &amp; columns</span></h2>
+          <ul>
+            <li><span data-lang="fr"><strong>Serif</strong> (Source Serif 4) pour les titres — signalement et hiérarchie ;</span><span data-lang="en"><strong>Serif</strong> (Source Serif 4) for headings — signalling and hierarchy;</span></li>
+            <li><span data-lang="fr"><strong>Sans</strong> à forte hauteur d'x (Public Sans) pour le corps — <strong>18 px plancher</strong>, interligne 1,6 ;</span><span data-lang="en"><strong>Sans</strong> with a tall x-height (Public Sans) for body text — <strong>18 px floor</strong>, 1.6 line height;</span></li>
+            <li><span data-lang="fr"><strong>Mono</strong> (IBM Plex Mono) pour code, méta et terminal.</span><span data-lang="en"><strong>Mono</strong> (IBM Plex Mono) for code, meta and the terminal.</span></li>
+          </ul>
+          <p><span data-lang="fr">La colonne de lecture est plafonnée à <code>max-width: 66ch</code> — règle, pas suggestion. Les zones techniques (tableaux, code) montent à <code>78ch</code>. L'espacement suit une échelle en base 8 px : la segmentation en blocs courts réduit la charge extrinsèque.</span><span data-lang="en">The reading column is capped at <code>max-width: 66ch</code> — a rule, not a suggestion. Technical areas (tables, code) widen to <code>78ch</code>. Spacing follows an 8 px base scale: segmenting content into short blocks reduces extraneous load.</span></p>
+        </section>
+
+        <section class="ds-section" id="notes">
+          <h2><span data-lang="fr">03 · Notes (admonitions)</span><span data-lang="en">03 · Notes (admonitions)</span></h2>
+          <p><span data-lang="fr">Un encart qui détache du texte une information à signaler. Quatre variantes, chacune combinant <em>couleur + icône + libellé</em> (WCAG 1.4.1) :</span><span data-lang="en">A callout that sets noteworthy information apart from the text. Four variants, each combining <em>colour + icon + label</em> (WCAG 1.4.1):</span></p>
+          <Note><span data-lang="fr">Variante <code>info</code> (défaut) — précision ou prérequis.</span><span data-lang="en"><code>info</code> variant (default) — clarification or prerequisite.</span></Note>
+          <Note type="success" title={fr ? "Astuce" : "Tip"}><span data-lang="fr">Variante <code>success</code> — raccourci ou bonne pratique.</span><span data-lang="en"><code>success</code> variant — shortcut or good practice.</span></Note>
+          <Note type="warning" title={fr ? "Attention" : "Warning"}><span data-lang="fr">Variante <code>warning</code> — point de vigilance.</span><span data-lang="en"><code>warning</code> variant — a point to watch out for.</span></Note>
+          <Note type="danger" title={fr ? "Piège" : "Pitfall"}><span data-lang="fr">Variante <code>danger</code> — erreur fréquente aux conséquences réelles.</span><span data-lang="en"><code>danger</code> variant — a common mistake with real consequences.</span></Note>
+        </section>
+
+        <section class="ds-section" id="exercices">
+          <h2><span data-lang="fr">04 · Exercices</span><span data-lang="en">04 · Exercises</span></h2>
+          <p><span data-lang="fr">Structure imposée : énoncé visible → solution repliable, masquée par défaut (<em>effet de test</em>). Le champ réponse <strong>verrouille la solution tant qu'il est vide</strong> — réglage global dans Paramètres, forçable par bloc. Trois niveaux documentés.</span><span data-lang="en">Imposed structure: visible prompt → collapsible solution, hidden by default (<em>testing effect</em>). The answer field <strong>keeps the solution locked while it is empty</strong> — a global setting in Settings, overridable per block. Three documented levels.</span></p>
+          <Exercise id="demo-systeme" level={1}>
+            <p><span data-lang="fr">Spécimen : que vaut 2⁶ − 2 ? (Tapez une réponse pour déverrouiller la solution.)</span><span data-lang="en">Specimen: what is 2⁶ − 2? (Type an answer to unlock the solution.)</span></p>
+            <Fragment slot="solution"><p><span data-lang="fr">2⁶ − 2 = 62. Dans les contenus MDX, les maths s'écrivent <code>$…$</code> et sont rendues par KaTeX au build — aucun script tiers au runtime.</span><span data-lang="en">2⁶ − 2 = 62. In MDX content, maths is written <code>$…$</code> and rendered by KaTeX at build time — no third-party script at runtime.</span></p></Fragment>
+          </Exercise>
+        </section>
+
+        <section class="ds-section" id="terminal">
+          <h2><span data-lang="fr">05 · Commande cliquable &amp; terminal</span><span data-lang="en">05 · Clickable command &amp; terminal</span></h2>
+          <p><span data-lang="fr">La commande s'« exécute » dans le panneau terminal (frappe animée, sortie simulée et étiquetée). Le terminal accepte aussi la <strong>saisie directe</strong> (<code>help</code>, historique ↑/↓), se bascule en clair/sombre localement et se réinitialise.</span><span data-lang="en">The command “runs” in the terminal panel (animated typing, simulated and labelled output). The terminal also accepts <strong>direct input</strong> (<code>help</code>, ↑/↓ history), toggles light/dark locally and can be reset.</span></p>
+          <Cmd cmd="uname -r" term="#term-demo">
+            <TermLine>6.8.0-1-amd64</TermLine>
+            <TermLine type="ok" tag="note"><span data-lang="fr">un seul noyau, partagé par tous les conteneurs.</span><span data-lang="en">a single kernel, shared by every container.</span></TermLine>
+          </Cmd>
+          <Terminal id="term-demo" title={fr ? "bash — démo" : "bash — demo"} comment={fr ? "# démo — tapez « help » ou cliquez la commande ci-dessus" : "# demo — type “help” or click the command above"} />
+        </section>
+
+        <section class="ds-section" id="diaporama">
+          <h2><span data-lang="fr">06 · Diaporama</span><span data-lang="en">06 · Slideshow</span></h2>
+          <p><span data-lang="fr">Îlot de diapositives : flèches, points, compteur, clavier ←/→, <strong>vue étendue</strong> (pop-up) et <strong>plein écran</strong>. Une diapositive « média » peut accueillir un PDF plein cadre.</span><span data-lang="en">A slide island: arrows, dots, counter, ←/→ keyboard, <strong>expanded view</strong> (pop-up) and <strong>full screen</strong>. A “media” slide can host a full-frame PDF.</span></p>
+          <Slides title={fr ? "Diaporama — démo" : "Slideshow — demo"}>
+            <Slide><h3><span data-lang="fr">Diapositive 1</span><span data-lang="en">Slide 1</span></h3><p><span data-lang="fr">Navigation par flèches, points, ou clavier.</span><span data-lang="en">Navigate with the arrows, the dots, or the keyboard.</span></p></Slide>
+            <Slide><h3><span data-lang="fr">Diapositive 2</span><span data-lang="en">Slide 2</span></h3><p><span data-lang="fr">Vue étendue et plein écran via les outils du chapeau.</span><span data-lang="en">Expanded view and full screen via the header tools.</span></p></Slide>
+          </Slides>
+        </section>
+
+        <section class="ds-section" id="trappe">
+          <h2><span data-lang="fr">07 · Trappe d'évasion</span><span data-lang="en">07 · Escape hatch</span></h2>
+          <p><span data-lang="fr">Le cadre se désactive <em>explicitement et visiblement</em> : bordure pointillée, hachures, levée du plafond de colonne. C'est la soupape officielle pour le contenu hors gabarit (visualisation custom, HTML/JS libre).</span><span data-lang="en">The framework switches off <em>explicitly and visibly</em>: dashed border, hatching, column cap lifted. It is the official safety valve for off-template content (custom visualisations, free-form HTML/JS).</span></p>
+          <Escape>
+            <h3 style="margin-top:0"><span data-lang="fr">Zone libre</span><span data-lang="en">Free zone</span></h3>
+            <p><span data-lang="fr">Ici, aucune contrainte de colonne ni de composant n'est imposée.</span><span data-lang="en">Here, no column or component constraint applies.</span></p>
+          </Escape>
+        </section>
+
+        <section class="ds-section" id="reglages">
+          <h2><span data-lang="fr">08 · Accessibilité &amp; réglages</span><span data-lang="en">08 · Accessibility &amp; settings</span></h2>
+          <p><span data-lang="fr">Deux tiroirs distincts, persistants (<code>localStorage</code>) et appliqués avant le premier rendu (anti-flash) :</span><span data-lang="en">Two separate drawers, persistent (<code>localStorage</code>) and applied before first paint (anti-flash):</span></p>
+          <ul>
+            <li><span data-lang="fr"><strong>Accessibilité</strong> (œil) — taille du texte, interligne, espacements lettres/mots jusqu'aux seuils WCAG 1.4.12, contraste élevé (prime sur le thème), réduction des animations (WCAG 2.3.3, double <code>prefers-reduced-motion</code>), police de lecture Atkinson/OpenDyslexic.</span><span data-lang="en"><strong>Accessibility</strong> (eye) — text size, line height, letter/word spacing up to the WCAG 1.4.12 thresholds, high contrast (overrides the theme), reduced motion (WCAG 2.3.3, on top of <code>prefers-reduced-motion</code>), Atkinson/OpenDyslexic reading font.</span></li>
+            <li><span data-lang="fr"><strong>Paramètres</strong> (roue crantée) — thème de couleurs, verrou des exercices, largeur du site, langue FR/EN.</span><span data-lang="en"><strong>Settings</strong> (cog wheel) — colour theme, exercise lock, site width, FR/EN language.</span></li>
+          </ul>
+          <p><span data-lang="fr">S'y ajoutent : recherche locale <kbd>Ctrl</kbd>+<kbd>K</kbd> (index généré au build), fil de progression de lecture, ancres copiables au survol des titres, sommaire mobile généré depuis la même source.</span><span data-lang="en">On top of these: local search <kbd>Ctrl</kbd>+<kbd>K</kbd> (index generated at build time), reading-progress bar, copyable anchors on heading hover, mobile table of contents generated from the same source.</span></p>
+        </section>
+
+        <section class="ds-section" id="references">
+          <h2><span data-lang="fr">09 · Références</span><span data-lang="en">09 · References</span></h2>
+          <p><span data-lang="fr">Les principes que ce système encode, avec leurs sources :</span><span data-lang="en">The principles this system encodes, with their sources:</span></p>
+          <ul class="ds-refs">
+            {refs.map((r) => <li><a href={r.url} target="_blank" rel="noopener"><span data-lang="fr">{r.fr}</span><span data-lang="en">{r.en}</span></a></li>)}
+          </ul>
+        </section>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .ds-hero { padding-block: var(--space-7) var(--space-5); border-bottom: 1px solid var(--color-border); }
+  .ds-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); max-width: 22ch; margin-top: var(--space-3); }
+  .ds-hero .lead { margin-top: var(--space-4); }
+  .ds-hero p:last-child { margin-top: var(--space-4); max-width: var(--measure); }
+  .toc-layout { padding-block: var(--space-6); }
+  .ds-section { scroll-margin-top: 80px; padding-block: var(--space-5); border-top: 1px solid var(--color-border); }
+  .ds-section:first-child { border-top: none; }
+  .ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); max-width: var(--measure-wide); }
+  .ds-swatch { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; gap: 2px var(--space-3); align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); background: var(--color-surface); }
+  .ds-swatch .chip { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--color-border-strong); }
+  .ds-swatch small { color: var(--color-text-muted); font-size: var(--text-xs); }
+  .ds-refs li { margin-top: var(--space-2); }
+</style>

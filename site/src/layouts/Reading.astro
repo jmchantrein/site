@@ -53,9 +53,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       {lead && <p class="lead">{lead}</p>}
     </div>
 
-    <div class:list={[toc.length > 1 && "toc-layout"]}>
+    <div class:list={[toc.length > 1 && "toc-layout"]} data-swap={toc.length > 1 ? "" : undefined}>
       {toc.length > 1 && (
-        <nav class="toc" aria-label="Sommaire">
+        <nav
+          class="toc"
+          aria-label={locale === "en" ? "Table of contents" : "Sommaire"}
+          data-swap-grip
+          role="button"
+          tabindex="0"
+          title={locale === "en" ? "Drag to move the table of contents left or right (Enter to toggle)" : "Glisser pour déplacer le sommaire à gauche ou à droite (Entrée pour basculer)"}
+        >
           <ol>
             {toc.map((h, i) => (
               <li>
@@ -65,6 +72,12 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
               </li>
             ))}
           </ol>
+          {(prev || next) && (
+            <div class="toc__nav">
+              {prev && <a href={prev.href}><span class="dir" aria-hidden="true">←</span> {prev.label}</a>}
+              {next && <a href={next.href}><span class="dir" aria-hidden="true">→</span> {next.label}</a>}
+            </div>
+          )}
         </nav>
       )}
       <div class="toc-layout__body">
@@ -73,7 +86,18 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
             <article class="course__reading prose">
               <slot />
             </article>
-            <aside class="course__aside" aria-label="Atelier terminal">
+            <div class="course__resizer" data-term-resizer role="separator" aria-orientation="vertical" tabindex="0" aria-label={locale === "en" ? "Resize the reading column and the terminal (left/right arrows)" : "Redimensionner la colonne de lecture et le terminal (flèches gauche/droite)"}>
+              <span class="knob rz-knob" aria-hidden="true"><i></i><i></i></span>
+            </div>
+            <aside class="course__aside" aria-label={locale === "en" ? "Terminal workshop" : "Atelier terminal"}>
+              <span class="pane-grip">
+                <span class="pane-grip__edge t" data-pane-grip role="button" tabindex="0" aria-label={locale === "en" ? "Move the terminal left or right (drag, or Enter)" : "Déplacer le terminal à gauche ou à droite (glisser, ou Entrée)"}>
+                  <span class="pane-grip__tip"><span data-lang="fr">Glisser la bordure pour déplacer le terminal</span><span data-lang="en">Drag the border to move the terminal</span></span>
+                </span>
+                <span class="pane-grip__edge r" data-pane-grip aria-hidden="true"></span>
+                <span class="pane-grip__edge b" data-pane-grip aria-hidden="true"></span>
+                <span class="pane-grip__edge l" data-pane-grip aria-hidden="true"></span>
+              </span>
               <Terminal id="term-1" title={terminalTitle} comment={terminalComment} />
             </aside>
           </div>
