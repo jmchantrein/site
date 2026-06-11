@@ -1,0 +1,91 @@
+---
+import Base from "../../layouts/Base.astro";
+import Icon from "../Icon.astro";
+
+interface Props {
+  locale?: "fr" | "en";
+}
+
+const { locale = "fr" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const altUrl = locale === "fr" ? `${base}/en/aide/` : `${base}/aide/`;
+const title = locale === "fr" ? "Aide & documentation" : "Help & documentation";
+const description = locale === "fr"
+  ? "Guide d'utilisation du site : lecture, accessibilité, recherche, terminal interactif, exercices et préférences."
+  : "User guide for the site: reading, accessibility, search, interactive terminal, exercises and preferences.";
+---
+<Base title={title} description={description} progress locale={locale} altUrl={altUrl}>
+  <main id="main" class="wrap">
+    <div class="doc-hero">
+      <p class="kicker"><span data-lang="fr">Guide d'utilisation</span><span data-lang="en">User guide</span></p>
+      <h1><span data-lang="fr">Prendre en main le site</span><span data-lang="en">Getting started</span></h1>
+      <p class="lead"><span data-lang="fr">Ce site est conçu pour rendre la lecture confortable et l'apprentissage actif. Voici, en clair, tout ce que vous pouvez régler et faire.</span><span data-lang="en">This site is built for comfortable reading and active learning. Here, in plain terms, is everything you can adjust and do.</span></p>
+    </div>
+
+    <div class="toc-layout">
+      <nav class="toc" aria-label={locale === "fr" ? "Sommaire" : "Table of contents"}>
+        <ol>
+          <li><a href="#demarrer"><Icon name="compass" /><span data-lang="fr">Se repérer</span><span data-lang="en">Find your way</span></a></li>
+          <li><a href="#accessibilite"><Icon name="eye" /><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></a></li>
+          <li><a href="#apparence"><Icon name="settings" /><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></a></li>
+          <li><a href="#cours"><Icon name="book-open" /><span data-lang="fr">Outils des cours</span><span data-lang="en">Course tools</span></a></li>
+          <li><a href="#donnees"><Icon name="hard-drive" /><span data-lang="fr">Vos données</span><span data-lang="en">Your data</span></a></li>
+        </ol>
+      </nav>
+
+      <div class="prose">
+        <section class="doc-section" id="demarrer">
+          <h2><span data-lang="fr">Se repérer</span><span data-lang="en">Find your way</span></h2>
+          <p><span data-lang="fr">La barre du haut reste toujours visible. À gauche, la navigation entre les grandes parties ; à droite, les outils :</span><span data-lang="en">The top bar stays visible at all times. On the left, navigation between the main areas; on the right, the tools:</span></p>
+          <ul>
+            <li><span data-lang="fr"><strong>Langue</strong> — bascule entre français et anglais pour l'interface.</span><span data-lang="en"><strong>Language</strong> — switch the interface between French and English.</span></li>
+            <li><span data-lang="fr"><strong>Recherche</strong> — <kbd>Ctrl</kbd>+<kbd>K</kbd> (ou <kbd>⌘</kbd>+<kbd>K</kbd>) ouvre une palette qui retrouve n'importe quelle section du site, insensible aux accents.</span><span data-lang="en"><strong>Search</strong> — <kbd>Ctrl</kbd>+<kbd>K</kbd> (or <kbd>⌘</kbd>+<kbd>K</kbd>) opens a palette that finds any section, accent-insensitive.</span></li>
+            <li><span data-lang="fr"><strong>Paramètres</strong> (roue crantée) — thème de couleurs, largeur, exercices, langue.</span><span data-lang="en"><strong>Settings</strong> (cog) — colour theme, width, exercises, language.</span></li>
+            <li><span data-lang="fr"><strong>Accessibilité</strong> (œil) — taille, espacements, contraste, animations, police de lecture.</span><span data-lang="en"><strong>Accessibility</strong> (eye) — size, spacing, contrast, motion, reading font.</span></li>
+          </ul>
+          <p><span data-lang="fr">Sur les pages longues, un fin trait de progression se remplit en haut de l'écran, et un « # » apparaît au survol des titres pour copier un lien direct vers la section.</span><span data-lang="en">On long pages a thin progress line fills at the top of the screen, and a "#" appears on heading hover to copy a direct link to the section.</span></p>
+        </section>
+
+        <section class="doc-section" id="accessibilite">
+          <h2><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></h2>
+          <p><span data-lang="fr">Le panneau Accessibilité (œil) permet d'ajuster, sans perte de contenu ni de fonction (WCAG 1.4.12) :</span><span data-lang="en">The Accessibility panel (eye) lets you adjust, with no loss of content or function (WCAG 1.4.12):</span></p>
+          <ul>
+            <li><span data-lang="fr">la <strong>taille du texte</strong> (90 % à 160 %) ;</span><span data-lang="en">the <strong>text size</strong> (90% to 160%);</span></li>
+            <li><span data-lang="fr">l'<strong>interligne</strong> et les <strong>espacements</strong> lettres/mots, jusqu'aux seuils WCAG ;</span><span data-lang="en">the <strong>line height</strong> and letter/word <strong>spacing</strong>, up to the WCAG thresholds;</span></li>
+            <li><span data-lang="fr">le <strong>contraste élevé</strong>, qui prime sur le thème choisi ;</span><span data-lang="en"><strong>high contrast</strong>, which overrides the chosen theme;</span></li>
+            <li><span data-lang="fr">la <strong>réduction des animations</strong> (fige le terminal et toute transition, et respecte la préférence système) ;</span><span data-lang="en"><strong>reduced motion</strong> (freezes the terminal and every transition, and honours the system preference);</span></li>
+            <li><span data-lang="fr">une <strong>police de lecture</strong> alternative — Atkinson Hyperlegible ou OpenDyslexic — proposée, jamais imposée.</span><span data-lang="en">an alternative <strong>reading font</strong> — Atkinson Hyperlegible or OpenDyslexic — offered, never forced.</span></li>
+          </ul>
+          <p><span data-lang="fr">Tous les réglages sont <strong>persistants</strong> d'une page et d'une visite à l'autre.</span><span data-lang="en">All settings <strong>persist</strong> across pages and visits.</span></p>
+        </section>
+
+        <section class="doc-section" id="apparence">
+          <h2><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></h2>
+          <p><span data-lang="fr">Le panneau Paramètres (roue crantée) regroupe les préférences d'apparence : le <strong>thème de couleurs</strong> (Abysse — sombre, par défaut — Marine, Ardoise, Forêt, Aurore), la <strong>largeur du site</strong> (de compact à quasi pleine largeur) et le réglage <strong>« Exiger une réponse avant la correction »</strong> des exercices.</span><span data-lang="en">The Settings panel (cog) gathers appearance preferences: the <strong>colour theme</strong> (Abyss — dark, the default — Marine, Slate, Forest, Dawn), the <strong>site width</strong> (compact to nearly full width) and the exercises' <strong>"require an answer"</strong> setting.</span></p>
+        </section>
+
+        <section class="doc-section" id="cours">
+          <h2><span data-lang="fr">Outils des cours</span><span data-lang="en">Course tools</span></h2>
+          <ul>
+            <li><span data-lang="fr"><strong>Terminal</strong> — cliquez une commande dans le texte : elle se tape et s'exécute (sortie simulée) dans le panneau de droite. Vous pouvez aussi <strong>taper vos propres commandes</strong> (<code>help</code> donne la liste, ↑/↓ pour l'historique). Le soleil/la lune bascule le terminal en clair/sombre, la flèche circulaire le réinitialise.</span><span data-lang="en"><strong>Terminal</strong> — click a command in the text: it is typed and run (simulated output) in the right-hand panel. You can also <strong>type your own commands</strong> (<code>help</code> lists them, ↑/↓ for history). Sun/moon switches the terminal light/dark, the circular arrow resets it.</span></li>
+            <li><span data-lang="fr"><strong>Exercices</strong> — l'énoncé est visible, la solution repliée. Par défaut, elle reste <strong>verrouillée tant que vous n'avez pas rédigé une réponse</strong> (effet de test) ; désactivable dans Paramètres.</span><span data-lang="en"><strong>Exercises</strong> — the prompt is visible, the solution folded. By default it stays <strong>locked until you write an answer</strong> (testing effect); can be turned off in Settings.</span></li>
+            <li><span data-lang="fr"><strong>Diaporamas</strong> — navigation par flèches, points ou clavier ←/→ ; boutons « vue étendue » (pop-up) et « plein écran ».</span><span data-lang="en"><strong>Slideshows</strong> — navigate with arrows, dots or ←/→ keys; "expanded view" (pop-up) and "full screen" buttons.</span></li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="donnees">
+          <h2><span data-lang="fr">Vos données</span><span data-lang="en">Your data</span></h2>
+          <p><span data-lang="fr">Le site est entièrement statique : <strong>aucune donnée n'est envoyée à un serveur</strong>. Vos préférences (thème, accessibilité, largeur, langue) sont stockées localement dans votre navigateur (<code>localStorage</code>) et restent sur cet appareil. Vider les données du site les réinitialise.</span><span data-lang="en">The site is fully static: <strong>no data is sent to any server</strong>. Your preferences (theme, accessibility, width, language) are stored locally in your browser (<code>localStorage</code>) and stay on this device. Clearing site data resets them.</span></p>
+        </section>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .doc-hero { padding-block: var(--space-7) var(--space-5); border-bottom: 1px solid var(--color-border); }
+  .doc-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); max-width: 20ch; }
+  .toc-layout { padding-block: var(--space-6); }
+  .doc-section { scroll-margin-top: 80px; padding-block: var(--space-5); border-top: 1px solid var(--color-border); }
+  .doc-section:first-child { border-top: none; }
+</style>

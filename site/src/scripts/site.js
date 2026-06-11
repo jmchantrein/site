@@ -438,6 +438,7 @@ function wireExercises() {
     if (!details) return;
     const summary = details.querySelector("summary");
     if (field && field.id && answers[field.id] && !field.value) field.value = answers[field.id];
+    if (field && curLang() === "en") field.placeholder = "Write your reasoning here before revealing the solution…";
     refreshExercise(ex);
     if (field) field.addEventListener("input", () => { refreshExercise(ex); if (field.id) saveAnswer(field.id, field.value); });
     if (summary) {
@@ -473,6 +474,16 @@ function wireReadingProgress() {
 /* ---- SOMMAIRE LATÉRAL (.toc) — double mobile généré + scrollspy ------------ */
 function wireTocs() {
   document.querySelectorAll(".toc").forEach((toc) => {
+    // Sommaire-poignée : curseur pointeur sur le texte des liens uniquement,
+    // le reste du sommaire se saisit (grab) pour le déplacer.
+    if (toc.hasAttribute("data-swap-grip")) {
+      toc.querySelectorAll("a").forEach((a) => {
+        if (a.querySelector(".lbl")) return;
+        const lbl = document.createElement("span"); lbl.className = "lbl";
+        while (a.firstChild) lbl.appendChild(a.firstChild);
+        a.appendChild(lbl);
+      });
+    }
     if (toc.hasAttribute("data-toc-no-mobile")) return;
     const layout = toc.closest(".toc-layout");
     const list = toc.querySelector("ol, ul");
@@ -698,6 +709,195 @@ function wireSlides() {
   });
 }
 
+/* ---- GLISSER le terminal à gauche/droite (poignées de pourtour) ------------ */
+const SIDE_KEY = "site-astro-term-side-v1";
+function readSide() { try { return localStorage.getItem(SIDE_KEY) || "right"; } catch (e) { return "right"; } }
+function setCourseSide(course, side) {
+  if (side === "left") course.setAttribute("data-term-side", "left");
+  else course.removeAttribute("data-term-side");
+}
+/* DragWidget (classe mère) — suit le curseur, dépose au lâcher. Sous-classes :
+   CoursePane (terminal/colonne d'un cours, persistant) et SwapIsland (sommaire). */
+function DragWidget(grip, box, pane) {
+  this.grip = grip; this.box = box; this.pane = pane;
+  this.dragging = false; this.moved = false; this.sx = 0; this.sy = 0;
+  const self = this;
+  this._move = (e) => self._onMove(e);
+  this._up = (e) => self._onUp(e);
+  grip.addEventListener("pointerdown", (e) => self._onDown(e));
+  grip.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); self.onToggle(); } });
+  grip.addEventListener("dragstart", (e) => e.preventDefault());
+}
+DragWidget.prototype.followY = 0.18;
+DragWidget.prototype.ignoreSel = "button, a, input, select, textarea";
+DragWidget.prototype._leftHalf = function (x) { const r = this.box.getBoundingClientRect(); return x < r.left + r.width / 2; };
+DragWidget.prototype._isFirst = function () { return [].indexOf.call(this.box.children, this.pane) === 0; };
+DragWidget.prototype._onDown = function (e) {
+  if (window.innerWidth <= 980) return;
+  const g = e.target.closest("[data-swap-grip], [data-pane-grip]");
+  if (g && g !== this.grip) return;
+  if (this.ignoreSel && e.target.closest(this.ignoreSel)) return;
+  this.dragging = true; this.moved = false; this.sx = e.clientX; this.sy = e.clientY;
+  this._pid = e.pointerId;
+  window.addEventListener("pointermove", this._move); window.addEventListener("pointerup", this._up);
+};
+DragWidget.prototype._onMove = function (e) {
+  if (!this.dragging) return;
+  const dx = e.clientX - this.sx, dy = e.clientY - this.sy;
+  if (!this.moved && Math.hypot(dx, dy) < 5) return;
+  this.moved = true; this.pane.setAttribute("data-dragging", "true"); this.box.classList.add("is-dragging");
+  try { if (this._pid != null) this.grip.setPointerCapture(this._pid); } catch (err) {}
+  this.pane.style.transform = "translate(" + dx + "px," + (dy * this.followY).toFixed(1) + "px) scale(0.99)";
+  this.onMove(this._leftHalf(e.clientX)); e.preventDefault();
+};
+DragWidget.prototype._onUp = function (e) {
+  window.removeEventListener("pointermove", this._move); window.removeEventListener("pointerup", this._up);
+  try { if (this._pid != null) this.grip.releasePointerCapture(this._pid); } catch (err) {}
+  this.pane.style.transform = ""; this.pane.removeAttribute("data-dragging"); this.box.classList.remove("is-dragging");
+  if (this.moved) this.onDrop(this._leftHalf(e.clientX));
+  this.onMove(null); this.dragging = false; this.moved = false;
+};
+DragWidget.prototype.onMove = function () {};
+DragWidget.prototype.onDrop = function () {};
+DragWidget.prototype.onToggle = function () {};
+
+function CoursePane(grip, course, pane, zones) {
+  DragWidget.call(this, grip, course, pane);
+  this.isTerminal = pane.classList.contains("course__aside");
+  this.zones = zones;
+}
+CoursePane.prototype = Object.create(DragWidget.prototype);
+CoursePane.prototype.constructor = CoursePane;
+CoursePane.prototype._side = function (leftHalf) { const p = leftHalf ? "left" : "right"; return this.isTerminal ? p : (p === "left" ? "right" : "left"); };
+CoursePane.prototype.onMove = function (leftHalf) { const s = leftHalf == null ? null : this._side(leftHalf); this.zones.l.classList.toggle("active", s === "left"); this.zones.r.classList.toggle("active", s === "right"); };
+CoursePane.prototype.onDrop = function (leftHalf) { const s = this._side(leftHalf); try { localStorage.setItem(SIDE_KEY, s); } catch (e) {} setCourseSide(this.box, s); };
+CoursePane.prototype.onToggle = function () { const cur = this.box.getAttribute("data-term-side") === "left" ? "left" : "right"; const s = cur === "left" ? "right" : "left"; try { localStorage.setItem(SIDE_KEY, s); } catch (e) {} setCourseSide(this.box, s); };
+
+function SwapIsland(grip, box, pane) { DragWidget.call(this, grip, box, pane); }
+SwapIsland.prototype = Object.create(DragWidget.prototype);
+SwapIsland.prototype.constructor = SwapIsland;
+SwapIsland.prototype.followY = 0;
+SwapIsland.prototype.onDrop = function (leftHalf) { if (this._isFirst() !== leftHalf) this.box.setAttribute("data-swapped", ""); else this.box.removeAttribute("data-swapped"); };
+SwapIsland.prototype.onToggle = function () { this.box.toggleAttribute("data-swapped"); };
+
+function wireTermDrag() {
+  document.querySelectorAll(".course").forEach((course) => {
+    setCourseSide(course, readSide());
+    const grips = course.querySelectorAll("[data-pane-grip]");
+    if (!grips.length) return;
+    const zl = document.createElement("div"); zl.className = "course__dropzone left"; zl.setAttribute("aria-hidden", "true");
+    const zr = document.createElement("div"); zr.className = "course__dropzone right"; zr.setAttribute("aria-hidden", "true");
+    course.appendChild(zl); course.appendChild(zr);
+    const zones = { l: zl, r: zr };
+    grips.forEach((grip) => {
+      const pane = grip.closest(".course__aside, .course__reading");
+      if (pane) new CoursePane(grip, course, pane, zones);
+    });
+  });
+}
+
+/* Le sommaire se déplace à gauche/droite (drag, Entrée/Espace au clavier). */
+function wireTocSwap() {
+  const SWAP_KEY = "site-astro-toc-side-v1";
+  document.querySelectorAll(".toc-layout[data-swap]").forEach((box) => {
+    try { if (localStorage.getItem(SWAP_KEY) === "right") box.setAttribute("data-swapped", ""); } catch (e) {}
+    const grip = box.querySelector("[data-swap-grip]");
+    if (!grip) return;
+    const w = new SwapIsland(grip, box, grip);
+    w.ignoreSel = "button, input, select, textarea";
+    const persist = () => { try { localStorage.setItem(SWAP_KEY, box.hasAttribute("data-swapped") ? "right" : "left"); } catch (e) {} };
+    const drop = w.onDrop.bind(w), tog = w.onToggle.bind(w);
+    w.onDrop = (lh) => { drop(lh); persist(); };
+    w.onToggle = () => { tog(); persist(); };
+  });
+}
+
+/* ---- REDIMENSIONNER lecture / terminal (splitter), persistant -------------- */
+const COL_KEY = "site-astro-term-col-v1";
+function wireTermResize() {
+  let saved = null;
+  try { saved = localStorage.getItem(COL_KEY); } catch (e) {}
+  document.querySelectorAll(".course").forEach((course) => {
+    if (saved) course.style.setProperty("--term-col", saved);
+    const rz = course.querySelector(".course__resizer");
+    if (!rz) return;
+    let dragging = false;
+    function widthFor(x) {
+      const r = course.getBoundingClientRect();
+      const side = course.getAttribute("data-term-side") === "left" ? "left" : "right";
+      const w = side === "left" ? (x - r.left) : (r.right - x);
+      return Math.max(320, Math.min(r.width * 0.56, w));
+    }
+    function move(e) { if (!dragging) return; course.style.setProperty("--term-col", widthFor(e.clientX) + "px"); e.preventDefault(); }
+    function up() {
+      dragging = false; course.classList.remove("rz-active"); document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+      try { localStorage.setItem(COL_KEY, course.style.getPropertyValue("--term-col")); } catch (e) {}
+    }
+    rz.addEventListener("pointerdown", (e) => {
+      if (window.innerWidth <= 980) return;
+      dragging = true; course.classList.add("rz-active"); document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+      e.preventDefault();
+    });
+    rz.addEventListener("keydown", (e) => {
+      const r = course.getBoundingClientRect();
+      const cur = parseFloat(getComputedStyle(course.querySelector(".course__aside")).width) || 440;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        const side = course.getAttribute("data-term-side") === "left" ? "left" : "right";
+        const dir = (e.key === "ArrowLeft" ? -1 : 1) * (side === "left" ? -1 : 1);
+        const w = Math.max(320, Math.min(r.width * 0.56, cur + dir * 24)) + "px";
+        course.style.setProperty("--term-col", w);
+        try { localStorage.setItem(COL_KEY, w); } catch (err) {}
+        e.preventDefault();
+      }
+    });
+  });
+}
+
+/* ---- RAIL de largeur globale (bord droit du contenu) ------------------------
+   Glisser = ajuster --page-max ; clic = largeur par défaut ; ←/→ au clavier.
+   Synchronisé avec le slider du panneau Paramètres (mêmes prefs). */
+function wireWidthGrip() {
+  if (window.innerWidth <= 980) return;
+  const grip = document.createElement("div");
+  grip.className = "width-rail";
+  grip.setAttribute("role", "slider");
+  grip.setAttribute("tabindex", "0");
+  grip.setAttribute("aria-label", "Largeur du site — glisser pour ajuster, cliquer pour réinitialiser, flèches gauche/droite");
+  grip.setAttribute("aria-valuemin", "60");
+  grip.setAttribute("aria-valuemax", "160");
+  grip.innerHTML = '<span class="knob" aria-hidden="true"><i></i><i></i></span><span class="width-rail__tip"><span data-lang="fr">Glisser pour ajuster · cliquer : largeur par défaut</span><span data-lang="en">Drag to adjust · click: default width</span></span>';
+  document.body.appendChild(grip);
+  const rem = () => parseFloat(getComputedStyle(root).fontSize) || 16;
+  function contentPx() { return Math.min((prefs.width || DEFAULTS.width) * rem(), window.innerWidth * 0.98); }
+  function reposition() {
+    grip.style.left = Math.round(window.innerWidth / 2 + contentPx() / 2 - 9) + "px";
+    grip.setAttribute("aria-valuenow", String(prefs.width || DEFAULTS.width));
+  }
+  reposition();
+  window.addEventListener("resize", reposition);
+  document.addEventListener("sa:require-answer", reposition); // apply() vient de tourner
+  let dragging = false, moved = false, sx = 0;
+  function setW(v) { prefs.width = Math.max(60, Math.min(160, v)); save(prefs); apply(); syncControls(); reposition(); }
+  grip.addEventListener("pointerdown", (e) => {
+    dragging = true; moved = false; sx = e.clientX; grip.setAttribute("data-active", "true");
+    window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up); e.preventDefault();
+  });
+  function mv(e) {
+    if (!dragging) return;
+    if (Math.abs(e.clientX - sx) > 4) moved = true;
+    if (!moved) return;
+    const half = Math.abs(e.clientX - window.innerWidth / 2);
+    setW(Math.round((half * 2 / rem()) / 2) * 2); e.preventDefault();
+  }
+  function up() { dragging = false; grip.removeAttribute("data-active"); window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); if (!moved) setW(DEFAULTS.width); }
+  grip.addEventListener("keydown", (e) => {
+    const d = e.key === "ArrowLeft" ? -4 : e.key === "ArrowRight" ? 4 : 0;
+    if (d) { setW((prefs.width || DEFAULTS.width) + d); e.preventDefault(); }
+  });
+}
+
 /* ---- PORTABILITÉ DES DONNÉES LOCALES (règle projet) -------------------------
    Tout ce qui est persisté en local doit pouvoir être exporté et réimporté :
    préférences, thème du terminal, réponses d'exercices, annotations, identité.
@@ -786,6 +986,10 @@ function init() {
   wireAnchors();
   wireSearch();
   wireSlides();
+  wireTermDrag();
+  wireTermResize();
+  wireTocSwap();
+  wireWidthGrip();
   wireDataPortability();
   wirePrint();
 }
