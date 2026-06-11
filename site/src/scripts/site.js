@@ -796,13 +796,24 @@ function wireTermDrag() {
   });
 }
 
-/* Le sommaire se déplace à gauche/droite (drag, Entrée/Espace au clavier). */
+/* Le sommaire se déplace à gauche/droite (drag, Entrée/Espace au clavier).
+   GÉNÉRIQUE : tout .toc-layout contenant un .toc est déplaçable — le runtime
+   pose lui-même les attributs, le comportement est identique sur chaque page. */
 function wireTocSwap() {
   const SWAP_KEY = "site-astro-toc-side-v1";
-  document.querySelectorAll(".toc-layout[data-swap]").forEach((box) => {
-    try { if (localStorage.getItem(SWAP_KEY) === "right") box.setAttribute("data-swapped", ""); } catch (e) {}
-    const grip = box.querySelector("[data-swap-grip]");
+  document.querySelectorAll(".toc-layout").forEach((box) => {
+    const grip = box.querySelector(":scope > .toc");
     if (!grip) return;
+    box.setAttribute("data-swap", "");
+    if (!grip.hasAttribute("data-swap-grip")) {
+      grip.setAttribute("data-swap-grip", "");
+      grip.setAttribute("role", "button");
+      grip.setAttribute("tabindex", "0");
+      grip.setAttribute("title", curLang() === "en"
+        ? "Drag to move the table of contents left or right (Enter to toggle)"
+        : "Glisser pour déplacer le sommaire à gauche ou à droite (Entrée pour basculer)");
+    }
+    try { if (localStorage.getItem(SWAP_KEY) === "right") box.setAttribute("data-swapped", ""); } catch (e) {}
     const w = new SwapIsland(grip, box, grip);
     w.ignoreSel = "button, input, select, textarea";
     const persist = () => { try { localStorage.setItem(SWAP_KEY, box.hasAttribute("data-swapped") ? "right" : "left"); } catch (e) {} };
@@ -982,13 +993,13 @@ function init() {
   wireTermInput();
   wireExercises();
   wireReadingProgress();
+  wireTocSwap();
   wireTocs();
   wireAnchors();
   wireSearch();
   wireSlides();
   wireTermDrag();
   wireTermResize();
-  wireTocSwap();
   wireWidthGrip();
   wireDataPortability();
   wirePrint();

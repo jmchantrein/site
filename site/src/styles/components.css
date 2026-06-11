@@ -485,7 +485,6 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
    --------------------------------------------------------------------------- */
 .toc-layout { display: grid; grid-template-columns: var(--toc-col, 220px) minmax(0, 1fr); gap: var(--space-7); align-items: start; }
 .toc-layout__body { min-width: 0; }
-.toc-layout .article { margin-inline: 0; }
 /* Sommaire déplacé à droite (drag — site.js · SwapIsland) */
 .toc-layout[data-swapped] { grid-template-columns: minmax(0, 1fr) var(--toc-col, 220px); }
 [data-swap][data-swapped] > :nth-child(1) { order: 2; }
