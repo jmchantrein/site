@@ -5,6 +5,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; }
+[hidden] { display: none !important; }
 
 html {
   font-size: 100%;               /* respecte la taille de police du navigateur */

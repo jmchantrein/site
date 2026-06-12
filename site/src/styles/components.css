@@ -421,15 +421,18 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .course__aside { position: sticky; top: calc(var(--space-7) + 56px); align-self: start; order: 2; }
 .course__aside .terminal { max-height: calc(100vh - 140px); }
 
-/* Atelier du cours masqué (dock terminal → « Atelier : afficher/masquer ») */
-.course[data-term-off] { grid-template-columns: minmax(0, 1fr); }
-.course[data-term-off] .course__aside, .course[data-term-off] .course__resizer { display: none; }
-
 /* Terminal déplacé à gauche (drag) */
 .course[data-term-side="left"] { grid-template-columns: clamp(320px, var(--term-col, 440px), 56vw) 18px minmax(0, 1fr); }
 .course[data-term-side="left"] .course__aside { order: 0; }
 .course[data-term-side="left"] .course__resizer { order: 1; }
 .course[data-term-side="left"] .course__reading { order: 2; }
+
+/* Atelier du cours masqué/détaché : la colonne disparaît, le contenu reflue
+   (après les variantes data-term-side pour primer, quel que soit le côté). */
+.course[data-term-off], .course[data-term-off][data-term-side="left"] { grid-template-columns: minmax(0, 1fr); }
+.course[data-term-off] .course__aside, .course[data-term-off] .course__resizer { display: none; }
+/* Terminal du dock parqué pendant un détachement : réellement masqué. */
+.terminal[data-parked] { display: none !important; }
 
 /* Préhension du panneau : tout le pourtour est saisissable */
 .pane-grip { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
