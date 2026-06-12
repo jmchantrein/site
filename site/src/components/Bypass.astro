@@ -1,0 +1,32 @@
+---
+/**
+ * BYPASS — gabarit d'îlot applicatif (« la paresse de l'informaticien ») :
+ * une application JavaScript pédagogique dans un cadre standard — étiquette,
+ * titre, plein écran. L'appli elle-même est l'enfant (île Astro ou markup
+ * libre) ; le cadre, lui, est toujours le même.
+ *
+ * Usage MDX :
+ *   <Bypass title="Simulateur de masque IP">
+ *     <IpSim />
+ *   </Bypass>
+ */
+import Icon from "./Icon.astro";
+
+interface Props {
+  /** Nom de l'application affiché dans le chapeau. */
+  title: string;
+}
+const { title } = Astro.props;
+---
+<section class="bypass" data-bypass aria-label={`Application interactive : ${title}`}>
+  <div class="bypass__head">
+    <span class="bypass__tag"><Icon name="zap" /> bypass</span>
+    <span class="bypass__title">{title}</span>
+    <button class="bypass__tool" data-bypass-fs type="button" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+      <Icon name="expand" />
+    </button>
+  </div>
+  <div class="bypass__body">
+    <slot />
+  </div>
+</section>

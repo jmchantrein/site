@@ -24,6 +24,10 @@ npm run build   # production → dist/ (servi sous /site/ — GitHub Pages)
 Le runtime partagé (`src/scripts/site.js`) câble : tiroirs Accessibilité /
 Paramètres (persistants), langue FR/EN, terminal interactif, verrou des
 exercices, sommaires, ancres, recherche Ctrl+K, diaporamas.
+Le **dock** de l'en-tête (`src/data/dock.ts` + `src/scripts/dock.js`) porte
+les applications : terminal (5 modes via ⋮ : émulé, JSLinux, LinuxOnTab,
+ttyd local, distant), Pomodoro, et des passe-temps (`pastime: true`)
+déverrouillés 5 min après 25 min de lecture active.
 
 ## Écrire un cours (MDX)
 
@@ -58,6 +62,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Exercise id="unique" level={1|2|3}>` énoncé + `<Fragment slot="solution">` — solution repliable, verrouillée tant que le champ réponse est vide (effet de test) ;
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
+- `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants.
 

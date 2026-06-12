@@ -8,6 +8,7 @@
  */
 import Base from "./Base.astro";
 import Terminal from "../components/Terminal.astro";
+import SerieTimeline from "../components/SerieTimeline.astro";
 
 interface NavLink { href: string; label: string }
 interface TocItem { slug: string; text: string }
@@ -24,6 +25,8 @@ interface Props {
   terminalComment?: string;
   /** Sommaire (h2 extraits au rendu) — colonne latérale + double mobile (site.js). */
   toc?: TocItem[];
+  /** Timeline de série : un point par module, position courante. */
+  serieNav?: { items: { href: string; title: string; num: string }[]; current: number };
   prev?: NavLink;
   next?: NavLink;
   locale?: "fr" | "en";
@@ -31,7 +34,7 @@ interface Props {
 }
 const {
   title, description, crumb, badges = [], topics = [], lead,
-  terminal = false, terminalTitle, terminalComment, toc = [], prev, next,
+  terminal = false, terminalTitle, terminalComment, toc = [], serieNav, prev, next,
   locale = "fr", altUrl,
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -54,6 +57,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       )}
       <h1>{title}</h1>
       {lead && <p class="lead">{lead}</p>}
+      {serieNav && <SerieTimeline items={serieNav.items} current={serieNav.current} locale={locale} />}
     </div>
 
     <div class:list={[toc.length > 1 && "toc-layout"]} data-swap={toc.length > 1 ? "" : undefined}>

@@ -1,0 +1,68 @@
+---
+/**
+ * DOCK — lanceur d'applications de l'en-tête (terminal, Pomodoro, passe-temps).
+ * Le registre vit dans src/data/dock.ts (champ `pastime`) ; le comportement
+ * (fenêtres, minimisation, grisage Pomodoro, modes du terminal) dans
+ * src/scripts/dock.js. La fenêtre terminal embarque un vrai composant
+ * Terminal (mode émulé) câblé par site.js au chargement.
+ */
+import Icon from "./Icon.astro";
+import Terminal from "./Terminal.astro";
+import { DOCK_APPS } from "../data/dock";
+---
+<div class="dock" role="toolbar" aria-label="Applications">
+  {DOCK_APPS.map((app) => (
+    <span class="dock__item">
+      <button
+        class="dock__btn"
+        type="button"
+        data-dock-app={app.id}
+        data-pastime={app.pastime ? "true" : undefined}
+        aria-pressed="false"
+        aria-label={app.fr}
+      >
+        <Icon name={app.icon} class="dock__icon" />
+        <span class="dock__state" aria-hidden="true"></span>
+        <span class="util-btn__label"><span data-lang="fr">{app.fr}</span><span data-lang="en">{app.en}</span></span>
+      </button>
+      {app.options && (
+        <button class="dock__opts" type="button" data-dock-opts={app.id} aria-haspopup="menu" aria-expanded="false" aria-label={`Options : ${app.fr}`}>
+          <Icon name="ellipsis-vertical" />
+        </button>
+      )}
+    </span>
+  ))}
+</div>
+
+{/* Fenêtres du dock (gérées par dock.js). La fenêtre terminal est pré-rendue
+    pour que site.js câble son terminal émulé au chargement. */}
+<div class="dockwin" data-dock-window="terminal" hidden>
+  <div class="dockwin__bar" data-dockwin-bar>
+    <Icon name="square-terminal" class="dockwin__icon" />
+    <span class="dockwin__title"><span data-lang="fr">Terminal</span><span data-lang="en">Terminal</span></span>
+    <span class="dockwin__mode" data-term-mode-label></span>
+    <button class="dockwin__tool" data-dockwin-min type="button" aria-label="Minimiser" title="Minimiser"><Icon name="minus" /></button>
+    <button class="dockwin__tool" data-dockwin-close type="button" aria-label="Fermer" title="Fermer"><Icon name="x" /></button>
+  </div>
+  <div class="dockwin__body">
+    <div data-term-pane="emulated">
+      <Terminal id="term-dock" title="bash — terminal" comment="# terminal du dock — tapez « help »" />
+    </div>
+    <div data-term-pane="frame" hidden>
+      <p class="dockwin__framenote">
+        <span data-lang="fr">Contenu chargé depuis une source externe ou locale (selon le mode choisi dans ⋮). Si le cadre reste vide, le site refuse l'intégration :</span>
+        <span data-lang="en">Content loaded from an external or local source (per the mode chosen in ⋮). If the frame stays empty, the site refuses embedding:</span>
+        <a data-term-frame-link href="#" target="_blank" rel="noopener"><span data-lang="fr">ouvrir dans un onglet</span><span data-lang="en">open in a tab</span> <Icon name="external-link" /></a>
+      </p>
+      <iframe data-term-frame title="Terminal" loading="lazy"></iframe>
+      <div class="dockwin__help" data-term-help hidden>
+        <p><strong><span data-lang="fr">Votre terminal local dans cette fenêtre :</span><span data-lang="en">Your local terminal in this window:</span></strong></p>
+        <ol>
+          <li><span data-lang="fr">installez</span><span data-lang="en">install</span> <code>ttyd</code> (<code>apt install ttyd</code>) ;</li>
+          <li><span data-lang="fr">lancez</span><span data-lang="en">run</span> <code>ttyd --writable -p 7681 bash</code> ;</li>
+          <li><span data-lang="fr">le cadre ci-dessus se connecte à</span><span data-lang="en">the frame above connects to</span> <code>http://localhost:7681</code>.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>

@@ -421,6 +421,10 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .course__aside { position: sticky; top: calc(var(--space-7) + 56px); align-self: start; order: 2; }
 .course__aside .terminal { max-height: calc(100vh - 140px); }
 
+/* Atelier du cours masqué (dock terminal → « Atelier : afficher/masquer ») */
+.course[data-term-off] { grid-template-columns: minmax(0, 1fr); }
+.course[data-term-off] .course__aside, .course[data-term-off] .course__resizer { display: none; }
+
 /* Terminal déplacé à gauche (drag) */
 .course[data-term-side="left"] { grid-template-columns: clamp(320px, var(--term-col, 440px), 56vw) 18px minmax(0, 1fr); }
 .course[data-term-side="left"] .course__aside { order: 0; }
@@ -638,3 +642,44 @@ h2:hover .h-anchor, h3:hover .h-anchor, .h-anchor:focus-visible { opacity: 1; }
 .figure { margin-block: var(--space-5); max-width: var(--measure-wide); }
 .figure figcaption { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); }
 .placeholder { background: var(--color-surface-sunken) repeating-linear-gradient(45deg, transparent 0 9px, color-mix(in srgb, var(--color-border) 50%, transparent) 9px 10px); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; place-items: center; color: var(--color-text-muted); font-family: var(--font-mono); font-size: var(--text-sm); min-height: 150px; text-align: center; padding: var(--space-4); }
+
+/* -----------------------------------------------------------------------------
+   BYPASS — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre
+   standard (étiquette, titre, plein écran). L'appli est l'enfant.
+   --------------------------------------------------------------------------- */
+.bypass { max-width: var(--measure-wide); margin-block: var(--space-6); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-1); overflow: hidden; }
+.bypass__head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface-sunken); border-bottom: 1px solid var(--color-border); }
+.bypass__tag { font-family: var(--font-mono); font-weight: 700; font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-accent-text); display: inline-flex; align-items: center; gap: var(--space-2); }
+.bypass__tag svg { width: 17px; height: 17px; }
+.bypass__title { font-weight: var(--weight-semibold); color: var(--color-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bypass__tool { margin-left: auto; cursor: pointer; width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 1px solid var(--color-border-strong); background: var(--color-surface); border-radius: var(--radius-md); color: var(--color-text); }
+.bypass__tool:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+.bypass__tool[aria-pressed="true"] { background: var(--color-accent-weak); border-color: var(--color-accent); color: var(--color-accent-text); }
+.bypass__tool svg { width: 17px; height: 17px; }
+.bypass__body { padding: var(--space-5); }
+.bypass--fs { position: fixed; inset: 0; z-index: 340; max-width: none; border-radius: 0; display: flex; flex-direction: column; }
+.bypass--fs .bypass__body { flex: 1; min-height: 0; overflow: auto; }
+
+/* -----------------------------------------------------------------------------
+   TIMELINE DE SÉRIE — un point par module ; remplissage = progression persistée
+   (site.js · wireSerieTimeline + wireReadingProgress).
+   --------------------------------------------------------------------------- */
+.stl { margin-top: var(--space-4); }
+.stl__track { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; max-width: var(--measure); }
+.stl__step { display: flex; align-items: center; flex: 1 1 0; min-width: 0; }
+.stl__step:first-child { flex: 0 0 auto; }
+/* Segment reliant au point précédent : rempli si module atteint, partiel
+   (var(--p)) sur le module courant. */
+.stl__step + .stl__step::before { content: ""; flex: 1; height: 3px; border-radius: 2px; margin-inline: var(--space-2);
+  background: linear-gradient(to right, var(--color-accent) calc(var(--p, 0) * 100%), var(--color-border) calc(var(--p, 0) * 100%)); }
+.stl__step.is-done { --p: 1; }
+.stl__step a { display: inline-flex; align-items: center; gap: var(--space-2); text-decoration: none; color: var(--color-text-muted); flex: none; padding: var(--space-2); margin: calc(-1 * var(--space-1)); border-radius: var(--radius-md); }
+.stl__step a:hover { color: var(--color-accent-text); background: var(--color-surface-sunken); }
+.stl__step a:hover .stl__dot { border-color: var(--color-accent); }
+@media (pointer: coarse) { .stl__step a { min-width: 44px; min-height: 44px; justify-content: center; } }
+.stl__dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--color-border-strong); background: var(--color-surface); flex: none; transition: background var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease); }
+.stl__step.is-done .stl__dot { background: var(--color-accent); border-color: var(--color-accent); }
+.stl__step.is-current .stl__dot { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-weak); }
+.stl__step.is-current a { color: var(--color-accent-text); font-weight: var(--weight-semibold); }
+.stl__num { font-family: var(--font-mono); font-size: var(--text-xs); }
+@media (max-width: 640px) { .stl__num { display: none; } }

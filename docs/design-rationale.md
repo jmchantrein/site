@@ -97,3 +97,11 @@ jamais imposée. Toutes les préférences persistent (`localStorage`).
   thème, chrome masqué, URL des liens imprimées, solutions dépliées).
 - **Abandonné** : l'effet de « plongée » au scroll (tokens retirés —
   décoration sans bénéfice pédagogique démontré).
+
+- **Dock & passe-temps cadencés** (juin 2026) : l'en-tête porte un dock
+  d'applications (terminal multi-modes, Pomodoro, jeux — Snake, 2048, vie
+  de Conway 2D/3D). Les jeux sont des *digressions volontaires* — la
+  tension avec « aucune distraction » est arbitrée par le **Pomodoro** :
+  25 min de lecture active déverrouillent 5 min de passe-temps (alternance
+  mode focalisé / mode diffus), icônes grisées le reste du temps, aucun
+  signal d'appel.

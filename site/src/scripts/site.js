@@ -191,7 +191,8 @@ function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").r
 function getTerminal(cmd) {
   const sel = cmd.getAttribute("data-term");
   if (sel) { const t = document.querySelector(sel); if (t) return t; }
-  return document.querySelector("[data-terminal]");
+  // Priorité à l'atelier de la page (le terminal du dock vit dans le chrome).
+  return document.querySelector("main [data-terminal]") || document.querySelector("[data-terminal]");
 }
 
 function typeInto(screen, text, done) {
@@ -454,10 +455,13 @@ function wireExercises() {
 }
 
 /* ---- BARRE DE PROGRESSION de lecture --------------------------------------- */
+const PROGRESS_KEY = "site-astro-progress-v1";
+function loadProgress() { try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); } catch (e) { return {}; } }
 function wireReadingProgress() {
   const bar = document.querySelector("[data-read-progress]");
   if (!bar) return;
   const article = document.querySelector(".course__reading") || document.querySelector("main");
+  let saved = loadProgress()[location.pathname] || 0;
   function update() {
     const rect = article.getBoundingClientRect();
     const total = rect.height - window.innerHeight;
@@ -465,10 +469,44 @@ function wireReadingProgress() {
     const p = total > 0 ? Math.max(0, Math.min(1, scrolled / total)) : rect.top <= 0 ? 1 : 0;
     bar.style.width = (p * 100).toFixed(1) + "%";
     bar.parentNode.setAttribute("aria-valuenow", Math.round(p * 100));
+    // Progression MAX persistée par page (timeline de série, reprise de lecture).
+    if (p > saved + 0.04 || (p >= 0.99 && saved < 1)) {
+      saved = p;
+      try { const all = loadProgress(); all[location.pathname] = Math.round(p * 100) / 100; localStorage.setItem(PROGRESS_KEY, JSON.stringify(all)); } catch (e) {}
+    }
+    document.dispatchEvent(new CustomEvent("sa:read-progress", { detail: { p } }));
   }
   update();
   window.addEventListener("scroll", update, { passive: true });
   window.addEventListener("resize", update);
+}
+
+/* ---- TIMELINE DE SÉRIE : un point par module, remplissage = progression ---- */
+function wireSerieTimeline() {
+  const tl = document.querySelector("[data-serie-timeline]");
+  if (!tl) return;
+  const store = loadProgress();
+  tl.querySelectorAll("[data-stl-path]").forEach((li) => {
+    const path = li.getAttribute("data-stl-path");
+    const isCurrent = li.classList.contains("is-current");
+    if (!isCurrent && (store[path] || 0) >= 0.9) li.classList.add("is-done");
+  });
+  // Le segment du module courant suit la lecture en direct.
+  const cur = tl.querySelector(".is-current");
+  if (cur) document.addEventListener("sa:read-progress", (e) => {
+    cur.style.setProperty("--p", String(e.detail.p));
+  });
+}
+
+/* ---- BYPASS : plein écran du cadre applicatif ------------------------------- */
+function wireBypass() {
+  document.querySelectorAll("[data-bypass]").forEach((box) => {
+    const btn = box.querySelector("[data-bypass-fs]");
+    if (!btn) return;
+    const set = (on) => { box.classList.toggle("bypass--fs", on); btn.setAttribute("aria-pressed", String(on)); };
+    btn.addEventListener("click", () => set(!box.classList.contains("bypass--fs")));
+    box.addEventListener("keydown", (e) => { if (e.key === "Escape" && box.classList.contains("bypass--fs")) set(false); });
+  });
 }
 
 /* ---- SOMMAIRE LATÉRAL (.toc) — double mobile généré + scrollspy ------------ */
@@ -993,6 +1031,8 @@ function init() {
   wireTermInput();
   wireExercises();
   wireReadingProgress();
+  wireSerieTimeline();
+  wireBypass();
   wireTocSwap();
   wireTocs();
   wireAnchors();

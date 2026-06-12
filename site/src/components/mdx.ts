@@ -13,6 +13,7 @@ import BootBench from "./BootBench.astro";
 import ArchiStack from "./ArchiStack.astro";
 import LayerStack from "./LayerStack.astro";
 import BuildStack from "./BuildStack.astro";
+import Bypass from "./Bypass.astro";
 
 export const mdxComponents = {
   Note,
@@ -27,4 +28,5 @@ export const mdxComponents = {
   ArchiStack,
   LayerStack,
   BuildStack,
+  Bypass,
 };
