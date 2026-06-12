@@ -194,7 +194,7 @@ function getTerminal(cmd) {
   // Priorité : l'atelier de la page, puis l'atelier détaché en fenêtre
   // flottante (jamais un terminal parqué), enfin le terminal du dock.
   return (
-    document.querySelector("main [data-terminal]") ||
+    document.querySelector("main [data-terminal]:not([data-parked])") ||
     document.querySelector('[data-dock-window="terminal"] .terminal:not([data-parked])[data-terminal]') ||
     document.querySelector("[data-terminal]:not([data-parked])")
   );
@@ -249,6 +249,13 @@ function runCommand(cmd) {
   // Atelier détaché dont la fenêtre est minimisée → la faire réapparaître.
   const dockwin = term.closest(".dockwin");
   if (dockwin && dockwin.hidden) dockwin.hidden = false;
+  // Mode iframe affiché → revenir au terminal émulé : les commandes du cours
+  // ne s'exécutent que dans la démo simulée (dock.js écoute term:mode).
+  const pane = term.closest("[data-term-pane]");
+  if (pane && pane.hidden) {
+    try { localStorage.setItem("site-astro-dockterm-mode-v1", "emulated"); } catch (e) {}
+    document.dispatchEvent(new CustomEvent("term:mode"));
+  }
   // Terminal hors écran (mobile : l'atelier est sous l'article) → l'amener en vue.
   const r = term.getBoundingClientRect();
   if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
