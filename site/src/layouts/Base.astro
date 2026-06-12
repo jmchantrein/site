@@ -30,8 +30,10 @@ import "../styles/base.css";
 import "../styles/components.css";
 import "../styles/a11y-panel.css";
 import "../styles/annotate.css";
+import "../styles/dock.css";
 import Icon from "../components/Icon.astro";
 import Panels from "../components/Panels.astro";
+import Dock from "../components/Dock.astro";
 
 interface Props {
   title: string;
@@ -104,6 +106,7 @@ const isCurrent = (href: string) =>
             </a>
           ))}
         </nav>
+        <Dock />
         <div class="header-utils">
           {altUrl && (
             <a class="util-btn lang-toggle" href={altUrl} aria-label={locale === "fr" ? "Read this page in English" : "Lire cette page en français"}>
@@ -149,6 +152,7 @@ const isCurrent = (href: string) =>
     <Panels />
     <script src="../scripts/site.js"></script>
     <script src="../scripts/annotate.js"></script>
+    <script src="../scripts/dock.js"></script>
     <style>
       .footer-a11y { margin-left: auto; }
       .annot-trigger { position: relative; }

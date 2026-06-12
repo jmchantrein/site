@@ -191,7 +191,8 @@ function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").r
 function getTerminal(cmd) {
   const sel = cmd.getAttribute("data-term");
   if (sel) { const t = document.querySelector(sel); if (t) return t; }
-  return document.querySelector("[data-terminal]");
+  // Priorité à l'atelier de la page (le terminal du dock vit dans le chrome).
+  return document.querySelector("main [data-terminal]") || document.querySelector("[data-terminal]");
 }
 
 function typeInto(screen, text, done) {

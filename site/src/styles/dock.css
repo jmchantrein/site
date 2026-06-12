@@ -1,0 +1,131 @@
+/* =============================================================================
+   DOCK — lanceur d'applications de l'en-tête + fenêtres flottantes.
+   Les passe-temps (data-pastime) sont grisés hors des pauses Pomodoro.
+   ============================================================================= */
+.dock { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; padding-inline: var(--space-2); border-inline: 1px solid var(--color-border); }
+.dock__item { position: relative; display: inline-flex; }
+.dock__btn {
+  position: relative; cursor: pointer;
+  width: 36px; height: 36px; display: grid; place-items: center;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+}
+.dock__btn:hover { color: var(--color-text-strong); border-color: var(--color-border-strong); background: var(--color-surface); }
+.dock__btn[aria-pressed="true"] { color: var(--color-accent-text); background: var(--color-accent-weak); border-color: var(--color-accent); }
+.dock__icon { width: 20px; height: 20px; }
+.dock__icon svg { width: 100%; height: 100%; }
+/* Pastille d'état : fenêtre ouverte (pleine) ou minimisée (anneau) */
+.dock__state { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.dock__btn[data-state="open"] .dock__state { background: var(--color-accent); }
+.dock__btn[data-state="min"] .dock__state { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-accent); }
+/* Passe-temps verrouillé (Pomodoro en phase lecture) */
+.dock__btn[data-locked="true"] { opacity: 0.38; cursor: not-allowed; }
+.dock__btn[data-locked="true"]:hover { border-color: transparent; background: transparent; color: var(--color-text-muted); }
+.dock__btn .util-btn__label { z-index: 130; }
+.dock__btn[data-locked="true"] .util-btn__label::after { content: " · " attr(data-left) " min"; }
+/* Bouton ⋮ d'options accolé */
+.dock__opts {
+  cursor: pointer; width: 16px; height: 36px; display: grid; place-items: center;
+  background: transparent; border: none; border-radius: var(--radius-sm);
+  color: var(--color-text-faint); padding: 0;
+}
+.dock__opts:hover { color: var(--color-accent-text); background: var(--color-surface-sunken); }
+.dock__opts svg { width: 14px; height: 14px; }
+
+/* Menu d'options (modes du terminal…) — popover sous l'icône */
+.dock__menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 160;
+  min-width: 270px; padding: var(--space-2);
+  background: var(--color-surface); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-2);
+  display: grid; gap: 2px;
+}
+.dock__menu[hidden] { display: none; }
+.dock__menu-label { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); padding: var(--space-1) var(--space-2); }
+.dock__menu button, .dock__menu a {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer; color: var(--color-text);
+  font-size: var(--text-sm); padding: var(--space-2) var(--space-2); border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.dock__menu button:hover, .dock__menu a:hover { background: var(--color-accent-weak); color: var(--color-accent-text); }
+.dock__menu [aria-checked="true"]::before { content: "✓"; font-weight: 700; color: var(--color-accent-text); }
+.dock__menu [aria-checked="false"]::before { content: ""; width: 0.9em; display: inline-block; }
+.dock__menu input {
+  width: 100%; font: inherit; font-size: var(--text-xs); color: var(--color-text);
+  background: var(--color-bg); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2);
+}
+.dock__menu-note { font-size: var(--text-xs); color: var(--color-text-faint); padding: var(--space-1) var(--space-2); max-width: 36ch; }
+
+/* ---- FENÊTRES ------------------------------------------------------------- */
+.dockwin {
+  position: fixed; z-index: 300;
+  right: 24px; bottom: 24px;
+  width: min(560px, calc(100vw - 32px));
+  background: var(--color-surface); border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(2, 12, 20, 0.42);
+  display: flex; flex-direction: column; overflow: hidden;
+  max-height: min(72vh, 720px);
+}
+.dockwin[hidden] { display: none; }
+.dockwin__bar {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken); border-bottom: 1px solid var(--color-border);
+  cursor: grab; user-select: none; touch-action: none;
+}
+.dockwin[data-dragging] .dockwin__bar { cursor: grabbing; }
+.dockwin__icon { width: 17px; height: 17px; color: var(--color-accent-text); flex: none; }
+.dockwin__icon svg { width: 100%; height: 100%; }
+.dockwin__title { font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--color-text-strong); }
+.dockwin__mode { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+.dockwin__tool {
+  cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+  color: var(--color-text-muted); margin-left: auto;
+}
+.dockwin__tool + .dockwin__tool { margin-left: 0; }
+.dockwin__tool:hover { color: var(--color-text-strong); border-color: var(--color-border-strong); background: var(--color-surface); }
+.dockwin__tool svg { width: 15px; height: 15px; }
+.dockwin__body { overflow: auto; min-height: 0; }
+.dockwin__body .terminal { border: none; border-radius: 0; box-shadow: none; max-height: 50vh; }
+.dockwin__framenote { font-size: var(--text-xs); color: var(--color-text-muted); padding: var(--space-2) var(--space-3); margin: 0; display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
+.dockwin__framenote a { display: inline-flex; align-items: center; gap: 4px; }
+.dockwin__framenote svg { width: 12px; height: 12px; }
+.dockwin iframe[data-term-frame] { width: 100%; height: 52vh; border: 0; background: #111; display: block; }
+.dockwin__help { padding: var(--space-2) var(--space-3) var(--space-3); font-size: var(--text-sm); }
+.dockwin__help ol { padding-left: var(--space-5); margin: var(--space-2) 0 0; }
+
+/* Corps générique des applis (jeux, pomodoro) */
+.dockapp { padding: var(--space-4); display: grid; gap: var(--space-3); justify-items: center; }
+.dockapp canvas { border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--term-bg); max-width: 100%; touch-action: none; }
+.dockapp__bar { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; justify-content: center; width: 100%; }
+.dockapp__bar .score { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); margin-right: auto; }
+.dockapp__btn {
+  cursor: pointer; font: inherit; font-size: var(--text-xs); font-weight: 600;
+  border: 1px solid var(--color-border-strong); background: var(--color-surface);
+  color: var(--color-text); border-radius: var(--radius-md); padding: var(--space-1) var(--space-3);
+}
+.dockapp__btn:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+.dockapp__btn[aria-pressed="true"] { background: var(--color-accent-weak); border-color: var(--color-accent); color: var(--color-accent-text); }
+.dockapp__hint { font-size: var(--text-xs); color: var(--color-text-faint); text-align: center; margin: 0; }
+
+/* Grille 2048 (DOM) */
+.g2048 { display: grid; grid-template-columns: repeat(4, 64px); gap: 6px; padding: 6px; background: var(--color-surface-sunken); border-radius: var(--radius-md); outline: none; }
+.g2048:focus-visible { outline: var(--focus-ring); }
+.g2048 .c { width: 64px; height: 64px; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--color-bg); font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; color: var(--color-text-strong); }
+.g2048 .c[data-v=""] { color: transparent; }
+.g2048 .c[data-big="true"] { background: var(--color-accent); color: var(--color-on-accent); }
+.g2048 .c:not([data-v=""]):not([data-big="true"]) { background: var(--color-accent-weak); }
+
+/* Pomodoro */
+.pomo { text-align: center; }
+.pomo__phase { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+.pomo__time { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 700; color: var(--color-text-strong); line-height: 1.1; }
+.pomo__track { width: 100%; height: 8px; border-radius: 999px; background: var(--color-surface-sunken); overflow: hidden; border: 1px solid var(--color-border); }
+.pomo__fill { height: 100%; width: 0; background: var(--color-accent); transition: width 400ms var(--ease); }
+.pomo--break .pomo__fill { background: var(--color-success); }
+
+@media (max-width: 880px) { .dock { display: none; } }

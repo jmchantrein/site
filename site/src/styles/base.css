@@ -213,7 +213,7 @@ html[data-motion="off"] .site-header { backdrop-filter: none; background: var(--
 
 .lang-toggle { font-family: var(--font-mono); }
 .lang-toggle [data-lang-cur] { color: var(--color-accent-text); font-weight: 700; }
-.header-utils { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.header-utils { display: flex; align-items: center; gap: var(--space-3); }
 
 /* ---- i18n : montre/masque selon html[lang] (chrome bilingue) ------------ */
 :root[lang="fr"] [data-lang="en"] { display: none !important; }

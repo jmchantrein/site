@@ -421,6 +421,10 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .course__aside { position: sticky; top: calc(var(--space-7) + 56px); align-self: start; order: 2; }
 .course__aside .terminal { max-height: calc(100vh - 140px); }
 
+/* Atelier du cours masqué (dock terminal → « Atelier : afficher/masquer ») */
+.course[data-term-off] { grid-template-columns: minmax(0, 1fr); }
+.course[data-term-off] .course__aside, .course[data-term-off] .course__resizer { display: none; }
+
 /* Terminal déplacé à gauche (drag) */
 .course[data-term-side="left"] { grid-template-columns: clamp(320px, var(--term-col, 440px), 56vw) 18px minmax(0, 1fr); }
 .course[data-term-side="left"] .course__aside { order: 0; }
