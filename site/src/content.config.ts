@@ -1,6 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { TOPIC_IDS } from "./data/topics";
+import { SERIE_IDS } from "./data/series";
 
 /* Le contenu vit dans src/content/ en MDX pur : frontmatter + composants
    pédagogiques — jamais de HTML/CSS à la main. */
@@ -10,8 +11,12 @@ const cours = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    /** Ordre dans le parcours (01, 02…). */
+    /** Ordre de tri global, interne — jamais affiché (la numérotation
+        visible est PAR SÉRIE, cf. src/data/series.ts). */
     order: z.number(),
+    /** Série d'appartenance (un cours = une série de modules) ;
+        absent → cours autonome, sans numéro de module. */
+    serie: z.enum(SERIE_IDS).optional(),
     topics: z.array(z.enum(TOPIC_IDS)).default([]),
     /** Durée de lecture estimée, en minutes. */
     duration: z.number().optional(),

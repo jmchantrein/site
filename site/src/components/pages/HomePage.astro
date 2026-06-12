@@ -5,6 +5,7 @@
  */
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
+import { SERIES, serieNumbers, type SerieId } from "../../data/series";
 
 interface Props {
   locale?: "fr" | "en";
@@ -16,8 +17,16 @@ const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const cours = (await getCollection("cours", ({ data, id }) =>
   !data.draft && (locale === "en" ? id.startsWith("en/") : !id.startsWith("en/"))))
   .sort((a, b) => a.data.order - b.data.order);
-const totalMin = cours.reduce((s, c) => s + (c.data.duration ?? 0), 0);
 const slug = (id: string) => (locale === "en" ? id.slice(3) : id);
+const nums = serieNumbers(cours);
+/* Un « cours » = une série de modules ; les pages sans série sont des cours
+   autonomes, sans numéro. */
+const serieIds = [...new Set(cours.map((c) => c.data.serie).filter(Boolean))] as SerieId[];
+const groups = serieIds.map((s) => {
+  const mods = cours.filter((c) => c.data.serie === s);
+  return { id: s, mods, totalMin: mods.reduce((t, c) => t + (c.data.duration ?? 0), 0) };
+});
+const standalone = cours.filter((c) => !c.data.serie);
 ---
 <Base
   title={locale === "en" ? "Home" : "Accueil"}
@@ -59,23 +68,52 @@ const slug = (id: string) => (locale === "en" ? id.slice(3) : id);
 
     <section class="wrap modules">
       <div class="section-head">
-        <h2><span data-lang="fr">Modules du cours</span><span data-lang="en">Course modules</span></h2>
-        <span class="count">{cours.length} <span data-lang="fr">modules · ≈ {totalMin} min</span><span data-lang="en">modules · ≈ {totalMin} min</span></span>
+        <h2><span data-lang="fr">Les cours</span><span data-lang="en">Courses</span></h2>
+        <span class="count">{groups.length + standalone.length} <span data-lang="fr">cours</span><span data-lang="en">course(s)</span></span>
       </div>
-      <div class="card-grid">
-        {cours.map((c) => (
-          <a class="module-card" href={`${cpfx}/cours/${slug(c.id)}/`}>
-            <div class="module-card__top">
-              <span class="module-card__num">{String(c.data.order).padStart(2, "0")}</span>
-              {c.data.duration && <span class="module-card__meta">≈ {c.data.duration} min</span>}
-            </div>
-            <h3 class="module-card__title">{c.data.title}</h3>
-            <p class="module-card__desc">{c.data.description}</p>
-            <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
-            <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
-          </a>
-        ))}
-      </div>
+      {groups.map((g) => (
+        <div class="serie">
+          <div class="serie-head">
+            <h3><span data-lang="fr">{SERIES[g.id].fr}</span><span data-lang="en">{SERIES[g.id].en}</span></h3>
+            <span class="count">{g.mods.length} <span data-lang="fr">modules</span><span data-lang="en">modules</span>{g.totalMin > 0 && ` · ≈ ${g.totalMin} min`}</span>
+          </div>
+          <div class="card-grid">
+            {g.mods.map((c) => (
+              <a class="module-card" href={`${cpfx}/cours/${slug(c.id)}/`}>
+                <div class="module-card__top">
+                  <span class="module-card__num">{nums.get(c.id)?.num}</span>
+                  {c.data.duration && <span class="module-card__meta">≈ {c.data.duration} min</span>}
+                </div>
+                <h3 class="module-card__title">{c.data.title}</h3>
+                <p class="module-card__desc">{c.data.description}</p>
+                <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+                <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+      {standalone.length > 0 && (
+        <div class="serie">
+          <div class="serie-head">
+            <h3><span data-lang="fr">Cours autonomes</span><span data-lang="en">Standalone courses</span></h3>
+            <span class="count">{standalone.length} <span data-lang="fr">cours</span><span data-lang="en">course(s)</span></span>
+          </div>
+          <div class="card-grid">
+            {standalone.map((c) => (
+              <a class="module-card" href={`${cpfx}/cours/${slug(c.id)}/`}>
+                <div class="module-card__top">
+                  {c.data.duration && <span class="module-card__meta">≈ {c.data.duration} min</span>}
+                </div>
+                <h3 class="module-card__title">{c.data.title}</h3>
+                <p class="module-card__desc">{c.data.description}</p>
+                <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+                <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   </main>
 </Base>
@@ -89,6 +127,10 @@ const slug = (id: string) => (locale === "en" ? id.slice(3) : id);
   .section-head h2 { margin: 0; }
   .section-head .count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
   .modules { margin-top: var(--space-7); }
+  .serie { margin-top: var(--space-6); }
+  .serie-head { display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); }
+  .serie-head h3 { margin: 0; font-size: var(--text-lg); }
+  .serie-head .count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
   .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); margin-block: var(--space-6); max-width: none; }
   .principle { padding-top: var(--space-4); border-top: 2px solid var(--color-accent); }
   .principle h3 { font-size: var(--text-md); margin: 0 0 var(--space-2); }
