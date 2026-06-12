@@ -2,16 +2,18 @@
 import { getCollection } from "astro:content";
 import Base from "../../../layouts/Base.astro";
 import TopicIndex from "../../../components/TopicIndex.astro";
+import { serieNumbers } from "../../../data/series";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const cours = (await getCollection("cours", ({ data, id }) => !data.draft && id.startsWith("en/")))
   .sort((a, b) => a.data.order - b.data.order);
+const nums = serieNumbers(cours);
 const items = cours.map((c) => ({
   href: `${base}/en/cours/${c.id.slice(3)}/`,
   title: c.data.title,
   description: c.data.description,
   topics: c.data.topics,
-  num: String(c.data.order).padStart(2, "0"),
+  num: nums.get(c.id)?.num,
   meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
   tags: c.data.tags,
 }));

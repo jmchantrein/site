@@ -2,29 +2,44 @@
 import { getCollection, render } from "astro:content";
 import Reading from "../../layouts/Reading.astro";
 import { mdxComponents } from "../../components/mdx";
+import { SERIES, serieNumbers } from "../../data/series";
 
 export async function getStaticPaths() {
   const all = await getCollection("cours", ({ data }) => !data.draft);
   // FR à la racine de la collection ; les traductions vivent sous en/ (routes /en/).
   const cours = all.filter((c) => !c.id.startsWith("en/")).sort((a, b) => a.data.order - b.data.order);
   const enIds = new Set(all.filter((c) => c.id.startsWith("en/")).map((c) => c.id.slice(3)));
-  return cours.map((entry, i) => ({
-    params: { slug: entry.id },
-    props: { entry, prevEntry: cours[i - 1] ?? null, nextEntry: cours[i + 1] ?? null, hasEn: enIds.has(entry.id) },
-  }));
+  const nums = serieNumbers(cours);
+  return cours.map((entry) => {
+    // Précédent/suivant À L'INTÉRIEUR de la série (un cours = ses modules) ;
+    // un cours autonome n'a pas de chaîne.
+    const chain = entry.data.serie ? cours.filter((c) => c.data.serie === entry.data.serie) : [entry];
+    const i = chain.indexOf(entry);
+    return {
+      params: { slug: entry.id },
+      props: {
+        entry,
+        prevEntry: chain[i - 1] ?? null,
+        nextEntry: chain[i + 1] ?? null,
+        hasEn: enIds.has(entry.id),
+        mod: nums.get(entry.id) ?? null,
+      },
+    };
+  });
 }
 
-const { entry, prevEntry, nextEntry, hasEn } = Astro.props;
+const { entry, prevEntry, nextEntry, hasEn, mod } = Astro.props;
 const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const d = entry.data;
 const badges = [d.badge, d.duration ? `≈ ${d.duration} min` : null].filter(Boolean) as string[];
 const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
+const crumbLabel = mod ? `${SERIES[mod.serie].fr} · module ${mod.num}/${String(mod.total).padStart(2, "0")}` : "cours";
 ---
 <Reading
   title={d.title}
   description={d.description}
-  crumb={{ href: `${base}/cours/`, label: `module ${String(d.order).padStart(2, "0")}` }}
+  crumb={{ href: `${base}/cours/`, label: crumbLabel }}
   badges={badges}
   lead={d.description}
   terminal={d.terminal}
@@ -36,7 +51,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
     ? { href: `${base}/cours/${prevEntry.id}/`, label: prevEntry.data.title }
     : { href: `${base}/cours/`, label: "Tous les cours" }}
   next={nextEntry
-    ? { href: `${base}/cours/${nextEntry.id}/`, label: `Cours suivant : ${nextEntry.data.title}` }
+    ? { href: `${base}/cours/${nextEntry.id}/`, label: `Module suivant : ${nextEntry.data.title}` }
     : { href: `${base}/cours/`, label: "Tous les cours" }}
 >
   <Content components={mdxComponents} />
