@@ -23,18 +23,25 @@ export async function getStaticPaths() {
         nextEntry: chain[i + 1] ?? null,
         hasEn: enIds.has(entry.id),
         mod: nums.get(entry.id) ?? null,
+        serieItems: entry.data.serie
+          ? chain.map((c) => ({ id: c.id, title: c.data.title, num: nums.get(c.id)?.num ?? "" }))
+          : null,
+        serieIndex: i,
       },
     };
   });
 }
 
-const { entry, prevEntry, nextEntry, hasEn, mod } = Astro.props;
+const { entry, prevEntry, nextEntry, hasEn, mod, serieItems, serieIndex } = Astro.props;
 const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const d = entry.data;
 const badges = [d.badge, d.duration ? `≈ ${d.duration} min` : null].filter(Boolean) as string[];
 const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
 const crumbLabel = mod ? `${SERIES[mod.serie].fr} · module ${mod.num}/${String(mod.total).padStart(2, "0")}` : "cours";
+const serieNav = serieItems
+  ? { items: serieItems.map((m) => ({ href: `${base}/cours/${m.id}/`, title: m.title, num: m.num })), current: serieIndex }
+  : undefined;
 ---
 <Reading
   title={d.title}
@@ -46,6 +53,7 @@ const crumbLabel = mod ? `${SERIES[mod.serie].fr} · module ${mod.num}/${String(
   terminalTitle={d.terminalTitle}
   terminalComment={d.terminalComment}
   toc={toc}
+  serieNav={serieNav}
   altUrl={hasEn ? `${base}/en/cours/${entry.id}/` : undefined}
   prev={prevEntry
     ? { href: `${base}/cours/${prevEntry.id}/`, label: prevEntry.data.title }

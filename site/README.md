@@ -58,6 +58,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Exercise id="unique" level={1|2|3}>` énoncé + `<Fragment slot="solution">` — solution repliable, verrouillée tant que le champ réponse est vide (effet de test) ;
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
+- `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants.
 

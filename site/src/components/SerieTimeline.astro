@@ -1,0 +1,33 @@
+---
+/**
+ * TIMELINE DE SÉRIE — progression dans le cours (un point par module),
+ * EN PLUS de la barre de progression du module lui-même.
+ * États (site.js · wireSerieTimeline, persistance localStorage) :
+ *   is-done    → module déjà lu (progression ≥ 90 %) — pastille pleine ;
+ *   is-current → module courant — son segment se remplit au fil du défilement.
+ */
+interface Item { href: string; title: string; num: string }
+interface Props {
+  items: Item[];
+  current: number;
+  locale?: "fr" | "en";
+}
+const { items, current, locale = "fr" } = Astro.props;
+---
+<nav class="stl" aria-label={locale === "en" ? "Course progress" : "Progression du cours"} data-serie-timeline>
+  <ol class="stl__track">
+    {items.map((it, k) => (
+      <li
+        class:list={["stl__step", k === current && "is-current"]}
+        data-stl-path={it.href}
+        style={`--seg: ${k === 0 ? 0 : 1};`}
+      >
+        <a href={it.href} aria-current={k === current ? "page" : undefined} title={it.title}>
+          <span class="stl__dot" aria-hidden="true"></span>
+          <span class="stl__num">{it.num}</span>
+          <span class="sr-only">{it.title}</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
