@@ -18,4 +18,5 @@ export const DOCK_APPS: DockApp[] = [
   { id: "snake", icon: "worm", fr: "Snake", en: "Snake", pastime: true },
   { id: "g2048", icon: "grid", fr: "2048", en: "2048", pastime: true },
   { id: "gol", icon: "boxes", fr: "Jeu de la vie", en: "Game of Life", pastime: true },
+  { id: "lenia", icon: "orbit", fr: "Lenia", en: "Lenia", pastime: true },
 ];
