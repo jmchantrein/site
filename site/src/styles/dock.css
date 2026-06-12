@@ -67,7 +67,8 @@
   background: var(--color-surface); border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(2, 12, 20, 0.42);
   display: flex; flex-direction: column; overflow: hidden;
-  max-height: min(64vh, 640px);
+  height: min(58vh, 560px);
+  max-height: 100dvh;
 }
 .dockwin[hidden] { display: none; }
 .dockwin__bar {
@@ -89,12 +90,23 @@
 .dockwin__tool + .dockwin__tool { margin-left: 0; }
 .dockwin__tool:hover { color: var(--color-text-strong); border-color: var(--color-border-strong); background: var(--color-surface); }
 .dockwin__tool svg { width: 15px; height: 15px; }
-.dockwin__body { overflow: auto; min-height: 0; }
-.dockwin__body .terminal { border: none; border-radius: 0; box-shadow: none; max-height: 44vh; }
+.dockwin__body { overflow: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+.dockwin__body > * { min-height: 0; }
+.dockwin [data-term-pane="emulated"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.dockwin [data-term-pane="emulated"] .terminal { flex: 1; min-height: 0; }
+.dockwin [data-term-pane="frame"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* Plein écran */
+.dockwin--fs { inset: 0 !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100dvh !important; max-height: none !important; border-radius: 0; z-index: 400 !important; }
+/* Poignée de redimensionnement (coin bas-droit) */
+.dockwin__resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; }
+.dockwin__resize::before { content: ""; position: absolute; right: 4px; bottom: 4px; width: 8px; height: 8px; border-right: 2px solid var(--color-border-strong); border-bottom: 2px solid var(--color-border-strong); border-radius: 0 0 3px 0; }
+.dockwin__resize:hover::before { border-color: var(--color-accent); }
+.dockwin--fs .dockwin__resize { display: none; }
+.dockwin__body .terminal { border: none; border-radius: 0; box-shadow: none; max-height: none; }
 .dockwin__framenote { font-size: var(--text-xs); color: var(--color-text-muted); padding: var(--space-2) var(--space-3); margin: 0; display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
 .dockwin__framenote a { display: inline-flex; align-items: center; gap: 4px; }
 .dockwin__framenote svg { width: 12px; height: 12px; }
-.dockwin iframe[data-term-frame] { width: 100%; height: 44vh; border: 0; background: #111; display: block; }
+.dockwin iframe[data-term-frame] { width: 100%; flex: 1; min-height: 240px; border: 0; background: #111; display: block; }
 body.dockwin-dragging iframe { pointer-events: none; }
 .dockwin__help { padding: var(--space-2) var(--space-3) var(--space-3); font-size: var(--text-sm); }
 .dockwin__help ol { padding-left: var(--space-5); margin: var(--space-2) 0 0; }
