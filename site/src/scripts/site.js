@@ -191,8 +191,13 @@ function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").r
 function getTerminal(cmd) {
   const sel = cmd.getAttribute("data-term");
   if (sel) { const t = document.querySelector(sel); if (t) return t; }
-  // Priorité à l'atelier de la page (le terminal du dock vit dans le chrome).
-  return document.querySelector("main [data-terminal]") || document.querySelector("[data-terminal]");
+  // Priorité : l'atelier de la page, puis l'atelier détaché en fenêtre
+  // flottante (jamais un terminal parqué), enfin le terminal du dock.
+  return (
+    document.querySelector("main [data-terminal]") ||
+    document.querySelector('[data-dock-window="terminal"] .terminal:not([data-parked])[data-terminal]') ||
+    document.querySelector("[data-terminal]:not([data-parked])")
+  );
 }
 
 function typeInto(screen, text, done) {
@@ -241,6 +246,9 @@ function runCommand(cmd) {
     course.removeAttribute("data-term-off");
     try { localStorage.setItem("site-astro-term-visible-v1", "on"); } catch (e) {}
   }
+  // Atelier détaché dont la fenêtre est minimisée → la faire réapparaître.
+  const dockwin = term.closest(".dockwin");
+  if (dockwin && dockwin.hidden) dockwin.hidden = false;
   // Terminal hors écran (mobile : l'atelier est sous l'article) → l'amener en vue.
   const r = term.getBoundingClientRect();
   if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
