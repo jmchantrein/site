@@ -8,6 +8,7 @@
 import { mountSnake } from "./apps/snake.js";
 import { mount2048 } from "./apps/g2048.js";
 import { mountGol } from "./apps/gol.js";
+import { mountLenia } from "./apps/lenia.js";
 
 "use strict";
 
@@ -51,25 +52,52 @@ setInterval(pomoTick, 1000);
 let topZ = 300;
 const windows = new Map(); // id → { el, dispose }
 
+/* Drag : écouteurs au niveau window (un iframe ne peut pas avaler le
+   pointeur) + pointer-events coupés sur les iframes pendant le drag.
+   La fenêtre reste manipulable : jamais sous l'en-tête, jamais hors écran. */
+const HEADER_H = 64;
+function clampWin(win, left, top) {
+  win.style.left = Math.max(8, Math.min(window.innerWidth - 120, left)) + "px";
+  win.style.top = Math.max(HEADER_H, Math.min(window.innerHeight - 56, top)) + "px";
+  win.style.right = "auto"; win.style.bottom = "auto";
+}
 function makeDraggable(win) {
   const bar = win.querySelector("[data-dockwin-bar]");
   if (!bar) return;
   let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+  const move = (e) => {
+    if (!dragging) return;
+    clampWin(win, ox + e.clientX - sx, oy + e.clientY - sy);
+    e.preventDefault();
+  };
+  const up = () => {
+    dragging = false; win.removeAttribute("data-dragging");
+    document.body.classList.remove("dockwin-dragging");
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+  };
   bar.addEventListener("pointerdown", (e) => {
     if (e.target.closest("button")) return;
     dragging = true; sx = e.clientX; sy = e.clientY;
     const r = win.getBoundingClientRect(); ox = r.left; oy = r.top;
     win.setAttribute("data-dragging", "");
-    bar.setPointerCapture(e.pointerId);
+    document.body.classList.add("dockwin-dragging"); // iframes inertes
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    e.preventDefault();
   });
-  bar.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    win.style.left = Math.max(0, Math.min(window.innerWidth - 80, ox + e.clientX - sx)) + "px";
-    win.style.top = Math.max(0, Math.min(window.innerHeight - 48, oy + e.clientY - sy)) + "px";
-    win.style.right = "auto"; win.style.bottom = "auto";
-  });
-  bar.addEventListener("pointerup", () => { dragging = false; win.removeAttribute("data-dragging"); });
   win.addEventListener("pointerdown", () => { win.style.zIndex = String(++topZ); });
+}
+
+/* Placement en cascade depuis le bas-droit : chaque nouvelle fenêtre est
+   décalée pour ne pas recouvrir les précédentes, autant que faire se peut. */
+let cascade = 0;
+function placeWindow(win) {
+  const step = 36, n = cascade++ % 8;
+  const w = Math.min(560, window.innerWidth - 32);
+  const left = window.innerWidth - w - 24 - n * step;
+  const top = Math.max(HEADER_H + 8, window.innerHeight - win.offsetHeight - 24 - n * step);
+  clampWin(win, left, top);
 }
 
 function dockBtn(id) { return document.querySelector('[data-dock-app="' + id + '"]'); }
@@ -108,6 +136,7 @@ const APPS = {
   snake: { title: () => "Snake", mount: mountSnake },
   g2048: { title: () => "2048", mount: mount2048 },
   gol: { title: () => T("Jeu de la vie", "Game of Life"), mount: mountGol },
+  lenia: { title: () => "Lenia", mount: mountLenia },
   pomodoro: { title: () => "Pomodoro", mount: mountPomodoro },
 };
 
@@ -120,6 +149,7 @@ function openApp(id) {
   const dispose = app.mount(win.querySelector(".dockwin__body"), T) || (() => {});
   windows.set(id, { el: win, dispose });
   wireWindowTools(id, win, () => closeApp(id));
+  placeWindow(win);
   setDockState(id, "open");
 }
 function closeApp(id) {
@@ -227,7 +257,11 @@ function toggleTerminal() {
   const win = termWin(); if (!win) return;
   win.hidden = !win.hidden;
   setDockState("terminal", win.hidden ? "min" : "open");
-  if (!win.hidden) { win.style.zIndex = String(++topZ); applyTermMode(); }
+  if (!win.hidden) {
+    win.style.zIndex = String(++topZ);
+    if (!win.style.left) placeWindow(win);
+    applyTermMode();
+  }
 }
 function closeTerminal() {
   const win = termWin(); if (!win) return;

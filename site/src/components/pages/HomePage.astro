@@ -41,6 +41,10 @@ const standalone = cours.filter((c) => !c.data.serie);
       <p class="kicker kicker--bar"><span data-lang="fr">Cours &amp; blog technique</span><span data-lang="en">Courses &amp; technical blog</span></p>
       <h1><span data-lang="fr">Des cours techniques expliqués pour être retenus.</span><span data-lang="en">Technical courses explained to be remembered.</span></h1>
       <p class="lead"><span data-lang="fr">Des manuels techniques structurés et un blog scientifique (maths, code, exercices). Chaque décision de mise en forme sert un objectif : réduire la charge cognitive extrinsèque pour que l'attention aille au fond.</span><span data-lang="en">Structured technical manuals and a scientific blog (math, code, exercises). Every design decision serves one goal: cut extraneous cognitive load so attention goes to the substance.</span></p>
+      <p class="construction">
+        <img src={`${base}/img/construction.gif`} width="232" height="34" alt={locale === "en" ? "Site under construction" : "Site en construction"} />
+        <span data-lang="fr">Ce site est en construction — le contenu s'enrichit cours après cours.</span><span data-lang="en">This site is under construction — content grows course after course.</span>
+      </p>
       <div class="hero__actions">
         <a class="btn btn--primary" href={`${cpfx}/cours/`}><span data-lang="fr">Commencer les cours</span><span data-lang="en">Start the courses</span> →</a>
         <a class="btn btn--ghost" href={`${base}/systeme/`}><span data-lang="fr">Voir le système de design</span><span data-lang="en">See the design system</span></a>
@@ -123,6 +127,9 @@ const standalone = cours.filter((c) => !c.data.serie);
   .hero h1 { font-size: clamp(2rem, 5.2vw, 3rem); max-width: 18ch; margin-top: var(--space-4); }
   .hero .lead { margin-top: var(--space-5); max-width: 60ch; }
   .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .construction { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-5); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
+  .construction img { image-rendering: pixelated; border-radius: 2px; }
+  :global(html[data-motion="off"]) .construction img { display: none; }
   .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
   .section-head h2 { margin: 0; }
   .section-head .count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
