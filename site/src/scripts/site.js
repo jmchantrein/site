@@ -235,6 +235,12 @@ function revealOutput(screen, html, done) {
 
 function runCommand(cmd) {
   const term = getTerminal(cmd); if (!term) return;
+  // Atelier masqué (dock) → le rouvrir : la commande doit se voir s'exécuter.
+  const course = term.closest(".course[data-term-off]");
+  if (course) {
+    course.removeAttribute("data-term-off");
+    try { localStorage.setItem("site-astro-term-visible-v1", "on"); } catch (e) {}
+  }
   // Terminal hors écran (mobile : l'atelier est sous l'article) → l'amener en vue.
   const r = term.getBoundingClientRect();
   if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });

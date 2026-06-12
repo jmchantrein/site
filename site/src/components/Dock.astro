@@ -41,6 +41,8 @@ import { DOCK_APPS } from "../data/dock";
     <Icon name="square-terminal" class="dockwin__icon" />
     <span class="dockwin__title"><span data-lang="fr">Terminal</span><span data-lang="en">Terminal</span></span>
     <span class="dockwin__mode" data-term-mode-label></span>
+    <button class="dockwin__tool" data-dockwin-grow type="button" aria-label="Agrandir" title="Agrandir">+</button>
+    <button class="dockwin__tool" data-dockwin-fs type="button" aria-pressed="false" aria-label="Plein écran" title="Plein écran"><Icon name="expand" /></button>
     <button class="dockwin__tool" data-dockwin-min type="button" aria-label="Minimiser" title="Minimiser"><Icon name="minus" /></button>
     <button class="dockwin__tool" data-dockwin-close type="button" aria-label="Fermer" title="Fermer"><Icon name="x" /></button>
   </div>
@@ -65,4 +67,5 @@ import { DOCK_APPS } from "../data/dock";
       </div>
     </div>
   </div>
+  <span class="dockwin__resize" data-dockwin-resize aria-hidden="true"></span>
 </div>
