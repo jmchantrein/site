@@ -421,6 +421,20 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .course__aside { position: sticky; top: calc(var(--space-7) + 56px); align-self: start; order: 2; }
 .course__aside .terminal { max-height: calc(100vh - 140px); }
 
+/* L'hôte de terminal en colonne : le pane iframe (JSLinux, LinuxOnTab, ttyd
+   local ou distant) prend l'apparence d'un panneau terminal, avec sa barre
+   (.term-host__framebar, contrôles − et ⧉ identiques au terminal émulé). */
+.course__aside .term-host__framebar { display: flex; }
+.course__aside [data-term-pane="frame"] {
+  display: flex; flex-direction: column;
+  background: var(--term-bg); color: var(--term-fg);
+  border: 1px solid var(--term-border); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-2);
+  height: calc(100vh - 160px);
+}
+.course__aside iframe[data-term-frame] { width: 100%; flex: 1; min-height: 0; border: 0; background: #111; display: block; }
+.course__aside .dockwin__framenote, .course__aside .dockwin__help { color: var(--term-dim); }
+
 /* Terminal déplacé à gauche (drag) */
 .course[data-term-side="left"] { grid-template-columns: clamp(320px, var(--term-col, 440px), 56vw) 18px minmax(0, 1fr); }
 .course[data-term-side="left"] .course__aside { order: 0; }
@@ -466,6 +480,9 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 }
 .course.is-dragging, .course.is-dragging * { cursor: grabbing !important; }
 .course.is-dragging { user-select: none; }
+/* Pendant un drag (panneau ou redimensionneur), une iframe de terminal ne
+   doit pas avaler le pointeur. */
+.course.is-dragging iframe, .course.rz-active iframe { pointer-events: none; }
 
 /* Fil d'Ariane / méta cours */
 .course-meta { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; color: var(--color-text-muted); font-size: var(--text-sm); }
@@ -593,6 +610,7 @@ html[data-motion="off"] .slides__track { transition: none; }
   .course__aside, .course[data-term-side="left"] .course__aside { position: static; order: 2; }
   .course__reading, .course[data-term-side="left"] .course__reading { order: 1; }
   .course__aside .terminal { max-height: 560px; }
+  .course__aside [data-term-pane="frame"] { height: 480px; }
 }
 
 /* Cibles tactiles ≥ 44px sur écran tactile (WCAG 2.5.5 / standard interne mobile) */

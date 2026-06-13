@@ -279,43 +279,52 @@ const TERM_MODES = {
 };
 function termMode() { try { return localStorage.getItem(TERM_MODE_KEY) || "emulated"; } catch (e) { return "emulated"; } }
 function termWin() { return document.querySelector('[data-dock-window="terminal"]'); }
+/* L'hôte de terminal : la « classe mère » de tous les modes. Une seule unité
+   (pane émulé + pane iframe) qui vit soit dans la colonne du cours, soit dans
+   la fenêtre flottante — détacher/rattacher déplace l'hôte entier, donc TOUS
+   les modes se comportent de la même manière. */
+function termHost() { return document.querySelector("[data-term-host]"); }
+function hostInAside() { const h = termHost(); return !!(h && h.closest(".course__aside")); }
 
 function applyTermMode() {
-  const win = termWin(); if (!win) return;
+  const host = termHost(); if (!host) return;
   const mode = termMode();
-  const emu = win.querySelector('[data-term-pane="emulated"]');
-  const frame = win.querySelector('[data-term-pane="frame"]');
-  const iframe = win.querySelector("[data-term-frame]");
-  const link = win.querySelector("[data-term-frame-link]");
-  const help = win.querySelector("[data-term-help]");
-  const label = win.querySelector("[data-term-mode-label]");
-  if (label) label.textContent = lang() === "en" ? TERM_MODES[mode].en : TERM_MODES[mode].fr;
+  const emu = host.querySelector('[data-term-pane="emulated"]');
+  const frame = host.querySelector('[data-term-pane="frame"]');
+  const iframe = host.querySelector("[data-term-frame]");
+  const link = host.querySelector("[data-term-frame-link]");
+  const help = host.querySelector("[data-term-help]");
+  document.querySelectorAll("[data-term-mode-label]").forEach((l) => {
+    l.textContent = lang() === "en" ? TERM_MODES[mode].en : TERM_MODES[mode].fr;
+  });
+  document.querySelectorAll(".dock__menu [data-mode]").forEach((b) =>
+    b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === mode)));
   if (mode === "emulated") { emu.hidden = false; frame.hidden = true; iframe.src = "about:blank"; return; }
   let src = TERM_MODES[mode].src;
   if (mode === "remote") { try { src = localStorage.getItem(TERM_REMOTE_KEY) || ""; } catch (e) { src = ""; } }
   emu.hidden = true; frame.hidden = false;
   help.hidden = mode !== "local";
-  if (src && !win.hidden && iframe.src !== src) iframe.src = src;
+  // Charger l'iframe seulement si l'hôte est visible (colonne affichée / fenêtre ouverte).
+  const win = termWin();
+  const visible = hostInAside()
+    ? !host.closest(".course")?.hasAttribute("data-term-off")
+    : !!win && !win.hidden;
+  if (src && visible && iframe.src !== src) iframe.src = src;
   if (link) link.href = src || "#";
 }
 /* Quand un module embarque son terminal, sa colonne est l'emplacement par
    défaut : l'icône du dock affiche/masque CETTE colonne (pas un 2e terminal).
-   L'option « détacher » déplace le même élément en fenêtre flottante (le
-   contenu de la session est conservé) ; fermer la fenêtre le rattache. */
+   L'option « détacher » déplace l'hôte entier en fenêtre flottante (session
+   et mode conservés) ; fermer la fenêtre le rattache. */
 const DETACH_KEY = "site-astro-term-detached-v1";
 function courseAside() { return document.querySelector(".course .course__aside"); }
 function isDetached() { try { return localStorage.getItem(DETACH_KEY) === "on"; } catch (e) { return false; } }
 function setDetached(v) { try { localStorage.setItem(DETACH_KEY, v ? "on" : "off"); } catch (e) {} }
 
 function detachCourseTerminal() {
-  const aside = courseAside(), win = termWin();
-  if (!aside || !win) return;
-  const term = aside.querySelector(".terminal");
-  if (!term) return;
-  const pane = win.querySelector('[data-term-pane="emulated"]');
-  const dockTerm = pane.querySelector("#term-dock")?.closest(".terminal") || pane.querySelector(".terminal");
-  if (dockTerm && dockTerm !== term) dockTerm.setAttribute("data-parked", "true"), (dockTerm.hidden = true);
-  pane.appendChild(term);
+  const aside = courseAside(), win = termWin(), host = termHost();
+  if (!aside || !win || !host) return;
+  win.querySelector(".dockwin__body").appendChild(host);
   aside.closest(".course").setAttribute("data-term-off", "");
   setDetached(true);
   win.hidden = false; win.style.zIndex = String(++topZ);
@@ -325,18 +334,15 @@ function detachCourseTerminal() {
   refreshDetachButtons();
 }
 function attachCourseTerminal() {
-  const aside = courseAside(), win = termWin();
-  if (!aside || !win) return;
-  const pane = win.querySelector('[data-term-pane="emulated"]');
-  const term = pane.querySelector(".terminal:not([data-parked])");
-  if (term) aside.appendChild(term);
-  const dockTerm = pane.querySelector('[data-parked="true"]');
-  if (dockTerm) { dockTerm.hidden = false; dockTerm.removeAttribute("data-parked"); }
+  const aside = courseAside(), win = termWin(), host = termHost();
+  if (!aside || !win || !host) return;
+  aside.appendChild(host);
   aside.closest(".course").removeAttribute("data-term-off");
   try { localStorage.setItem("site-astro-term-visible-v1", "on"); } catch (e) {}
   setDetached(false);
   win.hidden = true;
   setDockState("terminal", "");
+  applyTermMode();
   refreshDetachButtons();
 }
 function refreshDetachButtons() {
@@ -364,7 +370,7 @@ function toggleTerminal() {
     const off = course.toggleAttribute("data-term-off");
     try { localStorage.setItem("site-astro-term-visible-v1", off ? "off" : "on"); } catch (e) {}
     setDockState("terminal", off ? "min" : "open");
-    if (!off) aside.scrollIntoView({ block: "nearest" });
+    if (!off) { aside.scrollIntoView({ block: "nearest" }); applyTermMode(); }
     return;
   }
   const win = termWin(); if (!win) return;
@@ -433,7 +439,15 @@ function buildTermMenu(host) {
     if (mb) {
       try { localStorage.setItem(TERM_MODE_KEY, mb.getAttribute("data-mode")); } catch (err) {}
       menu.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-checked", String(b === mb)));
-      openTerminalWindow();
+      // Le mode s'applique là où vit l'hôte : colonne du cours si attaché,
+      // fenêtre flottante sinon.
+      if (hostInAside()) {
+        const course = document.querySelector(".course");
+        course.removeAttribute("data-term-off");
+        try { localStorage.setItem("site-astro-term-visible-v1", "on"); } catch (err) {}
+        setDockState("terminal", "open");
+        applyTermMode();
+      } else openTerminalWindow();
       hide();
     }
   });
@@ -443,34 +457,63 @@ function buildTermMenu(host) {
   return menu;
 }
 
+/* Contrôles communs à tous les modes (barre du terminal émulé ET barre du
+   pane iframe) : détacher/rattacher (⧉) et minimiser (−). */
+function makeDetachBtn() {
+  const det = document.createElement("button");
+  det.type = "button"; det.className = "term-icon-btn"; det.setAttribute("data-term-detach", "");
+  det.setAttribute("aria-pressed", "false");
+  det.innerHTML = '⧉<span class="term-tip"></span>';
+  det.addEventListener("click", () => { if (isDetached()) attachCourseTerminal(); else detachCourseTerminal(); });
+  return det;
+}
+function makeMinBtn(course) {
+  const min = document.createElement("button");
+  min.type = "button"; min.className = "term-icon-btn";
+  min.setAttribute("aria-label", T("Minimiser l'atelier", "Minimise the workshop"));
+  min.innerHTML = '−<span class="term-tip">' + T("Minimiser (icône terminal du dock pour rouvrir)", "Minimise (dock terminal icon to reopen)") + "</span>";
+  min.addEventListener("click", () => {
+    course.setAttribute("data-term-off", "");
+    try { localStorage.setItem("site-astro-term-visible-v1", "off"); } catch (e) {}
+    setDockState("terminal", "min");
+  });
+  return min;
+}
+
 /* ---- INIT ---------------------------------------------------------------------- */
 function init() {
-  // Atelier du cours : états persistants (colonne masquée, détaché)
+  // Atelier du cours : l'hôte de terminal adopte le terminal du module et
+  // s'installe dans la colonne (emplacement par défaut). Le terminal
+  // générique du dock est parqué : une seule session par page.
   const course = document.querySelector(".course");
-  if (course) {
+  const aside = courseAside();
+  const host = termHost();
+  if (course && aside && host) {
+    const dockTerm = host.querySelector(".terminal");
+    if (dockTerm) { dockTerm.setAttribute("data-parked", "true"); dockTerm.hidden = true; }
+    const courseTerm = aside.querySelector(".terminal");
+    if (courseTerm) host.querySelector('[data-term-pane="emulated"]').appendChild(courseTerm);
+    aside.appendChild(host);
+    // Barre du pane iframe (affichée en colonne seulement) : mêmes contrôles.
+    const fbar = document.createElement("div");
+    fbar.className = "terminal__bar term-host__framebar";
+    fbar.innerHTML = '<span class="terminal__glyph" aria-hidden="true">❯_</span>' +
+      '<span class="terminal__title" data-term-mode-label></span>' +
+      '<span class="terminal__actions"></span>';
+    host.querySelector('[data-term-pane="frame"]').prepend(fbar);
     try { if (localStorage.getItem("site-astro-term-visible-v1") === "off") course.setAttribute("data-term-off", ""); } catch (e) {}
-    const actions = course.querySelector(".course__aside .terminal__actions");
-    if (actions) {
-      const det = document.createElement("button");
-      det.type = "button"; det.className = "term-icon-btn"; det.setAttribute("data-term-detach", "");
-      det.setAttribute("aria-pressed", "false");
-      det.innerHTML = '⧉<span class="term-tip"></span>';
-      det.addEventListener("click", () => { if (isDetached()) attachCourseTerminal(); else detachCourseTerminal(); });
-      const min = document.createElement("button");
-      min.type = "button"; min.className = "term-icon-btn";
-      min.setAttribute("aria-label", T("Minimiser l'atelier", "Minimise the workshop"));
-      min.innerHTML = '−<span class="term-tip">' + T("Minimiser (icône terminal du dock pour rouvrir)", "Minimise (dock terminal icon to reopen)") + "</span>";
-      min.addEventListener("click", () => {
-        course.setAttribute("data-term-off", "");
-        try { localStorage.setItem("site-astro-term-visible-v1", "off"); } catch (e) {}
-        setDockState("terminal", "min");
-      });
-      actions.prepend(min); actions.prepend(det);
-      refreshDetachButtons();
-    }
+    [courseTerm?.querySelector(".terminal__actions"), fbar.querySelector(".terminal__actions")].forEach((actions) => {
+      if (!actions) return;
+      actions.prepend(makeMinBtn(course));
+      actions.prepend(makeDetachBtn());
+    });
+    refreshDetachButtons();
     if (isDetached()) detachCourseTerminal();
     else if (!course.hasAttribute("data-term-off")) setDockState("terminal", "open");
   }
+  // site.js demande un retour au mode émulé (clic sur une commande du cours
+  // alors qu'un mode iframe est affiché).
+  document.addEventListener("term:mode", applyTermMode);
   document.querySelectorAll("[data-dock-app]").forEach((btn) => {
     const id = btn.getAttribute("data-app") || btn.getAttribute("data-dock-app");
     btn.addEventListener("click", () => {

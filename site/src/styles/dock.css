@@ -92,6 +92,11 @@
 .dockwin__tool svg { width: 15px; height: 15px; }
 .dockwin__body { overflow: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; }
 .dockwin__body > * { min-height: 0; }
+/* Hôte de terminal (pane émulé + pane iframe) : l'unité déplacée entre la
+   colonne d'un cours et la fenêtre. Sa barre de pane iframe ne sert qu'en
+   colonne (la fenêtre a déjà sa propre barre). */
+.term-host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.term-host__framebar { display: none; }
 .dockwin [data-term-pane="emulated"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .dockwin [data-term-pane="emulated"] .terminal { flex: 1; min-height: 0; }
 .dockwin [data-term-pane="frame"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
