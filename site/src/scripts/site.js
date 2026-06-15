@@ -680,6 +680,36 @@ function wireSlides() {
 
 /* ---- INIT -------------------------------------------------------------------- */
 apply(); // applique tôt (évite le flash entre l'anti-FOUC inline et le bundle)
+/* ---- COPIE DU PROMPT DE RÉDACTION (panneau Paramètres) ---------------------
+   Récupère le prompt servi en statique (src/pages/redaction-mdx-prompt.txt.ts —
+   source unique : docs/prompt-redaction-mdx.md) et l'écrit dans le presse-papier. */
+function wireCopyPrompt() {
+  document.querySelectorAll("[data-copy-prompt]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const url = btn.getAttribute("data-prompt-url");
+      const flash = () => {
+        btn.setAttribute("data-copied", "true");
+        setTimeout(() => btn.removeAttribute("data-copied"), 1800);
+      };
+      try {
+        const text = await (await fetch(url, { cache: "no-cache" })).text();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text; ta.setAttribute("readonly", "");
+          ta.style.position = "fixed"; ta.style.top = "-9999px";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); } finally { ta.remove(); }
+        }
+        flash();
+      } catch (e) {
+        if (url) window.open(url, "_blank", "noopener"); // repli : copie manuelle
+      }
+    });
+  });
+}
+
 function init() {
   apply();
   wirePanel();
@@ -692,6 +722,7 @@ function init() {
   wireAnchors();
   wireSearch();
   wireSlides();
+  wireCopyPrompt();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();

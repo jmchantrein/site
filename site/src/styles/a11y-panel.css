@@ -128,6 +128,16 @@
 .a11y-saved { margin-left: auto; font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono); display: inline-flex; align-items: center; gap: var(--space-2); }
 .a11y-saved::before { content: "●"; color: var(--color-success); }
 
+/* Outil de rédaction (auteur·rice) — discret, en bas du panneau Paramètres.
+   Copie le prompt de rédaction MDX (servi en statique) dans le presse-papier. */
+.set-authoring { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px dashed var(--color-border); }
+.set-copy-prompt { margin-top: var(--space-3); width: 100%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font: inherit; font-weight: var(--weight-semibold); color: var(--color-text); }
+.set-copy-prompt:hover { border-color: var(--color-accent-text); color: var(--color-accent-text); }
+.set-copy-prompt:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+.set-copy-prompt .done { display: none; color: var(--color-success); }
+.set-copy-prompt[data-copied] .idle { display: none; }
+.set-copy-prompt[data-copied] .done { display: inline; }
+
 .a11y-section-title { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2); }
 
 /* Sélecteur de thème de couleurs */

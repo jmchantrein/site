@@ -7,6 +7,7 @@
  * Le comportement (ouverture, persistance) est câblé par scripts/site.js.
  */
 import Icon from "./Icon.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <div class="a11y-overlay" data-a11y-overlay></div>
 
@@ -122,6 +123,15 @@ import Icon from "./Icon.astro";
         <button data-set-lang="fr">Français</button>
         <button data-set-lang="en">English</button>
       </div>
+    </div>
+
+    <div class="set-authoring">
+      <span class="a11y-field__label"><span data-lang="fr">Rédaction de contenu</span><span data-lang="en">Content authoring</span></span>
+      <button class="set-copy-prompt" type="button" data-copy-prompt data-prompt-url={`${base}/redaction-mdx-prompt.txt`}>
+        <span class="idle"><span data-lang="fr">Copier le prompt de rédaction MDX</span><span data-lang="en">Copy the MDX authoring prompt</span></span>
+        <span class="done"><span data-lang="fr">Copié ✓</span><span data-lang="en">Copied ✓</span></span>
+      </button>
+      <p class="a11y-field__help"><span data-lang="fr">À coller dans un LLM avant de décrire le cours ou l'article voulu : il transmet tout le cadre du site (composants, règles, frontmatter) pour produire du MDX directement intégrable.</span><span data-lang="en">Paste into an LLM before describing the course or article you want: it hands over the whole site framework (components, rules, frontmatter) to produce ready-to-use MDX.</span></p>
     </div>
 
   </div>
