@@ -6,6 +6,7 @@
  * de composants) dépendent de `locale`.
  */
 import Base from "../../layouts/Base.astro";
+import Icon from "../Icon.astro";
 import Note from "../Note.astro";
 import Exercise from "../Exercise.astro";
 import Cmd from "../Cmd.astro";
@@ -72,6 +73,7 @@ const refs = [
           <li><a href="#trappe"><span class="num">07</span><span data-lang="fr">Trappe d'évasion</span><span data-lang="en">Escape hatch</span></a></li>
           <li><a href="#reglages"><span class="num">08</span><span data-lang="fr">Accessibilité &amp; réglages</span><span data-lang="en">Accessibility &amp; settings</span></a></li>
           <li><a href="#references"><span class="num">09</span><span data-lang="fr">Références</span><span data-lang="en">References</span></a></li>
+          <li><a href="#redaction"><span class="num">10</span><span data-lang="fr">Rédaction de contenu</span><span data-lang="en">Content authoring</span></a></li>
         </ol>
       </nav>
 
@@ -163,6 +165,20 @@ const refs = [
             {refs.map((r) => <li><a href={r.url} target="_blank" rel="noopener"><span data-lang="fr">{r.fr}</span><span data-lang="en">{r.en}</span></a></li>)}
           </ul>
         </section>
+
+        <section class="ds-section" id="redaction">
+          <h2><span data-lang="fr">10 · Rédaction de contenu</span><span data-lang="en">10 · Content authoring</span></h2>
+          <p><span data-lang="fr">Pour rédiger un cours ou un article qui respecte d'emblée ce cadre, un <strong>prompt-cadre</strong> transmet à un LLM toutes les règles ci-dessus : séparation contenu/forme, liste blanche des composants, frontmatter, contraintes maths et accessibilité. Le modèle rend alors du <strong>MDX directement intégrable</strong>.</span><span data-lang="en">To write a course or article that respects this framework from the outset, a <strong>framing prompt</strong> hands an LLM all the rules above: content/form separation, the component whitelist, frontmatter, math and accessibility constraints. The model then returns <strong>ready-to-use MDX</strong>.</span></p>
+          <div class="ds-prompt">
+            <button class="ds-prompt__btn" type="button" data-copy-prompt data-prompt-url={`${base}/redaction-mdx-prompt.txt`}>
+              <Icon name="clipboard-copy" class="ds-prompt__ico" />
+              <span class="idle"><span data-lang="fr">Copier le prompt de rédaction MDX</span><span data-lang="en">Copy the MDX authoring prompt</span></span>
+              <span class="done"><span data-lang="fr">Copié ✓</span><span data-lang="en">Copied ✓</span></span>
+            </button>
+            <a class="ds-prompt__link" href={`${base}/redaction-mdx-prompt.txt`} target="_blank" rel="noopener"><span data-lang="fr">le voir en entier</span><span data-lang="en">view it in full</span> <Icon name="external-link" /></a>
+          </div>
+          <p class="ds-prompt__help"><span data-lang="fr">À coller dans un LLM, puis décrivez le cours ou l'article voulu. Pensez à demander la <strong>version anglaise</strong> dans la foulée : tout contenu français a son pendant dans <code>en/</code>.</span><span data-lang="en">Paste it into an LLM, then describe the course or article you want. Remember to ask for the <strong>English version</strong> too: every French page has its counterpart under <code>en/</code>.</span></p>
+        </section>
       </div>
     </div>
   </main>
@@ -181,4 +197,22 @@ const refs = [
   .ds-swatch .chip { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--color-border-strong); }
   .ds-swatch small { color: var(--color-text-muted); font-size: var(--text-xs); }
   .ds-refs li { margin-top: var(--space-2); }
+  .ds-prompt { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin-top: var(--space-4); }
+  .ds-prompt__btn {
+    cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2);
+    background: var(--color-surface); border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+    font: inherit; font-weight: var(--weight-semibold); color: var(--color-text);
+    transition: border-color var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
+  }
+  .ds-prompt__btn:hover { border-color: var(--color-accent-text); color: var(--color-accent-text); }
+  .ds-prompt__btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+  .ds-prompt__ico { width: 18px; height: 18px; flex: none; }
+  .ds-prompt__ico :global(svg) { width: 100%; height: 100%; }
+  .ds-prompt__btn .done { display: none; color: var(--color-success); }
+  .ds-prompt__btn[data-copied] .idle { display: none; }
+  .ds-prompt__btn[data-copied] .done { display: inline; }
+  .ds-prompt__link { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-sm); }
+  .ds-prompt__link :global(svg) { width: 13px; height: 13px; }
+  .ds-prompt__help { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); max-width: var(--measure); }
 </style>
