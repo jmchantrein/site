@@ -44,8 +44,13 @@ jobs:
         with:
           path: site/dist
 
+  # La publication n'est possible que depuis la branche par défaut :
+  # l'environnement « github-pages » est protégé et refuse les autres branches.
+  # Un lancement manuel (workflow_dispatch) sur une branche de fonctionnalité
+  # valide ainsi le build sans tenter — et échouer — le déploiement.
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
