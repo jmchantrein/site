@@ -162,6 +162,54 @@ Ici, vous exécutez plusieurs processus dans un conteneur. La philosophie de Doc
   </Fragment>
 </Exercise>
 
+<Exercise id="solution-etape-1" level={1}>
+  Comparez votre premier Dockerfile à cette solution de référence. Elle est volontairement « sale » : beaucoup de couches, pas de nettoyage du cache `apt` — autant de points que les étapes suivantes corrigeront.
+
+  <Fragment slot="solution">
+    ```dockerfile
+    # Dockerfile « sale » : ne respecte pas (encore) les bonnes pratiques.
+    FROM debian:latest
+
+    # Pas d'upgrade (cf. bonnes pratiques Dockerfile)
+    RUN apt-get -yq update
+
+    RUN DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+        apache2 libapache2-mod-php libjs-cropper libjs-mediaelement libphp-phpmailer \
+        mariadb-server mariadb-client php-getid3 php php-gd php-mysql php-opcache php-readline
+
+    # Paquets utilitaires à part : profite du cache pendant la mise au point
+    RUN DEBIAN_FRONTEND=noninteractive apt-get -yq install vim wget unzip
+
+    # Sources WordPress dans /var/www/html
+    RUN cd /var/www/html && wget https://wordpress.org/latest.zip
+    RUN cd /var/www/html && unzip latest.zip
+
+    ENV MYSQL_PASSWORD=tempo \
+        MYSQL_USER=admin \
+        MYSQL_DB=wordpress
+
+    # Répertoire du socket MariaDB, dont mysql doit être propriétaire
+    RUN mkdir /run/mysqld && chown -R mysql:root /run/mysqld
+
+    # Le serveur doit être démarré dans chaque RUN qui l'interroge
+    RUN /etc/init.d/mariadb start && mysql -u root --execute="CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'"
+    RUN /etc/init.d/mariadb start && mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%' WITH GRANT OPTION" && mysql -u root --execute="FLUSH PRIVILEGES"
+    RUN /etc/init.d/mariadb start && mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute="CREATE DATABASE ${MYSQL_DB}"
+
+    RUN chown -R www-data:www-data /var/www/html/wordpress
+
+    # Une tâche en foreground (sleep infinity) maintient le conteneur actif
+    RUN echo "/etc/init.d/apache2 start && /etc/init.d/mariadb start && sleep infinity" > /run.sh
+    RUN chmod u+x /run.sh
+
+    CMD ["/bin/bash","-c","/run.sh"]
+
+    # docker build . -t mon_image_wordpress:v1
+    # docker run -it --name mon_conteneur_wordpress --rm -p 80:80 mon_image_wordpress:v1
+    ```
+  </Fragment>
+</Exercise>
+
 Est-ce que l'on peut avoir une rédaction plus propre ? Quelles sont les bonnes pratiques de rédaction d'un Dockerfile ? C'est justement ce que nous allons voir dans la prochaine étape.
 
 ### Étape 2 : mise en place des bonnes pratiques
@@ -193,6 +241,75 @@ Quel utilisateur est à l'origine de l'exécution d'apache2, de mysql et de la c
   - En êtes-vous sûr ?
 - Si c'est un problème pour au moins l'un des trois processus, que proposez-vous ?
 
+<Exercise id="solution-etape-2" level={2}>
+  Comparez votre Dockerfile « bonnes pratiques » à la solution : un seul bloc d'installation (paquets triés, cache `apt` purgé), métadonnées via `LABEL`, et variables d'environnement placées au plus près de leur usage pour préserver le cache.
+
+  <Fragment slot="solution">
+    ```dockerfile
+    # Bonnes pratiques : lisibilité, gestion du cache, une responsabilité par instruction.
+    FROM debian:12
+
+    ENV VERSION=2
+    LABEL maintainer="Prénom Nom" \
+          maintainer_email="prenom.nom@example.com" \
+          version="${VERSION}"
+
+    # Un seul bloc d'installation, paquets triés, cache apt purgé (gain d'espace)
+    RUN apt-get -yq update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+        apache2 \
+        libapache2-mod-php \
+        libjs-cropper \
+        libjs-mediaelement \
+        libphp-phpmailer \
+        mariadb-client \
+        mariadb-server \
+        php \
+        php-getid3 \
+        php-gd \
+        php-mysql \
+        php-opcache \
+        php-readline \
+        unzip \
+        vim \
+        wget && \
+        rm -rf /var/lib/apt/lists/*
+
+    # Téléchargement et déploiement des sources en une seule instruction
+    RUN cd /tmp && \
+        wget https://wordpress.org/latest.zip && \
+        unzip latest.zip && \
+        rm -rf /var/www/html/* && \
+        mv wordpress/* /var/www/html/ && \
+        chown -R www-data:www-data /var/www/html && \
+        rm latest.zip
+
+    # Variables placées juste avant leur usage (préserve le cache des couches basses)
+    ENV MYSQL_PASSWORD=tempo \
+        MYSQL_USER=admin \
+        MYSQL_DB=wordpress
+
+    RUN /etc/init.d/mariadb start && \
+        mysql -u root --execute="CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'" && \
+        mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%' WITH GRANT OPTION" && \
+        mysql -u root --execute="FLUSH PRIVILEGES" && \
+        mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute="CREATE DATABASE ${MYSQL_DB}" && \
+        echo "ServerName localhost" >> /etc/apache2/conf-available/servername.conf && \
+        a2enconf servername
+
+    # Tâche foreground. printf (et non echo) pour que le saut de ligne \n soit interprété :
+    # sinon /run.sh tiendrait sur une seule ligne commençant par #! (donc un commentaire).
+    RUN printf '#!/bin/bash\n/etc/init.d/apache2 start && mysqld_safe\n' > /run.sh && \
+        chmod u+x /run.sh
+
+    CMD ["/bin/bash","-c","/run.sh"]
+
+    # docker build . -t mon_image_wordpress:v2
+    # docker run -it --name mon_conteneur_wordpress --rm -p 80:80 mon_image_wordpress:v2
+    ```
+  </Fragment>
+</Exercise>
+
 ### Étape 3 : le problème de l'utilisateur root
 
 Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/) sur la sécurité lorsque l'on utilise un environnement Docker, ou bien directement la [conclusion](https://docs.docker.com/engine/security/#conclusions).
@@ -221,6 +338,33 @@ Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/) sur 
 </Exercise>
 
 Toutes vos données importantes sont dans le conteneur : quid de leur pérennité ? Quelles solutions proposez-vous pour pallier cette problématique ?
+
+<Exercise id="solution-etape-3" level={2}>
+  Comment exécuter le conteneur sans être `root` ? Comparez avec la solution : un bit *setuid* sur `/usr/sbin/apache2` (pour qu'un non-root puisse ouvrir le port 80), puis `USER mysql`.
+
+  <Fragment slot="solution">
+    Par rapport à l'étape 2, on ajoute le *setuid* à la fin de l'instruction de configuration…
+
+    ```dockerfile
+    RUN /etc/init.d/mariadb start && \
+        mysql -u root --execute="CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'" && \
+        mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%' WITH GRANT OPTION" && \
+        mysql -u root --execute="FLUSH PRIVILEGES" && \
+        mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute="CREATE DATABASE ${MYSQL_DB}" && \
+        echo "ServerName localhost" >> /etc/apache2/conf-available/servername.conf && \
+        a2enconf servername && \
+        chmod u+s /usr/sbin/apache2
+    ```
+
+    … et l'on bascule sur l'utilisateur `mysql` juste avant la commande du conteneur (`mysqld_safe` peut tourner en tant que `mysql`) :
+
+    ```dockerfile
+    USER mysql
+
+    CMD ["/bin/bash","-c","/run.sh"]
+    ```
+  </Fragment>
+</Exercise>
 
 ### Étape 4 : pérennisation des données
 
@@ -266,6 +410,35 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
   Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
 </Note>
 
+<Exercise id="solution-etape-4" level={2}>
+  Comparez avec la solution : l'instruction `VOLUME`, l'`EXPOSE 80` explicite, et surtout des volumes **nommés** au lancement (un volume anonyme serait perdu avec `--rm`).
+
+  <Fragment slot="solution">
+    Par rapport à l'étape 3, on ajoute, avant la commande, l'exposition du port et les points de montage persistants :
+
+    ```dockerfile
+    USER mysql
+
+    # Exposition explicite du port 80 (le serveur de base de données, lui, n'est pas exposé)
+    EXPOSE 80
+
+    # Points de montage persistants
+    VOLUME ["/var/lib/mysql", "/var/www/html"]
+
+    CMD ["/bin/bash","-c","/run.sh"]
+    ```
+
+    On lance ensuite le conteneur avec des volumes **nommés** :
+
+    ```bash
+    docker build . -t mon_image_wordpress:v4
+    docker run -d --name mon_conteneur_wordpress \
+      -v data_wordpress:/var/lib/mysql -v src_wordpress:/var/www/html \
+      -p 80:80 mon_image_wordpress:v4
+    ```
+  </Fragment>
+</Exercise>
+
 ### Étape 5 : vers une architecture de microservices
 
 #### Quelques contraintes
@@ -295,6 +468,118 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Nous sommes en présence d'une architecture de 2 microservices : que pensez-vous du mécanisme de script `build_and_launch.sh` ?
 - Et si nous étions en présence d'une architecture de 25 microservices, que penseriez-vous du mécanisme de script `build_and_launch.sh` ?
 - Docker va plus loin que la simple rédaction de Dockerfile : Docker nous permet aussi de gérer la façon dont interagissent les conteneurs entre eux. Pour cela, Docker met à notre disposition l'outil Docker Compose. C'est l'objet de notre prochaine partie.
+
+<Exercise id="solution-etape-5" level={3}>
+  Deux Dockerfiles (Apache et MySQL) et un script d'orchestration. Comparez avec la solution ; remarquez l'usage — pédagogique — de `--link` et le fait que le port de MySQL n'est **pas** publié vers l'hôte.
+
+  <Fragment slot="solution">
+    **`apache_wordpress/Dockerfile`**
+
+    ```dockerfile
+    FROM debian:12
+
+    ENV VERSION=1
+    LABEL maintainer="Prénom Nom" \
+          maintainer_email="prenom.nom@example.com" \
+          version="${VERSION}"
+
+    # Microservice Apache : pas de serveur de base de données ici
+    RUN apt-get -yq update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+        apache2 \
+        libapache2-mod-php \
+        libjs-cropper \
+        libjs-mediaelement \
+        libphp-phpmailer \
+        php \
+        php-getid3 \
+        php-gd \
+        php-mysql \
+        php-opcache \
+        php-readline \
+        unzip \
+        vim \
+        wget && \
+        rm -rf /var/lib/apt/lists/*
+
+    RUN cd /tmp && \
+        wget https://wordpress.org/latest.zip && \
+        unzip latest.zip && \
+        rm -rf /var/www/html/* && \
+        mv wordpress/* /var/www/html/ && \
+        chown -R www-data:www-data /var/www/html && \
+        rm latest.zip
+
+    # Variables attendues par apache2ctl
+    ENV APACHE_RUN_USER=www-data \
+        APACHE_RUN_GROUP=www-data \
+        APACHE_LOG_DIR=/var/log/apache2
+
+    EXPOSE 80
+
+    RUN chmod u+s /usr/sbin/apache2ctl /usr/sbin/apache2
+
+    USER www-data
+
+    CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+    ```
+
+    **`mysql_wordpress/Dockerfile`**
+
+    ```dockerfile
+    FROM debian:12
+
+    ENV VERSION=1
+    LABEL maintainer="Prénom Nom" \
+          maintainer_email="prenom.nom@example.com" \
+          version="${VERSION}"
+
+    RUN apt-get -yq update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+        mariadb-server && \
+        rm -rf /var/lib/apt/lists/*
+
+    ENV MYSQL_PASSWORD=tempo \
+        MYSQL_USER=admin \
+        MYSQL_DB=wordpress
+
+    RUN /etc/init.d/mariadb start && \
+        mysql -u root --execute="CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD'" && \
+        mysql -u root --execute="GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%' WITH GRANT OPTION" && \
+        mysql -u root --execute="FLUSH PRIVILEGES" && \
+        mysql --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} --execute="CREATE DATABASE ${MYSQL_DB}"
+
+    # Autoriser les connexions depuis le réseau du service (et non le seul localhost)
+    RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.cnf
+
+    USER mysql
+
+    # Exposé dans le réseau du service uniquement, pas vers l'hôte
+    EXPOSE 3306
+
+    CMD ["/usr/bin/mysqld_safe"]
+    ```
+
+    **`build_and_launch.sh`**
+
+    ```bash
+    #!/bin/bash
+    docker build apache_wordpress -t my_apache_wordpress_image
+    docker build mysql_wordpress -t my_mysql_image
+
+    docker container rm -f my_mysql_container
+    docker container rm -f my_apache_wordpress_container
+
+    # MySQL d'abord : le microservice Apache en dépend (--link)
+    docker run -d --name my_mysql_container --hostname my_mysql_container \
+      -v data_wordpress:/var/lib/mysql my_mysql_image
+    docker run -d --name my_apache_wordpress_container --hostname my_apache_wordpress_container \
+      -p 80:80 -v src_wordpress:/var/www/html --link my_mysql_container:db my_apache_wordpress_image
+
+    echo "Hôte de la base lors de l'installation de WordPress : my_mysql_container (ou db)"
+    ```
+  </Fragment>
+</Exercise>
 
 ## Docker Compose, ou l'art d'orchestrer nos conteneurs sur une seule machine
 
@@ -327,6 +612,40 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Observez bien tous les [paramètres](https://docs.docker.com/reference/compose-file/) que vous pouvez fixer pour vos conteneurs dans le fichier compose, parmi les plus intéressants : `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`… Parmi ces options, deux retiennent mon attention : il s'agit de `deploy` et d'`overlay`, qui ne fonctionnent qu'avec l'usage de Docker Swarm ; nous verrons ces deux commandes plus tard dans la partie Docker Swarm.
 
 Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de Docker. Ce fut peut-être long et difficile. Il est maintenant temps pour vous de savoir que tout ce que nous avons fait là à la main, d'autres personnes l'ont déjà fait, en beaucoup mieux, et pour notre usage. Nous allons donc maintenant nous servir de leurs travaux ; mais nous savons maintenant quels sont les mécanismes qui seront employés par les images officielles dont nous allons nous servir (variables d'environnement, fichier de bootstrap, setuid, volume). Il n'y a plus aucune ombre de magie dans Docker, nous savons désormais globalement comment tout cela s'articule.
+
+<Exercise id="solution-etape-6" level={3}>
+  Le script `build_and_launch.sh` devient un fichier `compose.yaml`. Comparez avec la solution : plus de clé `version:` (obsolète), plus de `links:` (Compose crée un réseau avec résolution DNS par nom de service). Les deux Dockerfiles sont ceux de l'étape 5 — le microservice Apache gagnant simplement la directive `ServerName`.
+
+  <Fragment slot="solution">
+    **`compose.yaml`**
+
+    ```yaml
+    services:
+      apache_wordpress:
+        build: apache_wordpress
+        container_name: apache_wordpress_container
+        hostname: my_apache_wordpress_container
+        ports:
+          - "80:80"
+        volumes:
+          - "src_wordpress:/var/www/html"
+        depends_on:
+          - mysql_wordpress
+      mysql_wordpress:
+        build: mysql_wordpress
+        container_name: mysql_wordpress_container
+        hostname: my_mysql_wordpress_container
+        volumes:
+          - "data_wordpress:/var/lib/mysql"
+
+    volumes:
+      src_wordpress:
+      data_wordpress:
+    ```
+
+    Lors de l'installation de WordPress, l'hôte de la base de données est `mysql_wordpress` (le nom du service) : aucun `--link` n'est nécessaire.
+  </Fragment>
+</Exercise>
 
 ### Étape 7 : une architecture de microservices décrite dans un fichier compose fourni par la communauté
 
@@ -386,6 +705,42 @@ services:
 - Combien de temps cela vous a-t-il pris ?
 - Si vous aviez eu à rédiger un Dockerfile, celui-ci ne comporterait que d'infimes modifications, car vous partiriez de l'image de base officielle.
 - La persistance de la base de données et du code source est très bien gérée par l'image officielle, alors même qu'il vous aurait été très compliqué de la réaliser vous-même de cette façon !
+
+<Exercise id="solution-etape-8" level={2}>
+  Comparez avec la solution : on ajoute des montages liés (*bind mounts*) vers `$HOME/source_code_wordpress` et `$HOME/data_wordpress` pour maîtriser l'emplacement des données sur l'hôte.
+
+  <Fragment slot="solution">
+    **`stack_wordpress.yml`**
+
+    ```yaml
+    services:
+
+      wordpress:
+        image: wordpress
+        restart: always
+        ports:
+          - 8080:80
+        environment:
+          WORDPRESS_DB_HOST: db
+          WORDPRESS_DB_USER: exampleuser
+          WORDPRESS_DB_PASSWORD: examplepass
+          WORDPRESS_DB_NAME: exampledb
+        volumes:
+          - $HOME/source_code_wordpress:/var/www/html
+
+      db:
+        image: mysql:8.0
+        restart: always
+        environment:
+          MYSQL_DATABASE: exampledb
+          MYSQL_USER: exampleuser
+          MYSQL_PASSWORD: examplepass
+          MYSQL_RANDOM_ROOT_PASSWORD: '1'
+        volumes:
+          - $HOME/data_wordpress:/var/lib/mysql
+    ```
+  </Fragment>
+</Exercise>
 
 #### Conclusions
 
