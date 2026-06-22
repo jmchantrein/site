@@ -14,6 +14,7 @@ import ArchiStack from "./ArchiStack.astro";
 import LayerStack from "./LayerStack.astro";
 import BuildStack from "./BuildStack.astro";
 import Bypass from "./Bypass.astro";
+import CodeFile from "./CodeFile.astro";
 
 export const mdxComponents = {
   Note,
@@ -29,4 +30,5 @@ export const mdxComponents = {
   LayerStack,
   BuildStack,
   Bypass,
+  CodeFile,
 };

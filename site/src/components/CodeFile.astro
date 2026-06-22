@@ -1,0 +1,41 @@
+---
+/**
+ * Affiche le contenu d'un fichier de correction (src/solutions/…) tel quel.
+ *
+ * SOURCE UNIQUE (DRY) : le fichier sur disque est aussi celui que construit
+ * scripts/test-solutions.sh — le code montré au lecteur EST le code testé.
+ *
+ * On reproduit le markup des blocs Markdown (<pre><code class="language-…">)
+ * pour hériter du style « terminal » du site : aucune coloration Shiki
+ * (cf. astro.config.mjs → syntaxHighlight:false), les blocs suivent les
+ * tokens --term-* (base.css).
+ *
+ * Usage MDX :
+ *   <CodeFile path="tp-docker-wordpress/2_wordpress_multiservice_better/Dockerfile" lang="dockerfile" />
+ */
+interface Props {
+  /** Chemin du fichier, relatif à src/solutions/. */
+  path: string;
+  /** Langage pour la classe `language-…` (dockerfile, yaml, bash…). */
+  lang?: string;
+}
+const { path, lang } = Astro.props;
+
+// Chargés au build, en brut. Glob littéral imposé par Vite.
+const files = import.meta.glob("/src/solutions/**/*", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const key = `/src/solutions/${path}`;
+const raw = files[key];
+if (raw === undefined) {
+  throw new Error(
+    `<CodeFile> : fichier introuvable « ${key} ». Le chemin est relatif à src/solutions/.`,
+  );
+}
+const code = String(raw).replace(/\n+$/, "");
+const cls = lang ? `language-${lang}` : undefined;
+---
+<pre><code class={cls}>{code}</code></pre>
