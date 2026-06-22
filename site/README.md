@@ -63,6 +63,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
 - `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
+- `<CodeFile path="…" lang="…">` — affiche un fichier de corrigé réel (`src/solutions/…`) tel quel : source unique, testée par le harnais (cf. « Corrigés testables ») ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants.
 
@@ -82,6 +83,15 @@ Les sources (LaTeX / Markdown fiables ; PDF en dernier recours) sont déposées
 dans `../sources/` puis converties en MDX : maths → `$…$`, environnements
 LaTeX (théorème, exercice, remarque) → composants ci-dessus. Procédure : un
 cours pilote d'abord, validation, puis le reste.
+
+## Corrigés testables
+
+Les corrigés de code des TP ne sont pas écrits dans le MDX : ils vivent sous
+`src/solutions/<cours>/…` (fichiers complets, buildables) et sont affichés par
+`<CodeFile path="…" lang="…">`. Le harnais `scripts/test-solutions.sh`
+(`--lint` / `--build` / `--up`) les construit et, en `--up`, les démarre et les
+teste en HTTP avant nettoyage ; le workflow `test-solutions.yml` le rejoue en
+CI (Docker requis). **Le code affiché dans le cours est le code testé.**
 
 ## Ajouter une icône / un îlot
 

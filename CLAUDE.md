@@ -18,6 +18,10 @@ Mayer), WCAG AA (corps AAA).
 - **KISS / DRY** : préférer la simplicité ; un composant se définit une fois
   (`site/src/components/` + `site/src/styles/components.css`), les pages ne
   font qu'instancier.
+- **Corrigés testables** : un corrigé de code (Dockerfile, compose, script…)
+  n'est jamais écrit en dur dans le MDX. Il vit comme fichier réel sous
+  `site/src/solutions/`, est affiché par `<CodeFile>` et couvert par le
+  harnais de test — voir « Corrigés testables (mécanisme imposé) ».
 - Si une décision d'architecture a plusieurs options, **proposer les options
   à l'auteur** plutôt que de trancher seul.
 - Maths : `$…$` en ligne, `$$` **sur leurs propres lignes** pour le mode
@@ -64,6 +68,30 @@ Mayer), WCAG AA (corps AAA).
 4. Source PDF ambiguë (maths cassées, structure incertaine) : **signaler
    explicitement au lieu de deviner**.
 
+## Corrigés testables (mécanisme imposé)
+
+Tout corrigé de code doit être **exécutable et testé**, jamais seulement
+recopié dans le MDX. Ce mécanisme, mis en place sur le TP Docker WordPress,
+est à **reproduire pour tout futur cours comportant des corrigés exécutables** :
+
+1. **Source unique.** Le corrigé vit comme fichier réel sous
+   `site/src/solutions/<cours>/…` (arborescence reflétant les étapes), et le
+   cours l'affiche avec `<CodeFile path="…" lang="…" />`. Le code montré au
+   lecteur **est** le code testé : aucune duplication MDX ↔ fichier. Le
+   composant charge le fichier au build et reproduit le markup terminal du
+   site (pas de coloration Shiki).
+2. **Harnais de test.** `site/scripts/test-solutions.sh`
+   (`--lint` / `--build` / `--up`) construit, et en `--up` démarre puis teste
+   (HTTP, sortie attendue…) chaque corrigé, avant nettoyage. Un nouveau cours
+   ajoute ses cas dans ce script (ou un script frère bâti sur le même modèle).
+3. **CI dédiée.** `.github/workflows/test-solutions.yml` rejoue le harnais à
+   la demande et à chaque changement de `site/src/solutions/**`. Il est
+   **séparé** du déploiement Pages : il lui faut Docker, inutile au build du
+   site.
+
+Les fichiers de corrigés ont des **commentaires en anglais** (fichier unique
+partagé FR/EN) ; la pédagogie traduite reste dans la prose MDX.
+
 ## Vérification
 
 ```bash
@@ -75,3 +103,10 @@ npm run dev        # aperçu local
 
 Vérifier sur la page rendue : maths KaTeX, composants câblés (exercice
 verrouillé, terminal, diaporama), aucune ressource réseau externe.
+
+Corrigés exécutables : les tester avec le harnais (Docker requis) —
+
+```bash
+cd site
+scripts/test-solutions.sh --up    # build + run + test HTTP, puis nettoyage
+```
