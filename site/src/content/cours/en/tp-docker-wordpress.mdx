@@ -213,6 +213,13 @@ Which user is behind the execution of apache2, of mysql, and of the command that
 
 First of all, some [reading](https://docs.docker.com/engine/security/) about security when using a Docker environment, or go straight to the [conclusions](https://docs.docker.com/engine/security/#conclusions).
 
+<Note type="info" title="Evolution · running without root">
+  - **Before.** To run a server bound to port 80 without being `root`, you set a *setuid* bit on the binary — exactly what this lab does, on purpose, for teaching.
+  - **The problem.** *setuid* is a fragile hack: if the binary is vulnerable it opens the door to privilege escalation, and the container still starts as `root` anyway.
+  - **Today.** An image declares an unprivileged `USER`; Docker offers **rootless mode** (the daemon itself runs without `root`) and fine-grained *capabilities* (`--cap-drop ALL --cap-add NET_BIND_SERVICE`). The **official images** drop privileges cleanly via an entrypoint + `gosu`/`su-exec`.
+  - **Why it is better.** Smaller attack surface, no hand-rolled `setuid`, in line with best practices. This is precisely why the official images in steps 7-8 "just work", without these contortions.
+</Note>
+
 #### A few constraints
 
 - Copy your `2_wordpress_multiservice_better` directory to `3_wordpress_multiservice_noroot`.
@@ -249,6 +256,13 @@ All your important data lives inside the container: what about its durability? W
 </Exercise>
 
 ### Step 4: making data persistent
+
+<Note type="info" title="Evolution · storage drivers">
+  - **Before.** Docker offered several *storage drivers* to stack layers: `aufs`, `devicemapper`, `btrfs`, `overlay`… chosen according to the host kernel.
+  - **The problem.** `aufs` was never merged into the mainline Linux kernel; `devicemapper` in *loopback* mode was slow and notoriously fragile in production.
+  - **Today.** **overlay2** is the default, recommended driver everywhere; `aufs` and `devicemapper` are deprecated and removed (Docker Engine 25+). In the vast majority of cases, you no longer choose anything.
+  - **Why it is better.** overlay2 is in the mainline kernel, fast and stable. Not to be confused with **volumes** (the subject of this step), which handle data *persistence*, whereas the driver handles the *stacking of image layers*.
+</Note>
 
 #### A few constraints
 
