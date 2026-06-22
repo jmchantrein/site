@@ -162,6 +162,14 @@ Ici, vous exécutez plusieurs processus dans un conteneur. La philosophie de Doc
   </Fragment>
 </Exercise>
 
+<Exercise id="solution-etape-1" level={1}>
+  Comparez votre premier Dockerfile à cette solution de référence. Elle est volontairement « sale » : beaucoup de couches, pas de nettoyage du cache `apt` — autant de points que les étapes suivantes corrigeront.
+
+  <Fragment slot="solution">
+    <CodeFile path="tp-docker-wordpress/1_wordpress_multiservice_dirty/Dockerfile" lang="dockerfile" />
+  </Fragment>
+</Exercise>
+
 Est-ce que l'on peut avoir une rédaction plus propre ? Quelles sont les bonnes pratiques de rédaction d'un Dockerfile ? C'est justement ce que nous allons voir dans la prochaine étape.
 
 ### Étape 2 : mise en place des bonnes pratiques
@@ -193,9 +201,24 @@ Quel utilisateur est à l'origine de l'exécution d'apache2, de mysql et de la c
   - En êtes-vous sûr ?
 - Si c'est un problème pour au moins l'un des trois processus, que proposez-vous ?
 
+<Exercise id="solution-etape-2" level={2}>
+  Comparez votre Dockerfile « bonnes pratiques » à la solution : un seul bloc d'installation (paquets triés, cache `apt` purgé), métadonnées via `LABEL`, et variables d'environnement placées au plus près de leur usage pour préserver le cache.
+
+  <Fragment slot="solution">
+    <CodeFile path="tp-docker-wordpress/2_wordpress_multiservice_better/Dockerfile" lang="dockerfile" />
+  </Fragment>
+</Exercise>
+
 ### Étape 3 : le problème de l'utilisateur root
 
 Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/) sur la sécurité lorsque l'on utilise un environnement Docker, ou bien directement la [conclusion](https://docs.docker.com/engine/security/#conclusions).
+
+<Note type="info" title="Évolution · exécuter sans root">
+  - **Avant.** Pour qu'un serveur lié au port 80 tourne sans être `root`, on posait un bit *setuid* sur le binaire — exactement ce que fait ce TP, à dessein pédagogique.
+  - **Le problème.** Le *setuid* est une rustine fragile : si le binaire est vulnérable, c'est une porte ouverte à l'élévation de privilèges ; et le conteneur démarre malgré tout en `root`.
+  - **Aujourd'hui.** Une image déclare un `USER` non privilégié ; Docker propose le **mode rootless** (le démon lui-même tourne sans `root`) et le réglage fin des *capabilities* (`--cap-drop ALL --cap-add NET_BIND_SERVICE`). Les **images officielles** abandonnent proprement les privilèges via un *entrypoint* + `gosu`/`su-exec`.
+  - **Pourquoi c'est mieux.** Surface d'attaque réduite, plus de `setuid` artisanal, conforme aux bonnes pratiques. C'est d'ailleurs pourquoi les images officielles des étapes 7-8 « fonctionnent toutes seules », sans ces contorsions.
+</Note>
 
 #### Quelques contraintes
 
@@ -222,7 +245,24 @@ Tout d'abord, un peu de [lecture](https://docs.docker.com/engine/security/) sur 
 
 Toutes vos données importantes sont dans le conteneur : quid de leur pérennité ? Quelles solutions proposez-vous pour pallier cette problématique ?
 
+<Exercise id="solution-etape-3" level={2}>
+  Comment exécuter le conteneur sans être `root` ? Comparez avec la solution : un bit *setuid* sur `/usr/sbin/apache2` (pour qu'un non-root puisse ouvrir le port 80), puis `USER mysql`.
+
+  <Fragment slot="solution">
+    Par rapport à l'étape 2 : on ajoute le bit *setuid* sur `/usr/sbin/apache2` (en fin d'instruction de configuration) et l'on bascule sur `USER mysql` juste avant la commande du conteneur.
+
+    <CodeFile path="tp-docker-wordpress/3_wordpress_multiservice_noroot/Dockerfile" lang="dockerfile" />
+  </Fragment>
+</Exercise>
+
 ### Étape 4 : pérennisation des données
+
+<Note type="info" title="Évolution · les drivers de stockage">
+  - **Avant.** Docker proposait plusieurs *storage drivers* pour empiler les couches : `aufs`, `devicemapper`, `btrfs`, `overlay`… à choisir selon le noyau de l'hôte.
+  - **Le problème.** `aufs` n'a jamais été intégré au noyau Linux mainline ; `devicemapper` en mode *loopback* était lent et réputé fragile en production.
+  - **Aujourd'hui.** **overlay2** est le driver par défaut et recommandé partout ; `aufs` et `devicemapper` sont dépréciés et retirés (Docker Engine 25+). Dans l'immense majorité des cas, on ne choisit plus rien.
+  - **Pourquoi c'est mieux.** overlay2 est dans le noyau mainline, rapide et stable. À ne pas confondre avec les **volumes** (l'objet de cette étape), qui gèrent la *persistance* des données, là où le driver gère l'*empilement des couches* d'images.
+</Note>
 
 #### Quelques contraintes
 
@@ -266,6 +306,16 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
   Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
 </Note>
 
+<Exercise id="solution-etape-4" level={2}>
+  Comparez avec la solution : l'instruction `VOLUME`, l'`EXPOSE 80` explicite, et surtout des volumes **nommés** au lancement (un volume anonyme serait perdu avec `--rm`).
+
+  <Fragment slot="solution">
+    Par rapport à l'étape 3 : on ajoute `EXPOSE 80` et l'instruction `VOLUME`, et l'on lance le conteneur avec des volumes **nommés** (commandes en commentaire en fin de fichier).
+
+    <CodeFile path="tp-docker-wordpress/4_wordpress_multiservice_persistant/Dockerfile" lang="dockerfile" />
+  </Fragment>
+</Exercise>
+
 ### Étape 5 : vers une architecture de microservices
 
 #### Quelques contraintes
@@ -295,6 +345,24 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Nous sommes en présence d'une architecture de 2 microservices : que pensez-vous du mécanisme de script `build_and_launch.sh` ?
 - Et si nous étions en présence d'une architecture de 25 microservices, que penseriez-vous du mécanisme de script `build_and_launch.sh` ?
 - Docker va plus loin que la simple rédaction de Dockerfile : Docker nous permet aussi de gérer la façon dont interagissent les conteneurs entre eux. Pour cela, Docker met à notre disposition l'outil Docker Compose. C'est l'objet de notre prochaine partie.
+
+<Exercise id="solution-etape-5" level={3}>
+  Deux Dockerfiles (Apache et MySQL) et un script d'orchestration. Comparez avec la solution ; remarquez l'usage — pédagogique — de `--link` et le fait que le port de MySQL n'est **pas** publié vers l'hôte.
+
+  <Fragment slot="solution">
+    **`apache_wordpress/Dockerfile`**
+
+    <CodeFile path="tp-docker-wordpress/5_wordpress_microservice_persistant/apache_wordpress/Dockerfile" lang="dockerfile" />
+
+    **`mysql_wordpress/Dockerfile`**
+
+    <CodeFile path="tp-docker-wordpress/5_wordpress_microservice_persistant/mysql_wordpress/Dockerfile" lang="dockerfile" />
+
+    **`build_and_launch.sh`**
+
+    <CodeFile path="tp-docker-wordpress/5_wordpress_microservice_persistant/build_and_launch.sh" lang="bash" />
+  </Fragment>
+</Exercise>
 
 ## Docker Compose, ou l'art d'orchestrer nos conteneurs sur une seule machine
 
@@ -328,6 +396,18 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 
 Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de Docker. Ce fut peut-être long et difficile. Il est maintenant temps pour vous de savoir que tout ce que nous avons fait là à la main, d'autres personnes l'ont déjà fait, en beaucoup mieux, et pour notre usage. Nous allons donc maintenant nous servir de leurs travaux ; mais nous savons maintenant quels sont les mécanismes qui seront employés par les images officielles dont nous allons nous servir (variables d'environnement, fichier de bootstrap, setuid, volume). Il n'y a plus aucune ombre de magie dans Docker, nous savons désormais globalement comment tout cela s'articule.
 
+<Exercise id="solution-etape-6" level={3}>
+  Le script `build_and_launch.sh` devient un fichier `compose.yaml`. Comparez avec la solution : plus de clé `version:` (obsolète), plus de `links:` (Compose crée un réseau avec résolution DNS par nom de service). Les deux Dockerfiles sont ceux de l'étape 5 — le microservice Apache gagnant simplement la directive `ServerName`.
+
+  <Fragment slot="solution">
+    **`compose.yaml`**
+
+    <CodeFile path="tp-docker-wordpress/6_wordpress_microservice_compose/compose.yaml" lang="yaml" />
+
+    Lors de l'installation de WordPress, l'hôte de la base de données est `mysql_wordpress` (le nom du service) : aucun `--link` n'est nécessaire.
+  </Fragment>
+</Exercise>
+
 ### Étape 7 : une architecture de microservices décrite dans un fichier compose fourni par la communauté
 
 #### Quelques contraintes
@@ -335,29 +415,7 @@ Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de D
 - Créez un répertoire nommé `7_wordpress_official_stack`.
 - Créez un fichier `stack_wordpress.yml` avec ce contenu :
 
-```yaml
-services:
-
-  wordpress:
-    image: wordpress
-    restart: always
-    ports:
-      - 8080:80
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: exampleuser
-      WORDPRESS_DB_PASSWORD: examplepass
-      WORDPRESS_DB_NAME: exampledb
-
-  db:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_DATABASE: exampledb
-      MYSQL_USER: exampleuser
-      MYSQL_PASSWORD: examplepass
-      MYSQL_RANDOM_ROOT_PASSWORD: '1'
-```
+<CodeFile path="tp-docker-wordpress/7_wordpress_official_stack/stack_wordpress.yml" lang="yaml" />
 
 - Exécutez le service, observez les logs, testez le service.
 
@@ -386,6 +444,16 @@ services:
 - Combien de temps cela vous a-t-il pris ?
 - Si vous aviez eu à rédiger un Dockerfile, celui-ci ne comporterait que d'infimes modifications, car vous partiriez de l'image de base officielle.
 - La persistance de la base de données et du code source est très bien gérée par l'image officielle, alors même qu'il vous aurait été très compliqué de la réaliser vous-même de cette façon !
+
+<Exercise id="solution-etape-8" level={2}>
+  Comparez avec la solution : on ajoute des montages liés (*bind mounts*) vers `$HOME/source_code_wordpress` et `$HOME/data_wordpress` pour maîtriser l'emplacement des données sur l'hôte.
+
+  <Fragment slot="solution">
+    **`stack_wordpress.yml`**
+
+    <CodeFile path="tp-docker-wordpress/8_my_final_wordpress/stack_wordpress.yml" lang="yaml" />
+  </Fragment>
+</Exercise>
 
 #### Conclusions
 

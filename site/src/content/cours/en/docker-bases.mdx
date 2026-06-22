@@ -179,6 +179,13 @@ terminalComment: "# docker workshop — click a command from the course to run i
 - `docker commit`: build an image from a container;
 - `docker build`: build an image from a Dockerfile.
 
+<Note type="info" title="Evolution · image registries">
+  - **Before.** `docker pull`/`push` targeted the **Docker Hub** by default, with no real limit: you pulled and pushed freely.
+  - **The problem.** Since November 2020, the Docker Hub enforces **pull quotas** (per IP for anonymous users, per account otherwise) — a CI build can be interrupted by a *rate limit*.
+  - **Today.** The image format and the *registry* protocol are **standardized (OCI)**: you authenticate (`docker login`) and spread your images across several registries — Docker Hub, **GHCR** (`ghcr.io`), **Quay**, or a self-hosted private registry.
+  - **Why it is better.** No more dependence on a single provider, controlled quotas, and images interoperable from one registry to another thanks to the OCI standard.
+</Note>
+
 ### Container management
 
 - `docker run`: start a container;

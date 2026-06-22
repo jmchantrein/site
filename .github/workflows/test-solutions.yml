@@ -1,0 +1,30 @@
+# Test E2E des corrigés du TP Docker (construit/teste les fichiers de
+# site/src/solutions/ — exactement ceux que le cours affiche via <CodeFile>).
+# Indépendant du déploiement Pages : il a besoin de Docker (présent sur
+# ubuntu-latest) et n'est PAS déclenché par les pushs ordinaires.
+name: Tester les corrigés du TP Docker
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Niveau de test"
+        type: choice
+        options: [lint, build, up]
+        default: up
+  push:
+    paths:
+      - "site/src/solutions/**"
+      - "site/scripts/test-solutions.sh"
+      - ".github/workflows/test-solutions.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      # ubuntu-latest fournit déjà Docker Engine + le plugin docker compose v2.
+      - name: Tester les corrigés
+        working-directory: site
+        run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || 'build' }}"

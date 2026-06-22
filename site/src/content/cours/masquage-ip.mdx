@@ -17,6 +17,13 @@ Une adresse IPv4 fait 32 bits. Le **préfixe** CIDR (le `/24` de `192.168.1.0/24
   Le **masque** est l'adresse où les bits réseau valent 1 et les bits hôte valent 0. `/24` ⇒ `255.255.255.0`.
 </Note>
 
+<Note type="info" title="Évolution · des classes au CIDR">
+  - **Avant.** L'espace IPv4 était découpé en **classes** figées : A (`/8`), B (`/16`), C (`/24`). La taille du réseau était imposée par les premiers bits de l'adresse.
+  - **Le problème.** Gaspillage massif (une classe B = 65 534 hôtes, souvent pour quelques machines) et **explosion des tables de routage** ; l'épuisement des adresses se profilait.
+  - **Aujourd'hui.** Le **CIDR** (*Classless Inter-Domain Routing*, 1993) rend le préfixe **libre** (`/p` quelconque) : découpage fin (VLSM) et **agrégation de routes** (*supernetting*). C'est le modèle décrit ici.
+  - **Pourquoi c'est mieux.** Allocation au plus juste, tables de routage compactes — et l'on a gagné du temps avant le passage à IPv6.
+</Note>
+
 <Bypass title="Simulateur de masque IP">
   <IpSim />
 </Bypass>

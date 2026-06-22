@@ -86,6 +86,13 @@ La conteneurisation :
   - Écosystème en évolution rapide (mais aujourd'hui stabilisé autour du standard OCI, *Open Container Initiative*).
 </Note>
 
+<Note type="info" title="Évolution · la standardisation (OCI, containerd, runc)">
+  - **Avant.** Docker était un bloc monolithique (construction, exécution, démon, réseau) et chaque outil avait son propre format d'image.
+  - **Le problème.** Couplage fort et risque de *lock-in* ; Kubernetes devait même embarquer un adaptateur spécifique à Docker (`dockershim`).
+  - **Aujourd'hui.** L'**OCI** (*Open Container Initiative*) standardise le format d'image et le runtime ; Docker s'appuie désormais sur **containerd** (gestion du cycle de vie) + **runc** (exécution bas niveau), et Kubernetes a retiré `dockershim` (1.24, 2022) pour parler directement à containerd. Podman, Buildah et Apptainer partagent ces standards.
+  - **Pourquoi c'est mieux.** Une image OCI tourne partout, les composants sont interchangeables, et l'on n'est plus prisonnier d'un seul outil.
+</Note>
+
 Remarque : on peut imbriquer plusieurs VM ou plusieurs conteneurs les uns dans les autres (*nested virtualization / nested containers*).
 
 <Escape>

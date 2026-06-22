@@ -79,8 +79,11 @@ hello world !
 - Les images intermédiaires sont générées par un mécanisme de **commit** des conteneurs dans lesquels les instructions ont été exécutées.
 - On peut créer plusieurs images avec un seul Dockerfile (mais on ne devrait pas).
 
-<Note type="warning" title="BuildKit : le constructeur moderne">
-  Ce mécanisme « un conteneur committé par instruction » est celui du constructeur historique de Docker, et c'est lui que montrent les sorties de terminal de ce cours. Depuis Docker 23.0, le constructeur par défaut est **BuildKit** : le modèle couches + cache reste conceptuellement identique, mais les images intermédiaires n'apparaissent plus dans `docker images -a` et l'affichage du build est différent. Pour reproduire les sorties historiques : `DOCKER_BUILDKIT=0 docker build .` (constructeur en voie de suppression).
+<Note type="info" title="Évolution · le builder (BuildKit)">
+  - **Avant.** `docker build` utilisait le constructeur historique : une image (et un conteneur committé) par instruction, étapes strictement séquentielles — c'est ce que montrent les sorties de terminal de ce cours.
+  - **Le problème.** Pas de parallélisme entre instructions indépendantes, un cache grossier, et des secrets (clés, jetons) qui finissaient gravés dans les couches s'ils transitaient par un `ARG`.
+  - **Aujourd'hui.** Depuis Docker 23.0 (2023), **BuildKit** est le constructeur par défaut (`docker buildx`) : graphe d'étapes parallélisé, cache fin (`RUN --mount=type=cache`), secrets éphémères (`--mount=type=secret`), build multi-architecture. Le modèle couches + cache reste conceptuellement identique, mais les images intermédiaires n'apparaissent plus dans `docker images -a`.
+  - **Pourquoi c'est mieux.** Des builds plus rapides et reproductibles, des secrets non exposés, une meilleure granularité de cache. Pour reproduire les sorties historiques de ce cours : `DOCKER_BUILDKIT=0 docker build .` (constructeur en voie de suppression).
 </Note>
 
 ### La notion de contexte
