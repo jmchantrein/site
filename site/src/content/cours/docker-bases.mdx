@@ -179,6 +179,13 @@ terminalComment: "# atelier docker — cliquez une commande du cours pour l'exé
 - `docker commit` : construire une image à partir d'un conteneur ;
 - `docker build` : construire une image à partir d'un Dockerfile.
 
+<Note type="info" title="Évolution · les registres d'images">
+  - **Avant.** `docker pull`/`push` visaient par défaut le **Docker Hub**, sans réelle limite : on tirait et poussait sans compter.
+  - **Le problème.** Depuis novembre 2020, le Docker Hub impose des **quotas de *pull*** (par IP pour les anonymes, par compte sinon) — un build de CI peut être interrompu par un *rate limit*.
+  - **Aujourd'hui.** Le format d'image et le protocole de *registry* sont **standardisés (OCI)** : on s'authentifie (`docker login`) et l'on répartit ses images sur plusieurs registres — Docker Hub, **GHCR** (`ghcr.io`), **Quay**, ou un registre privé auto-hébergé.
+  - **Pourquoi c'est mieux.** Plus de dépendance à un fournisseur unique, des quotas maîtrisés, et des images interopérables d'un registre à l'autre grâce au standard OCI.
+</Note>
+
 ### Gestion des conteneurs
 
 - `docker run` : démarrer un conteneur ;

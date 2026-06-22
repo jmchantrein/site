@@ -17,6 +17,13 @@ An IPv4 address is 32 bits long. The CIDR **prefix** (the `/24` in `192.168.1.0/
   The **subnet mask** is the address whose network bits are set to 1 and whose host bits are set to 0. `/24` ⇒ `255.255.255.0`.
 </Note>
 
+<Note type="info" title="Evolution · from classes to CIDR">
+  - **Before.** The IPv4 space was carved into fixed **classes**: A (`/8`), B (`/16`), C (`/24`). The network size was dictated by the address's leading bits.
+  - **The problem.** Massive waste (one class B = 65,534 hosts, often for a handful of machines) and a **routing-table explosion**; address exhaustion loomed.
+  - **Today.** **CIDR** (*Classless Inter-Domain Routing*, 1993) makes the prefix **free** (any `/p`): fine-grained subnetting (VLSM) and **route aggregation** (*supernetting*). This is the model described here.
+  - **Why it is better.** Tighter allocation, compact routing tables — and it bought time before the move to IPv6.
+</Note>
+
 <Bypass title="IP subnet mask simulator">
   <IpSim />
 </Bypass>
