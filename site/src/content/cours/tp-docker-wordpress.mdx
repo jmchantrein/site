@@ -302,6 +302,13 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
   Historiquement, `docker volume prune` supprimait **aussi** les volumes nommés qui n'étaient utilisés par aucun conteneur. Depuis Docker 23, la commande ne supprime par défaut que les volumes **anonymes** ; les volumes nommés inutilisés ne sont supprimés qu'avec `docker volume prune --all`. Dans tous les cas, un volume nommé inutilisé n'est pas à l'abri d'un prune : nommer ne suffit pas, sauvegardez.
 </Note>
 
+<Note type="info" title="Évolution · docker volume prune">
+  - **Avant.** `docker volume prune` supprimait **tous** les volumes inutilisés, y compris les volumes **nommés** — un simple nettoyage pouvait effacer des données qu'on croyait protégées par leur nom.
+  - **Le problème.** Comportement trop agressif et contre-intuitif : nommer un volume ne suffisait pas à le mettre à l'abri d'un `prune`.
+  - **Aujourd'hui.** Depuis **Docker 23** (2023), `docker volume prune` ne retire par défaut que les volumes **anonymes** ; il faut `--all` pour inclure les volumes nommés inutilisés.
+  - **Pourquoi c'est mieux.** Le comportement par défaut est désormais sûr (les volumes nommés survivent à un nettoyage courant) — sans pour autant dispenser de **sauvegarder**, comme le rappelle l'avertissement ci-dessus.
+</Note>
+
 <Note title="N.B.">
   Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
 </Note>
