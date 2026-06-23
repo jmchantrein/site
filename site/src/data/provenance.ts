@@ -17,6 +17,9 @@ export interface Provenance {
   reviewedBy?: ProvReview;
   /** Le(s) modèle(s) d'IA impliqué(s), en clair (ex. « Claude Opus 4.x »). */
   model?: string;
+  /** Version traduite : qui a assuré la traduction. Orthogonal à `by`/`reviewedBy`
+      (le fond reste celui de la langue d'origine ; seule la traduction change). */
+  translated?: "human" | "ai";
 }
 
 type Locale = "fr" | "en";
@@ -37,6 +40,8 @@ export interface ProvView {
   title: string;
   /** Modèle, tel que déclaré. */
   model?: string;
+  /** Suffixe de traduction (ex. « trad. IA »), si version traduite. */
+  trans?: string;
 }
 
 function provKey(by: ProvBy, rev: ProvReview): Key {
@@ -95,6 +100,16 @@ const TITLE: Record<Locale, Record<Key, string>> = {
   },
 };
 
+/** Suffixe « traduit par … » (orthogonal aux niveaux ci-dessus). */
+const TRANS: Record<Locale, Record<"human" | "ai", string>> = {
+  fr: { human: "trad. humaine", ai: "trad. IA" },
+  en: { human: "human translation", ai: "AI-translated" },
+};
+const TRANS_TITLE: Record<Locale, Record<"human" | "ai", string>> = {
+  fr: { human: " Traduction humaine.", ai: " Traduit par une IA." },
+  en: { human: " Human translation.", ai: " AI-translated." },
+};
+
 /** Vue d'affichage dérivée d'une provenance déclarée. */
 export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
   const rev = p.reviewedBy ?? "none";
@@ -103,6 +118,7 @@ export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
   const warn = p.by === "ai" && rev !== "human";
   let title = TITLE[locale][key];
   if (p.model) title += locale === "fr" ? ` Modèle : ${p.model}.` : ` Model: ${p.model}.`;
+  if (p.translated) title += TRANS_TITLE[locale][p.translated];
   return {
     key,
     icon: warn ? "triangle-alert" : ICON[key],
@@ -111,5 +127,6 @@ export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
     label: LABEL[locale][key],
     title,
     model: p.model,
+    trans: p.translated ? TRANS[locale][p.translated] : undefined,
   };
 }

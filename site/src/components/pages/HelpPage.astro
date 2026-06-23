@@ -18,6 +18,7 @@ const provExamples: Provenance[] = [
   { by: "mixed" },
   { by: "ai", reviewedBy: "human", model: "Claude Opus 4.x" },
   { by: "ai", model: "Claude Opus 4.x" },
+  { by: "human", translated: "ai" },
 ];
 const provDesc = [
   { fr: "Écrit par un humain, sans IA.", en: "Written by a human, no AI." },
@@ -25,6 +26,7 @@ const provDesc = [
   { fr: "Co-écrit : humain et IA ont contribué à parts comparables.", en: "Co-written: human and AI contributed in comparable parts." },
   { fr: "Rédigé par une IA, puis relu et validé par un humain.", en: "Drafted by an AI, then reviewed and approved by a human." },
   { fr: "Généré par une IA, sans relecture humaine — à lire avec prudence.", en: "AI-generated, with no human review — read with caution." },
+  { fr: "Marqueur additionnel : cette version a été traduite par une IA (le fond reste celui de la langue d'origine).", en: "Extra marker: this version was AI-translated (the substance is that of the source language)." },
 ];
 const title = locale === "fr" ? "Aide & documentation" : "Help & documentation";
 const description = locale === "fr"

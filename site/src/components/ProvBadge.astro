@@ -24,5 +24,5 @@ const Tag = link ? "a" : "span";
 <Tag class:list={["pill", "prov", v.warn && "prov--warn"]} data-prov={v.key} title={v.title} href={link ? href : undefined}>
   <Icon name={v.icon} class="prov__ic" />
   {!v.warn && <span class="prov__bar" aria-hidden="true" style={`--ai:${v.ai}%`}><i></i></span>}
-  <span class="prov__txt">{v.label}{v.model && <span class="prov__model"> · {v.model}</span>}</span>
+  <span class="prov__txt">{v.label}{v.model && <span class="prov__model"> · {v.model}</span>}{v.trans && <span class="prov__trans"> · {v.trans}</span>}</span>
 </Tag>
