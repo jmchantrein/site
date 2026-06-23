@@ -302,6 +302,13 @@ All your important data lives inside the container: what about its durability? W
   Historically, `docker volume prune` **also** removed named volumes that were not used by any container. Since Docker 23, by default the command only removes **anonymous** volumes; unused named volumes are only removed with `docker volume prune --all`. In any case, an unused named volume is not safe from a prune: naming is not enough — back up your data.
 </Note>
 
+<Note type="info" title="Evolution · docker volume prune">
+  - **Before.** `docker volume prune` removed **all** unused volumes, including **named** ones — a routine cleanup could wipe data you thought was protected by its name.
+  - **The problem.** Too aggressive and counter-intuitive: naming a volume was not enough to shield it from a `prune`.
+  - **Today.** Since **Docker 23** (2023), `docker volume prune` removes only **anonymous** volumes by default; you need `--all` to include unused named volumes.
+  - **Why it is better.** The default behavior is now safe (named volumes survive a routine cleanup) — though it is still no substitute for **backups**, as the warning above reminds you.
+</Note>
+
 <Note title="N.B.">
   If you need to handle temporary data, it is better to use the [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) directive rather than using your container's writable layer.
 </Note>
