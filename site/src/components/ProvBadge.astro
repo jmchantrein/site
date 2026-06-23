@@ -1,0 +1,28 @@
+---
+/**
+ * Pastille de PROVENANCE d'un contenu — définie UNE fois, instanciée par le
+ * héro de lecture (Reading.astro) et par la légende d'aide (HelpPage.astro).
+ * Réutilise `.pill`. Icône + libellé toujours (jamais la couleur seule) ;
+ * petite barre de proportion humain ↔ IA (estimation déclarée, pas une mesure).
+ * Le cas « IA non relue par un humain » bascule en mise en garde (.prov--warn).
+ */
+import Icon from "./Icon.astro";
+import { provenanceView, type Provenance } from "../data/provenance";
+
+interface Props {
+  provenance: Provenance;
+  locale?: "fr" | "en";
+  /** Pastille cliquable vers la légende (défaut) ou simple témoin (légende elle-même). */
+  link?: boolean;
+}
+const { provenance, locale = "fr", link = true } = Astro.props;
+const v = provenanceView(provenance, locale);
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const href = `${base}${locale === "en" ? "/en/aide/" : "/aide/"}#provenance`;
+const Tag = link ? "a" : "span";
+---
+<Tag class:list={["pill", "prov", v.warn && "prov--warn"]} data-prov={v.key} title={v.title} href={link ? href : undefined}>
+  <Icon name={v.icon} class="prov__ic" />
+  {!v.warn && <span class="prov__bar" aria-hidden="true" style={`--ai:${v.ai}%`}><i></i></span>}
+  <span class="prov__txt">{v.label}{v.model && <span class="prov__model"> · {v.model}</span>}</span>
+</Tag>

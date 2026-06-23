@@ -1,6 +1,8 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Icon from "../Icon.astro";
+import ProvBadge from "../ProvBadge.astro";
+import type { Provenance } from "../../data/provenance";
 
 interface Props {
   locale?: "fr" | "en";
@@ -9,6 +11,21 @@ interface Props {
 const { locale = "fr" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const altUrl = locale === "fr" ? `${base}/en/aide/` : `${base}/aide/`;
+// Légende de provenance — les 5 niveaux visibles (mêmes pastilles que les cours).
+const provExamples: Provenance[] = [
+  { by: "human" },
+  { by: "human", reviewedBy: "ai" },
+  { by: "mixed" },
+  { by: "ai", reviewedBy: "human", model: "Claude Opus 4.x" },
+  { by: "ai", model: "Claude Opus 4.x" },
+];
+const provDesc = [
+  { fr: "Écrit par un humain, sans IA.", en: "Written by a human, no AI." },
+  { fr: "Écrit par un humain, puis relu ou corrigé par une IA.", en: "Written by a human, then reviewed or corrected by an AI." },
+  { fr: "Co-écrit : humain et IA ont contribué à parts comparables.", en: "Co-written: human and AI contributed in comparable parts." },
+  { fr: "Rédigé par une IA, puis relu et validé par un humain.", en: "Drafted by an AI, then reviewed and approved by a human." },
+  { fr: "Généré par une IA, sans relecture humaine — à lire avec prudence.", en: "AI-generated, with no human review — read with caution." },
+];
 const title = locale === "fr" ? "Aide & documentation" : "Help & documentation";
 const description = locale === "fr"
   ? "Guide d'utilisation du site : lecture, accessibilité, recherche, terminal interactif, exercices et préférences."
@@ -29,6 +46,7 @@ const description = locale === "fr"
           <li><a href="#accessibilite"><Icon name="eye" /><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></a></li>
           <li><a href="#apparence"><Icon name="settings" /><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></a></li>
           <li><a href="#cours"><Icon name="book-open" /><span data-lang="fr">Outils des cours</span><span data-lang="en">Course tools</span></a></li>
+          <li><a href="#provenance"><Icon name="sparkles" /><span data-lang="fr">Provenance des contenus</span><span data-lang="en">Content provenance</span></a></li>
           <li><a href="#donnees"><Icon name="hard-drive" /><span data-lang="fr">Vos données</span><span data-lang="en">Your data</span></a></li>
         </ol>
       </nav>
@@ -73,6 +91,23 @@ const description = locale === "fr"
           </ul>
         </section>
 
+        <section class="doc-section" id="provenance">
+          <h2><span data-lang="fr">Provenance des contenus</span><span data-lang="en">Content provenance</span></h2>
+          <p><span data-lang="fr">Chaque cours et chaque article porte, dans son en-tête, une pastille discrète indiquant <strong>qui l'a rédigé et qui l'a relu</strong>. La petite barre figure la <strong>proportion humain ↔ IA</strong> (une estimation déclarée, jamais une mesure) ; le modèle d'IA est nommé lorsqu'une IA est intervenue. Cela concerne le <strong>contenu</strong>, pas l'interface du site.</span><span data-lang="en">Every course and article carries, in its header, a discreet badge stating <strong>who wrote it and who reviewed it</strong>. The small bar shows the <strong>human ↔ AI proportion</strong> (a declared estimate, never a measurement); the AI model is named whenever an AI was involved. This is about the <strong>content</strong>, not the site interface.</span></p>
+          <ul class="prov-legend">
+            {provExamples.map((ex, i) => (
+              <li>
+                <span class="prov-legend__badge">
+                  <span data-lang="fr"><ProvBadge provenance={ex} locale="fr" link={false} /></span>
+                  <span data-lang="en"><ProvBadge provenance={ex} locale="en" link={false} /></span>
+                </span>
+                <span class="prov-legend__desc"><span data-lang="fr">{provDesc[i].fr}</span><span data-lang="en">{provDesc[i].en}</span></span>
+              </li>
+            ))}
+          </ul>
+          <p><span data-lang="fr">La provenance est déclarée <strong>par document</strong> : une version française et sa traduction anglaise peuvent donc différer (une traduction assurée par une IA, par exemple). Le cas « IA — non relu » reçoit volontairement un badge plus marqué.</span><span data-lang="en">Provenance is declared <strong>per document</strong>: a French version and its English translation may therefore differ (an AI-produced translation, for instance). The "AI — unreviewed" case deliberately gets a stronger badge.</span></p>
+        </section>
+
         <section class="doc-section" id="donnees">
           <h2><span data-lang="fr">Vos données</span><span data-lang="en">Your data</span></h2>
           <p><span data-lang="fr">Le site est entièrement statique : <strong>aucune donnée n'est envoyée à un serveur</strong>. Vos préférences (thème, accessibilité, largeur, langue) sont stockées localement dans votre navigateur (<code>localStorage</code>) et restent sur cet appareil. Vider les données du site les réinitialise.</span><span data-lang="en">The site is fully static: <strong>no data is sent to any server</strong>. Your preferences (theme, accessibility, width, language) are stored locally in your browser (<code>localStorage</code>) and stay on this device. Clearing site data resets them.</span></p>
@@ -88,4 +123,8 @@ const description = locale === "fr"
   .toc-layout { padding-block: var(--space-6); }
   .doc-section { scroll-margin-top: 80px; padding-block: var(--space-5); border-top: 1px solid var(--color-border); }
   .doc-section:first-child { border-top: none; }
+  .prov-legend { list-style: none; padding: 0; margin: var(--space-4) 0 0; display: grid; gap: var(--space-4); }
+  .prov-legend li { display: grid; grid-template-columns: minmax(0, max-content) 1fr; gap: var(--space-3) var(--space-5); align-items: center; }
+  .prov-legend__badge { white-space: nowrap; }
+  @media (max-width: 40rem) { .prov-legend li { grid-template-columns: 1fr; gap: var(--space-2); align-items: start; } }
 </style>

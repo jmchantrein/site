@@ -23,6 +23,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
   badges={d.duration ? [`≈ ${d.duration} min`] : []}
   topics={d.topics.map((t) => TOPICS[t])}
   lead={d.description}
+  provenance={d.provenance}
   toc={toc}
   locale="en"
   altUrl={`${base}/miscelanea/${slug}/`}
