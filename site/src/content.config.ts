@@ -2,9 +2,35 @@ import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { TOPIC_IDS } from "./data/topics";
 import { SERIE_IDS } from "./data/series";
+import { PROV_BY, PROV_REVIEW } from "./data/provenance";
+import { STATUS_VALUES } from "./data/status";
 
 /* Le contenu vit dans src/content/ en MDX pur : frontmatter + composants
    pédagogiques — jamais de HTML/CSS à la main. */
+
+/* Provenance éditoriale (transparence) — qui rédige / qui relit / quel modèle.
+   OBLIGATOIRE pour tout contenu publié et finalisé (cf. PROVENANCE_RULE plus
+   bas). Le rendu est dérivé dans src/data/provenance.ts. */
+const provenance = z
+  .object({
+    by: z.enum(PROV_BY),
+    reviewedBy: z.enum(PROV_REVIEW).optional(),
+    model: z.string().optional(),
+    translated: z.enum(["human", "ai"]).optional(),
+  })
+  .optional();
+
+/* Statut transverse d'un contenu : « en construction » / « exemple ».
+   Le rendu est dérivé dans src/data/status.ts (cf. StatusBadge). */
+const status = z.array(z.enum(STATUS_VALUES)).default([]);
+
+/* La provenance est OBLIGATOIRE pour tout contenu publié et finalisé. En sont
+   dispensés : les brouillons (`draft`) et les contenus marqués « en
+   construction » ou « exemple » (rien à figer tant que non finalisé). */
+const PROVENANCE_RULE = {
+  message:
+    "Provenance manquante : ajoutez `provenance:` au frontmatter, ou marquez le contenu `draft: true` / `status: [construction]` / `status: [example]`.",
+};
 
 const cours = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/cours" }),
@@ -29,8 +55,15 @@ const cours = defineCollection({
     terminalTitle: z.string().optional(),
     /** Commentaire bash de la 1re ligne du terminal. */
     terminalComment: z.string().optional(),
+    /** Provenance éditoriale (humain / IA / révision) — cf. ProvBadge. */
+    provenance,
+    /** Statut transverse (« en construction » / « exemple ») — cf. StatusBadge. */
+    status,
     draft: z.boolean().default(false),
-  }),
+  }).refine(
+    (d) => d.draft || d.status.includes("construction") || d.status.includes("example") || d.provenance !== undefined,
+    PROVENANCE_RULE,
+  ),
 });
 
 const miscelanea = defineCollection({
@@ -41,8 +74,15 @@ const miscelanea = defineCollection({
     topics: z.array(z.enum(TOPIC_IDS)).min(1),
     duration: z.number().optional(),
     date: z.coerce.date().optional(),
+    /** Provenance éditoriale (humain / IA / révision) — cf. ProvBadge. */
+    provenance,
+    /** Statut transverse (« en construction » / « exemple ») — cf. StatusBadge. */
+    status,
     draft: z.boolean().default(false),
-  }),
+  }).refine(
+    (d) => d.draft || d.status.includes("construction") || d.status.includes("example") || d.provenance !== undefined,
+    PROVENANCE_RULE,
+  ),
 });
 
 export const collections = { cours, miscelanea };

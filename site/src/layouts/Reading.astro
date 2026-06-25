@@ -9,6 +9,10 @@
 import Base from "./Base.astro";
 import Terminal from "../components/Terminal.astro";
 import SerieTimeline from "../components/SerieTimeline.astro";
+import ProvBadge from "../components/ProvBadge.astro";
+import type { Provenance } from "../data/provenance";
+import StatusBadge from "../components/StatusBadge.astro";
+import type { Status } from "../data/status";
 
 interface NavLink { href: string; label: string }
 interface TocItem { slug: string; text: string }
@@ -31,11 +35,15 @@ interface Props {
   next?: NavLink;
   locale?: "fr" | "en";
   altUrl?: string;
+  /** Provenance éditoriale (pastille discrète dans le héro). */
+  provenance?: Provenance;
+  /** Statuts transverses (« en construction » / « exemple »). */
+  status?: Status[];
 }
 const {
   title, description, crumb, badges = [], topics = [], lead,
   terminal = false, terminalTitle, terminalComment, toc = [], serieNav, prev, next,
-  locale = "fr", altUrl,
+  locale = "fr", altUrl, provenance, status = [],
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
@@ -48,6 +56,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       <div class="course-meta">
         <span class="crumb"><a href={`${base}/`}>~</a> / <a href={crumb.href}>{crumb.label}</a></span>
         {badges.map((b) => <span class="pill">{b}</span>)}
+        {status.map((s) => <StatusBadge status={s} locale={locale} />)}
+        {provenance && <ProvBadge provenance={provenance} locale={locale} />}
       </div>
       {topics.length > 0 && (
         <ul class="article-tags" aria-label="Thématiques">

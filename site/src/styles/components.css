@@ -499,6 +499,26 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .article-tags li.multi { color: var(--color-accent-text); border-color: var(--color-accent); }
 .article { max-width: var(--measure-wide); margin-inline: auto; }
 
+/* PROVENANCE — pastille « qui a écrit / qui a relu » + barre de proportion
+   humain ↔ IA. Réutilise .pill (discrète dans la ligne méta du héro). L'info
+   n'est jamais portée par la couleur seule : icône + libellé toujours. La barre
+   est une PROPORTION DÉCLARÉE, pas une mesure. Cf. ProvBadge / data/provenance. */
+.prov { text-decoration: none; color: var(--color-text-muted); }
+.prov:hover, .prov:focus-visible { color: var(--color-text); border-color: var(--color-text-faint); }
+.prov__ic svg { width: 14px; height: 14px; display: block; }
+.prov__bar { flex: none; width: 30px; height: 6px; border-radius: 999px; background: var(--color-border-strong); overflow: hidden; }
+.prov__bar > i { display: block; height: 100%; width: var(--ai, 0%); background: var(--color-accent); }
+.prov__model, .prov__trans { color: var(--color-text-faint); }
+/* « IA non relue par un humain » : mise en garde assumée (rompt la discrétion). */
+.prov--warn { color: var(--color-warning); background: var(--color-warning-weak); border-color: var(--color-warning); font-weight: var(--weight-medium); }
+.prov--warn:hover, .prov--warn:focus-visible { color: var(--color-warning); border-color: var(--color-warning); }
+.prov--warn .prov__model, .prov--warn .prov__trans { color: inherit; opacity: 0.85; }
+
+/* STATUT transverse — « En construction » (chantier : bordure pointillée, ambre)
+   et « Exemple » (démonstration : accent). Réutilise .pill + .prov__ic/.prov__txt. */
+.status--construction { color: var(--color-warning); border-color: var(--color-warning); border-style: dashed; }
+.status--example { color: var(--color-accent-text); border-color: var(--color-accent); }
+
 /* Navigation précédent / suivant en pied de cours */
 .course-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 
