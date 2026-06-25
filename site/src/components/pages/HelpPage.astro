@@ -2,6 +2,7 @@
 import Base from "../../layouts/Base.astro";
 import Icon from "../Icon.astro";
 import ProvBadge from "../ProvBadge.astro";
+import StatusBadge from "../StatusBadge.astro";
 import type { Provenance } from "../../data/provenance";
 
 interface Props {
@@ -108,6 +109,23 @@ const description = locale === "fr"
             ))}
           </ul>
           <p><span data-lang="fr">La provenance est déclarée <strong>par document</strong> : une version française et sa traduction anglaise peuvent donc différer (une traduction assurée par une IA, par exemple). Le cas « IA — non relu » reçoit volontairement un badge plus marqué.</span><span data-lang="en">Provenance is declared <strong>per document</strong>: a French version and its English translation may therefore differ (an AI-produced translation, for instance). The "AI — unreviewed" case deliberately gets a stronger badge.</span></p>
+          <p><span data-lang="fr">Deux marqueurs d'état, indépendants de la provenance, peuvent aussi apparaître sur un cours ou un article :</span><span data-lang="en">Two status markers, independent of provenance, may also appear on a course or article:</span></p>
+          <ul class="prov-legend">
+            <li>
+              <span class="prov-legend__badge">
+                <span data-lang="fr"><StatusBadge status="construction" locale="fr" /></span>
+                <span data-lang="en"><StatusBadge status="construction" locale="en" /></span>
+              </span>
+              <span class="prov-legend__desc"><span data-lang="fr">Contenu en cours de rédaction — incomplet, susceptible de changer.</span><span data-lang="en">Work in progress — incomplete and subject to change.</span></span>
+            </li>
+            <li>
+              <span class="prov-legend__badge">
+                <span data-lang="fr"><StatusBadge status="example" locale="fr" /></span>
+                <span data-lang="en"><StatusBadge status="example" locale="en" /></span>
+              </span>
+              <span class="prov-legend__desc"><span data-lang="fr">Contenu d'exemple, à visée de démonstration.</span><span data-lang="en">Example content, for demonstration purposes.</span></span>
+            </li>
+          </ul>
         </section>
 
         <section class="doc-section" id="donnees">

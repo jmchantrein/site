@@ -1,0 +1,18 @@
+---
+/**
+ * Pastille de STATUT d'un contenu — « En construction » / « Exemple ».
+ * Marqueur d'état transverse, distinct de la provenance ; défini UNE fois,
+ * instancié par le héro de lecture (Reading.astro) et la légende d'aide.
+ * Réutilise `.pill` + les classes .prov__ic / .prov__txt (icône + libellé).
+ */
+import Icon from "./Icon.astro";
+import { statusView, type Status } from "../data/status";
+
+interface Props { status: Status; locale?: "fr" | "en"; }
+const { status, locale = "fr" } = Astro.props;
+const v = statusView(status, locale);
+---
+<span class:list={["pill", "status", `status--${v.key}`]} data-status={v.key} title={v.title}>
+  <Icon name={v.icon} class="prov__ic" />
+  <span class="prov__txt">{v.label}</span>
+</span>
