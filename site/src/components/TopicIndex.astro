@@ -6,6 +6,9 @@
  * multi-thématique apparaît dans chaque bloc, sans duplication de contenu.
  */
 import { TOPICS, type TopicId } from "../data/topics";
+import ContentBadges from "./ContentBadges.astro";
+import type { Provenance } from "../data/provenance";
+import type { Status } from "../data/status";
 
 export interface IndexItem {
   href: string;
@@ -15,13 +18,16 @@ export interface IndexItem {
   meta?: string;
   num?: string;
   tags?: string[];
+  provenance?: Provenance;
+  status?: Status[];
 }
 interface Props {
   items: IndexItem[];
   /** Libellé de la vue « à plat » (ex. « Par cours », « Par article »). */
   flatLabel: string;
+  locale?: "fr" | "en";
 }
-const { items, flatLabel } = Astro.props;
+const { items, flatLabel, locale = "fr" } = Astro.props;
 
 const counts = new Map<TopicId, number>();
 for (const it of items) for (const t of it.topics) counts.set(t, (counts.get(t) ?? 0) + 1);
@@ -62,6 +68,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
               {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
               {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
             </ul>
+            <ContentBadges provenance={it.provenance} status={it.status} locale={locale} />
             <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
           </a>
         ))}
@@ -83,6 +90,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
             {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
             {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
           </ul>
+          <ContentBadges provenance={it.provenance} status={it.status} locale={locale} />
           <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
         </a>
       ))}

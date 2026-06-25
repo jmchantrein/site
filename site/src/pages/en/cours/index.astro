@@ -16,6 +16,8 @@ const items = cours.map((c) => ({
   num: nums.get(c.id)?.num,
   meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
   tags: c.data.tags,
+  provenance: c.data.provenance,
+  status: c.data.status,
 }));
 ---
 <Base title="Courses" description="Technical courses organised by topic: a progressive path, from fundamentals to advanced." locale="en" altUrl={`${base}/cours/`}>
@@ -25,7 +27,7 @@ const items = cours.map((c) => ({
       <h1><span data-lang="fr">Cours</span><span data-lang="en">Courses</span></h1>
       <p class="lead"><span data-lang="fr">Des cours techniques structurés, classés par thématiques. Chaque cours impose la même hygiène de lecture : colonne courte, exercices, atelier pratique.</span><span data-lang="en">Structured technical courses, organised by topic. Every course enforces the same reading hygiene: short column, exercises, hands-on workshop.</span></p>
     </div>
-    <TopicIndex items={items} flatLabel="By course" />
+    <TopicIndex items={items} flatLabel="By course" locale="en" />
   </main>
 </Base>
 

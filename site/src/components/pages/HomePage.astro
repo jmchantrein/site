@@ -6,6 +6,7 @@
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import { SERIES, serieNumbers, type SerieId } from "../../data/series";
+import ContentBadges from "../ContentBadges.astro";
 
 interface Props {
   locale?: "fr" | "en";
@@ -91,6 +92,7 @@ const standalone = cours.filter((c) => !c.data.serie);
                 <h3 class="module-card__title">{c.data.title}</h3>
                 <p class="module-card__desc">{c.data.description}</p>
                 <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+                <ContentBadges provenance={c.data.provenance} status={c.data.status} locale={locale} />
                 <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
               </a>
             ))}
@@ -112,6 +114,7 @@ const standalone = cours.filter((c) => !c.data.serie);
                 <h3 class="module-card__title">{c.data.title}</h3>
                 <p class="module-card__desc">{c.data.description}</p>
                 <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+                <ContentBadges provenance={c.data.provenance} status={c.data.status} locale={locale} />
                 <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
               </a>
             ))}

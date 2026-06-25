@@ -1,0 +1,26 @@
+---
+/**
+ * Rangée de pastilles d'un contenu pour les VIGNETTES (cartes de cours/articles) :
+ * statut(s) « en construction » / « exemple » + provenance compacte.
+ * La provenance est rendue en `link={false}` (la carte est déjà un <a> : pas de
+ * lien imbriqué) et `compact` (sans le modèle). Définie une fois — instanciée
+ * par TopicIndex et HomePage.
+ */
+import ProvBadge from "./ProvBadge.astro";
+import StatusBadge from "./StatusBadge.astro";
+import type { Provenance } from "../data/provenance";
+import type { Status } from "../data/status";
+
+interface Props {
+  provenance?: Provenance;
+  status?: Status[];
+  locale?: "fr" | "en";
+}
+const { provenance, status = [], locale = "fr" } = Astro.props;
+---
+{(status.length > 0 || provenance) && (
+  <div class="content-badges">
+    {status.map((s) => <StatusBadge status={s} locale={locale} />)}
+    {provenance && <ProvBadge provenance={provenance} locale={locale} link={false} compact />}
+  </div>
+)}

@@ -12,6 +12,8 @@ const items = articles.map((a) => ({
   description: a.data.description,
   topics: a.data.topics,
   meta: a.data.duration ? `≈ ${a.data.duration} min` : undefined,
+  provenance: a.data.provenance,
+  status: a.data.status,
 }));
 ---
 <Base title="Miscelánea" description="Articles techniques et scientifiques courts, classés par thématiques — un article peut relever de plusieurs thématiques." altUrl={`${base}/en/miscelanea/`}>

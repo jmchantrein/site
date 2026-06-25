@@ -30,8 +30,10 @@ export interface ProvView {
   key: Key;
   /** Icône Lucide (mappée dans Icon.astro). */
   icon: string;
-  /** Part d'IA 0–100 — pilote la barre. ESTIMATION DÉCLARÉE, jamais une mesure. */
+  /** Part d'IA 0–100. ESTIMATION DÉCLARÉE, jamais une mesure. */
   ai: number;
+  /** Part humaine 0–100 (= 100 − ai) — pilote la portion d'accent de la barre. */
+  human: number;
   /** Cas « IA non relue par un humain » → badge fort de mise en garde. */
   warn: boolean;
   /** Libellé court de la pastille. */
@@ -52,9 +54,11 @@ function provKey(by: ProvBy, rev: ProvReview): Key {
   return "ai";
 }
 
-/** Part d'IA déclarée par niveau — règle la barre (humain ↔ IA), pas une mesure. */
+/** Part d'IA déclarée par niveau — règle la barre (humain ↔ IA), pas une mesure.
+   La RELECTURE pèse peu sur la rédaction : « révisé IA » reste très humain,
+   « révisé humain » reste très IA. */
 const SHARE: Record<Key, number> = {
-  human: 0, "human-ai": 15, mixed: 50, "ai-human": 85, "ai-ai": 92, ai: 100,
+  human: 0, "human-ai": 10, mixed: 50, "ai-human": 90, "ai-ai": 95, ai: 100,
 };
 
 const ICON: Record<Key, string> = {
@@ -123,6 +127,7 @@ export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
     key,
     icon: warn ? "triangle-alert" : ICON[key],
     ai: SHARE[key],
+    human: 100 - SHARE[key],
     warn,
     label: LABEL[locale][key],
     title,

@@ -506,8 +506,9 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .prov { text-decoration: none; color: var(--color-text-muted); }
 .prov:hover, .prov:focus-visible { color: var(--color-text); border-color: var(--color-text-faint); }
 .prov__ic svg { width: 14px; height: 14px; display: block; }
-.prov__bar { flex: none; width: 30px; height: 6px; border-radius: 999px; background: var(--color-border-strong); overflow: hidden; }
-.prov__bar > i { display: block; height: 100%; width: var(--ai, 0%); background: var(--color-accent); }
+/* Barre humain ↔ IA : part HUMAINE en couleur d'accent (à gauche), part IA en
+   gris (à droite). Plus la barre est « accent », plus c'est humain. */
+.prov__bar { flex: none; width: 32px; height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) 0 var(--human, 100%), var(--color-text-faint) var(--human, 100%) 100%); }
 .prov__model, .prov__trans { color: var(--color-text-faint); }
 /* « IA non relue par un humain » : mise en garde assumée (rompt la discrétion). */
 .prov--warn { color: var(--color-warning); background: var(--color-warning-weak); border-color: var(--color-warning); font-weight: var(--weight-medium); }
@@ -518,6 +519,9 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
    et « Exemple » (démonstration : accent). Réutilise .pill + .prov__ic/.prov__txt. */
 .status--construction { color: var(--color-warning); border-color: var(--color-warning); border-style: dashed; }
 .status--example { color: var(--color-accent-text); border-color: var(--color-accent); }
+
+/* Rangée de pastilles (statut + provenance) sur les vignettes de cours/articles. */
+.content-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
 
 /* Navigation précédent / suivant en pied de cours */
 .course-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
