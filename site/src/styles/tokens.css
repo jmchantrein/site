@@ -24,6 +24,10 @@
   --color-border:        #294056;  /* bordures fines — usage non textuel             */
   --color-border-strong: #3e5970;  /* bordures de séparation marquée (UI)            */
 
+  /* Segment IA de la barre de répartition (provenance) — neutre qui CONTRASTE
+     avec l'accent dans CHAQUE thème (redéfini par thème : themes.css + ci-dessous). */
+  --prov-ai:             #aab8c4;  /* thème sombre : gris clair sur fond profond     */
+
   /* Accent unique : bleu marine / teal. L'info n'est JAMAIS portée par la couleur seule. */
   --color-accent:        #3aa6cd;  /* accent UI / focus — ~6:1 sur --color-bg → AA   */
   --color-accent-text:   #79cfee;  /* liens & texte d'accent — ~9:1 → AAA            */
@@ -142,6 +146,7 @@ html[data-contrast="high"][data-contrast="high"] {
   --color-success:       #0f5224; --color-success-weak: #e3efe6;
   --color-warning:       #6e4700; --color-warning-weak: #f6efdc;
   --color-danger:        #8f1812; --color-danger-weak: #f8e7e5;
+  --prov-ai:             #5a6573;  /* segment IA : gris foncé, visible sur blanc      */
 }
 
 /* =============================================================================

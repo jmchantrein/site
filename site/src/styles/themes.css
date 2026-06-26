@@ -66,6 +66,14 @@ html[data-theme="aurore"] {
   --color-danger: #b1261f; --color-danger-weak: #f6e2dd;
 }
 
+/* Segment IA de la barre de répartition (provenance) — sur fond CLAIR, un gris
+   moyen qui contraste avec l'accent foncé ET reste visible (≥3:1). Partagé par
+   les 4 thèmes clairs (DRY). Le mode contraste élevé le redéfinit (tokens.css). */
+html[data-theme="marine"], html[data-theme="ardoise"],
+html[data-theme="foret"], html[data-theme="aurore"] {
+  --prov-ai: #74828c;
+}
+
 /* ABYSSE — thème SOMBRE des grands fonds (DRY : source unique = tokens.css).
    Ce bloc n'existe que pour la sélection explicite html[data-theme="abysse"] :
    aucune redéclaration — les tokens couleur héritent de :root (tokens.css),
