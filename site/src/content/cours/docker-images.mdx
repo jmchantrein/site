@@ -438,6 +438,68 @@ Step 3/4 : RUN pwd
   </Fragment>
 </Exercise>
 
+## Le multistage build
+
+Jusqu'ici, **tout ce qui sert à construire** l'image se retrouve **dans l'image finale** : compilateur, en-têtes de développement, archives téléchargées, `wget`, `unzip`… autant de poids superflu et de **surface d'attaque** que l'on n'exécutera jamais en production. Le *multistage build* (construction multi-étapes) règle exactement ce problème : on **construit** dans une étape jetable, et l'on ne **livre** que les artefacts utiles dans une étape finale épurée.
+
+- Un même Dockerfile peut contenir **plusieurs instructions `FROM`** : chacune ouvre une nouvelle **étape** (*stage*).
+- On nomme une étape avec `FROM image AS nom_etape`.
+- On recopie un fichier d'une étape vers une autre avec `COPY --from=nom_etape /source /destination`.
+- **Seule la dernière étape** produit l'image finale ; les étapes intermédiaires — et tout leur outillage — sont **jetées** : elles ne contribuent à aucune couche livrée.
+
+<Note title="Trois réflexes utiles">
+  - `COPY --from=` peut aussi pointer vers une **image externe** : `COPY --from=nginx:1.27 /etc/nginx/nginx.conf /tmp/` récupère un fichier sans rien installer.
+  - `docker build --target nom_etape` arrête la construction à une étape donnée — pratique pour déboguer, ou pour produire une image de *dev* plus complète que l'image de *prod*.
+  - L'image finale peut partir d'une base **minimale** : `alpine` (≈ 5 Mo), une image *distroless*, voire `scratch` — une image **vide** (zéro octet) — lorsqu'un binaire **statique** se suffit à lui-même.
+</Note>
+
+Exemple : on compile un petit programme C dans une étape outillée (`build-essential`), puis l'on ne copie que le binaire **statique** dans une image `scratch` :
+
+**`hello.c`**
+
+<CodeFile path="docker-images/multistage-scratch/hello.c" lang="c" />
+
+**`Dockerfile`**
+
+<CodeFile path="docker-images/multistage-scratch/Dockerfile" lang="dockerfile" />
+
+À la construction, l'étape `builder` (Debian + `build-essential`, plusieurs centaines de Mo) **n'apparaît pas** dans `docker images` : seule subsiste l'image finale, qui pèse quelques centaines de kilo-octets.
+
+```console
+jmc@laptop ~ $ docker build -t hello .
+jmc@laptop ~ $ docker images
+REPOSITORY   TAG     IMAGE ID      CREATED         SIZE
+hello        latest  a1b2c3d4e5f6  2 seconds ago   892kB
+debian       13      7b9b13f7b9c0  2 weeks ago     117MB
+jmc@laptop ~ $ docker run --rm hello
+Hello from a multi-stage build!
+```
+
+<Note type="info" title="Multistage et BuildKit">
+  Avec **BuildKit** (constructeur par défaut depuis Docker 23), les étapes intermédiaires ne sont **jamais** taguées ni listées par `docker images -a` : elles vivent dans le cache de construction, et les étapes **indépendantes** peuvent même être construites **en parallèle**. C'est l'un des cas où le modèle « une image intermédiaire par instruction » du constructeur historique ne s'applique plus.
+</Note>
+
+<Exercise id="multistage-scratch" level={2}>
+  - Reprenez les deux fichiers ci-dessus dans un même répertoire.
+  - Construisez l'image (`docker build -t hello .`), exécutez-la, puis relevez sa taille avec `docker images`.
+  - Construisez **uniquement** l'étape de compilation avec `docker build --target builder -t hello-builder .`. Comparez les deux tailles : que constatez-vous ?
+
+  <Fragment slot="solution">
+    ```bash
+    docker build -t hello .
+    docker run --rm hello                          # Hello from a multi-stage build!
+    docker build --target builder -t hello-builder .
+    docker images                                  # hello ≈ 1 Mo, hello-builder plusieurs centaines de Mo
+    ```
+
+    L'image finale ne contient que le binaire statique ; l'étape `builder`, avec sa chaîne de compilation, est des centaines de fois plus lourde — et c'est précisément ce que le multistage permet de **ne pas** livrer.
+  </Fragment>
+</Exercise>
+
+<Note title="Et pour notre service WordPress ?">
+  WordPress est du PHP **interprété** : le multistage y est moins spectaculaire que pour un langage compilé. On pourrait néanmoins **télécharger et dézipper** les sources dans une étape *builder*, puis ne recopier que `/var/www/html` dans l'image finale — qui n'aurait alors plus besoin de `wget` ni d'`unzip`. Le [TP](../tp-docker-wordpress/) les installe dans l'image finale : un compromis pédagogique assumé, pas une fatalité.
+</Note>
+
 ## Et maintenant, la pratique
 
 Vous savez désormais ce qu'est une image, une couche, un conteneur, et comment construire des images proprement. Place à la pratique : le [TP — Conteneurisation d'un service WordPress](../tp-docker-wordpress/) déroule, étape par étape, le chemin du Dockerfile artisanal jusqu'à l'orchestration avec Docker Compose et Docker Swarm.

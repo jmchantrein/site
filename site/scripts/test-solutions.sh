@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Test E2E des corrigés du TP « Conteneurisation d'un service WordPress ».
+# Test E2E des corrigés Docker : TP « Conteneurisation d'un service WordPress »
+# + cours « Créer ses images Docker » (multistage).
 #
 # SOURCE UNIQUE : ce script construit/teste les fichiers de
-#   site/src/solutions/tp-docker-wordpress/
+#   site/src/solutions/  (tp-docker-wordpress/ et docker-images/)
 # c'est-à-dire EXACTEMENT ceux que le cours affiche via <CodeFile>.
 # Si un corrigé est faux, ce test échoue — et inversement.
 #
@@ -11,7 +12,7 @@
 #   --build     (défaut) Construit toutes les images + valide les fichiers compose.
 #   --up        Construit, démarre, teste en HTTP (curl), puis nettoie.
 #   --no-cache  Construit sans cache.
-#   --only N    Ne teste que l'étape N (1..8).
+#   --only N    Ne teste que l'étape N (1..8) ou le cas « multistage ».
 #   --keep      Ne nettoie pas (images/conteneurs/volumes) en fin de test.
 #
 # Prérequis : démon Docker accessible + accès réseau (apt, wordpress.org, Docker Hub).
@@ -19,6 +20,7 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sol="$here/../src/solutions/tp-docker-wordpress"
+sol_images="$here/../src/solutions/docker-images"
 mode="build"; nocache=""; only=""; keep=""
 
 while [ $# -gt 0 ]; do
@@ -132,6 +134,27 @@ test_compose 6 "$sol/6_wordpress_microservice_compose" compose.yaml "http://loca
 # Étapes 7 et 8 : images officielles, WordPress exposé en 8080. La 8 monte des dossiers de $HOME.
 test_compose 7 "$sol/7_wordpress_official_stack" stack_wordpress.yml "http://localhost:8080/" 0
 test_compose 8 "$sol/8_my_final_wordpress"       stack_wordpress.yml "http://localhost:8080/" 1
+
+# Cours « Créer ses images » : corrigé multistage (binaire C statique → scratch).
+if want multistage; then
+  note_step multistage "$sol_images/multistage-scratch"
+  d="$sol_images/multistage-scratch"
+  if [ "$mode" = "lint" ]; then
+    lint_dockerfile "$d"
+  elif docker build $nocache -t wp-tp-multistage "$d"; then
+    ok "build multistage"
+    if [ "$mode" = "up" ]; then
+      out="$(docker run --rm wp-tp-multistage 2>&1 || true)"
+      if printf '%s\n' "$out" | grep -q "Hello from a multi-stage build"; then
+        ok "run multistage (sortie attendue)"
+      else
+        ko "run multistage (sortie inattendue : $out)"
+      fi
+    fi
+  else
+    ko "build multistage"
+  fi
+fi
 
 # --- Bilan ------------------------------------------------------------------
 echo; echo "================== Bilan : $pass OK, $fail KO =================="

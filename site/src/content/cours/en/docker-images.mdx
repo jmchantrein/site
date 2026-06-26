@@ -439,6 +439,68 @@ Step 3/4 : RUN pwd
   </Fragment>
 </Exercise>
 
+## Multi-stage builds
+
+Up to now, **everything used to build** the image ends up **in the final image**: compiler, development headers, downloaded archives, `wget`, `unzip`… all of it dead weight and **attack surface** that you will never run in production. The *multi-stage build* solves exactly this: you **build** in a throwaway stage, and **ship** only the useful artifacts in a lean final stage.
+
+- A single Dockerfile can contain **several `FROM` instructions**: each one opens a new **stage**.
+- You name a stage with `FROM image AS stage_name`.
+- You copy a file from one stage into another with `COPY --from=stage_name /source /destination`.
+- **Only the last stage** produces the final image; the intermediate stages — and all their tooling — are **discarded**: they contribute no layer to what ships.
+
+<Note title="Three handy reflexes">
+  - `COPY --from=` can also point at an **external image**: `COPY --from=nginx:1.27 /etc/nginx/nginx.conf /tmp/` grabs a file without installing anything.
+  - `docker build --target stage_name` stops the build at a given stage — handy for debugging, or to produce a *dev* image more complete than the *prod* one.
+  - The final image can start from a **minimal** base: `alpine` (≈ 5 MB), a *distroless* image, or even `scratch` — an **empty** image (zero bytes) — when a **static** binary is self-sufficient.
+</Note>
+
+Example: we compile a small C program in a tooled stage (`build-essential`), then copy only the **static** binary into a `scratch` image:
+
+**`hello.c`**
+
+<CodeFile path="docker-images/multistage-scratch/hello.c" lang="c" />
+
+**`Dockerfile`**
+
+<CodeFile path="docker-images/multistage-scratch/Dockerfile" lang="dockerfile" />
+
+At build time, the `builder` stage (Debian + `build-essential`, several hundred MB) **does not appear** in `docker images`: only the final image remains, weighing a few hundred kilobytes.
+
+```console
+jmc@laptop ~ $ docker build -t hello .
+jmc@laptop ~ $ docker images
+REPOSITORY   TAG     IMAGE ID      CREATED         SIZE
+hello        latest  a1b2c3d4e5f6  2 seconds ago   892kB
+debian       13      7b9b13f7b9c0  2 weeks ago     117MB
+jmc@laptop ~ $ docker run --rm hello
+Hello from a multi-stage build!
+```
+
+<Note type="info" title="Multi-stage and BuildKit">
+  With **BuildKit** (the default builder since Docker 23), intermediate stages are **never** tagged nor listed by `docker images -a`: they live in the build cache, and **independent** stages can even be built **in parallel**. This is one of the cases where the legacy builder's "one intermediate image per instruction" model no longer applies.
+</Note>
+
+<Exercise id="multistage-scratch" level={2}>
+  - Put both files above in the same directory.
+  - Build the image (`docker build -t hello .`), run it, then note its size with `docker images`.
+  - Build **only** the compile stage with `docker build --target builder -t hello-builder .`. Compare the two sizes: what do you notice?
+
+  <Fragment slot="solution">
+    ```bash
+    docker build -t hello .
+    docker run --rm hello                          # Hello from a multi-stage build!
+    docker build --target builder -t hello-builder .
+    docker images                                  # hello ≈ 1 MB, hello-builder several hundred MB
+    ```
+
+    The final image holds only the static binary; the `builder` stage, with its compilation toolchain, is hundreds of times heavier — which is exactly what the multi-stage build lets you **avoid** shipping.
+  </Fragment>
+</Exercise>
+
+<Note title="What about our WordPress service?">
+  WordPress is **interpreted** PHP: multi-stage is less spectacular there than for a compiled language. You could still **download and unzip** the sources in a *builder* stage, then copy only `/var/www/html` into the final image — which would then no longer need `wget` or `unzip`. The [lab](../tp-docker-wordpress/) installs them in the final image: a deliberate pedagogical trade-off, not a necessity.
+</Note>
+
 ## Now, hands-on practice
 
 You now know what an image, a layer, and a container are, and how to build images properly. Time for practice: the [Lab — Containerizing a WordPress service](../tp-docker-wordpress/) walks, step by step, the path from the handcrafted Dockerfile all the way to orchestration with Docker Compose and Docker Swarm.
