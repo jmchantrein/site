@@ -24,7 +24,12 @@ const href = `${base}${locale === "en" ? "/en/aide/" : "/aide/"}#provenance`;
 const Tag = link ? "a" : "span";
 ---
 <Tag class:list={["pill", "prov", v.warn && "prov--warn"]} data-prov={v.key} title={v.title} href={link ? href : undefined}>
-  <Icon name={v.icon} class="prov__ic" />
-  {!v.warn && <span class="prov__bar" aria-hidden="true" style={`--human:${v.human}%`}></span>}
-  <span class="prov__txt">{v.label}{v.shareText && <span class="prov__share"> · {v.shareText}</span>}{!compact && v.model && <span class="prov__model"> · {v.model}</span>}{!compact && v.trans && <span class="prov__trans"> · {v.trans}</span>}</span>
+  <span class="prov__gauge" aria-hidden="true">
+    <Icon name="user" class="prov__pole prov__pole--h" />
+    <span class="prov__bar" style={`--human:${v.human}%`}></span>
+    <Icon name="bot" class="prov__pole prov__pole--ai" />
+  </span>
+  {compact
+    ? <span class="prov__txt">{v.label}{v.shareText && <span class="prov__share"> · {v.shareText}</span>}</span>
+    : <span class="prov__txt">{v.desc}</span>}
 </Tag>

@@ -39,8 +39,10 @@ export interface ProvView {
   human: number;
   /** Cas « IA non relue par un humain » → badge fort de mise en garde. */
   warn: boolean;
-  /** Libellé court de la pastille. */
+  /** Libellé court de la pastille (mode compact / vignettes). */
   label: string;
+  /** Phrase homogène (pastille en mode plein) : action + % éventuel + modèle. */
+  desc: string;
   /** Phrase complète (infobulle). */
   title: string;
   /** Modèle, tel que déclaré. */
@@ -119,6 +121,45 @@ const TRANS_TITLE: Record<Locale, Record<"human" | "ai", string>> = {
   en: { human: " Human translation.", ai: " AI-translated." },
 };
 
+/** Phrase homogène de la pastille (humain → IA), ex. « Révisé à 20 % par IA
+   générative Claude Opus 4.x ». Le pourcentage n'apparaît QUE s'il est
+   explicitement déclaré (`aiShare`) — sinon on évite la fausse précision. */
+function buildDesc(
+  key: Key, ai: number, model: string | undefined,
+  declared: boolean, translated: "human" | "ai" | undefined, locale: Locale,
+): string {
+  if (locale === "fr") {
+    const M = model ? `IA générative ${model}` : "une IA générative";
+    const p = declared ? `à ${ai} % ` : "";
+    let s: string;
+    switch (key) {
+      case "human": s = "Écrit par un humain"; break;
+      case "human-ai": s = `Révisé ${p}par ${M}`; break;
+      case "mixed": s = `Co-écrit ${p}par ${M}`; break;
+      case "ai-human": s = `Rédigé ${p}par ${M}, relu par un humain`; break;
+      case "ai-ai": s = `Rédigé ${p}par ${M}, relu par IA — sans validation humaine`; break;
+      default: s = `Généré ${p}par ${M} — non relu`;
+    }
+    if (translated === "ai") s += " · trad. IA";
+    else if (translated === "human") s += " · trad. humaine";
+    return s;
+  }
+  const M = model ? `generative AI ${model}` : "a generative AI";
+  const p = declared ? `${ai}% ` : "";
+  let s: string;
+  switch (key) {
+    case "human": s = "Written by a human"; break;
+    case "human-ai": s = `Reviewed ${p}by ${M}`; break;
+    case "mixed": s = `Co-written ${p}by ${M}`; break;
+    case "ai-human": s = `Written ${p}by ${M}, human-reviewed`; break;
+    case "ai-ai": s = `Written ${p}by ${M}, AI-reviewed — no human sign-off`; break;
+    default: s = `Generated ${p}by ${M} — unreviewed`;
+  }
+  if (translated === "ai") s += " · AI-translated";
+  else if (translated === "human") s += " · human translation";
+  return s;
+}
+
 /** Vue d'affichage dérivée d'une provenance déclarée. */
 export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
   const rev = p.reviewedBy ?? "none";
@@ -139,6 +180,7 @@ export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
     human: 100 - ai,
     warn,
     label: LABEL[locale][key],
+    desc: buildDesc(key, ai, p.model, declared, p.translated, locale),
     title,
     model: p.model,
     trans: p.translated ? TRANS[locale][p.translated] : undefined,

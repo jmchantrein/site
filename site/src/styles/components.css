@@ -511,7 +511,15 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .prov__ic svg { width: 14px; height: 14px; display: block; }
 /* Barre humain ↔ IA : part HUMAINE en couleur d'accent (à gauche), part IA en
    gris (à droite). Plus la barre est « accent », plus c'est humain. */
-.prov__bar { flex: none; width: 32px; height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) 0 var(--human, 100%), var(--color-text-faint) var(--human, 100%) 100%); }
+.prov__bar { flex: none; width: 34px; height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) 0 var(--human, 100%), var(--color-text-faint) var(--human, 100%) 100%); }
+/* Pôles de la barre : logo HUMAIN (accent) à gauche, logo IA (gris) à droite —
+   le sens « humain ↔ IA » devient explicite ; la couleur double la forme (WCAG). */
+.prov__gauge { display: inline-flex; align-items: center; gap: var(--space-1); flex: none; }
+.prov__pole svg { width: 13px; height: 13px; display: block; }
+.prov__pole--h { color: var(--color-accent-text); }
+.prov__pole--ai { color: var(--color-text-faint); }
+.prov--warn .prov__pole--h { color: var(--color-warning); opacity: 0.5; }
+.prov--warn .prov__pole--ai { color: var(--color-warning); }
 .prov__model, .prov__trans, .prov__share { color: var(--color-text-faint); }
 /* « IA non relue par un humain » : mise en garde assumée (rompt la discrétion). */
 .prov--warn { color: var(--color-warning); background: var(--color-warning-weak); border-color: var(--color-warning); font-weight: var(--weight-medium); }
