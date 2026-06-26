@@ -12,6 +12,8 @@ const items = articles.map((a) => ({
   description: a.data.description,
   topics: a.data.topics,
   meta: a.data.duration ? `≈ ${a.data.duration} min` : undefined,
+  provenance: a.data.provenance,
+  status: a.data.status,
 }));
 ---
 <Base title="Miscelánea" description="Short technical and scientific articles, organised by topic — an article can belong to several topics." locale="en" altUrl={`${base}/miscelanea/`}>
@@ -21,7 +23,7 @@ const items = articles.map((a) => ({
       <h1>Miscelánea</h1>
       <p class="lead"><span data-lang="fr">Des articles courts, classés par thématiques. Un même article peut relever de plusieurs thématiques : il apparaît alors dans chacune, sans duplication.</span><span data-lang="en">Short articles, organised by topic. A single article can belong to several topics: it then appears in each, without duplication.</span></p>
     </div>
-    <TopicIndex items={items} flatLabel="By article" />
+    <TopicIndex items={items} flatLabel="By article" locale="en" />
   </main>
 </Base>
 
