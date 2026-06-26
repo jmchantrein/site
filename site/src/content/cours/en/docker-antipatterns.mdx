@@ -1,0 +1,125 @@
+---
+title: "Docker: Mistakes to Avoid"
+description: "A synthesis of Docker anti-patterns — security, build, runtime, data, networking — and, for each one, what to do instead."
+order: 6
+serie: docker
+topics: [linux]
+duration: 20
+badge: "Synthesis"
+tags: [docker, security, anti-patterns, best practices]
+terminal: false
+status: [construction]
+---
+
+## Why this section
+
+Across the previous modules we met good practices — and a few **bad** ones, sometimes used deliberately for teaching (the plaintext password, the `setuid`, several processes in one container…). This page **gathers in one place** the fundamental mistakes, **including those the course had not covered**. For each one: what you see far too often, **why it is bad**, and **what to do instead**.
+
+<Note type="warning" title="Read this after the rest">
+  This synthesis assumes the notions from the previous modules (image, layer, container, volume, network). It also reads as a **check-list** to revisit before any production deployment.
+</Note>
+
+## Security: don't disarm isolation
+
+**Mounting the Docker socket inside a container.** `-v /var/run/docker.sock:/var/run/docker.sock` gives the container **full control of the daemon** — therefore, in effect, **root on the host**: all it takes is launching a privileged container that mounts `/`. It is one of the most common escapes (and it is why sandboxes such as play-with-docker run as *Docker-in-Docker*, not with the host's socket).
+
+**`--privileged` and `--cap-add ALL`.** `--privileged` strips away most of the isolation (access to *devices*, to almost every *capability*). You almost never need it; if a container truly needs **one** specific capability, add it **surgically** (`--cap-add NET_ADMIN`) and drop the rest (`--cap-drop ALL`).
+
+**Running as root inside the container** (seen in the [basics course](../docker-bases/)): a non-privileged `USER` should be the norm, and the daemon's *rootless* mode goes further still.
+
+<Note type="danger" title="Secrets baked into the image">
+  A secret passed via `ENV` or `ARG` **stays written in the layers**: `docker history --no-trunc` reveals it, and it travels with the image on the registry. **Our own lab is guilty of this**: `ENV MYSQL_PASSWORD=tempo` ends up in the image. In production: secrets **at runtime** (variables injected at launch, *Docker/Swarm secrets*, mounted files) or, at build time, `RUN --mount=type=secret` (BuildKit) — never hard-coded in the Dockerfile.
+</Note>
+
+**Trusting just any image.** An image pulled from an unknown registry can contain anything. Prefer **official** or signed images, **pin** by digest, and **scan** your images (`docker scout`, Trivy, Grype) before deploying.
+
+## Building cleanly
+
+**Breaking the `apt` cache.** `RUN apt-get update` then `RUN apt-get install …` as **two** separate instructions: the day you add a package, Docker reuses a **cached, stale** `update` and installs outdated versions. **Always** put `update && install` in the **same** `RUN`.
+
+**Cleaning up in a different layer from the one that made the mess.** Running `rm -rf /var/lib/apt/lists/*` in a **later** `RUN` does nothing for size: the previous layer already holds those files, and a layer never erases the contents of the one below. Cleanup must live in the **same** `RUN` as the install.
+
+**`latest` in production.** `latest` is a moving tag: two `pull`s can deliver two different images. For production, **pin** a version (`postgres:16.3`) or, better, a **digest** (`postgres@sha256:…`) — the only truly immutable reference.
+
+**`COPY . .` without a `.dockerignore`.** You then send the whole context to the daemon: `.git`, `node_modules`, secret files, build artifacts… A `.dockerignore` (like `.gitignore`) shrinks the context, speeds up the build and **avoids baking in secrets** by accident.
+
+**`ADD` where `COPY` is enough.** `ADD` has surprising behaviours: it automatically **unpacks** local tar archives and can **download** URLs. Use `COPY` by default; reserve `ADD` for explicit, documented cases.
+
+<Note type="warning" title="Nothing superfluous in the final image">
+  `vim`, `curl`, compilers… bloat the image and **widen the attack surface**. Our lab installs `vim` for teaching purposes; in production you do without — and the [multi-stage build](../docker-images/) exists precisely to ship only what is needed.
+</Note>
+
+## Actually running it
+
+<Note type="danger" title="The PID 1 problem">
+  A container's first process (PID 1) has a special role: it must **forward signals** and **reap zombie processes**. A `bash -c "…"`, a `sleep infinity` or a carelessly launched server **do none of this**: `docker stop` then waits 10 s and **kills brutally** (SIGKILL), while zombies pile up. **Our lab illustrates this** (`sleep infinity`, `mysqld_safe`). Remedies: `docker run --init` (injects *tini*), a real lightweight init, and the **exec form** (`CMD ["nginx", "-g", "daemon off;"]`) so the binary **is** PID 1 and properly receives SIGTERM.
+</Note>
+
+**Writing logs to files.** A container should log to **stdout/stderr**: that is what `docker logs` collects and what aggregators expect. Writing to `/var/log/…` inside the container makes the logs invisible and **inflates the writable layer**. Conversely, the default `json-file` driver is **unbounded** on the host: remember **rotation** (`max-size`, `max-file`).
+
+**Not limiting resources.** Without `--memory` or `--cpus`, a leaking container can **take down the whole host** (OOM, saturated CPU). In production, set limits — and sensible restart policies, not a blind `restart: always`.
+
+**No health probe.** Without a `HEALTHCHECK`, the orchestrator thinks a container that has crashed internally is "healthy". And a `depends_on` **does not wait for the service to be ready**, only for it to have started: pair it with a `condition: service_healthy`.
+
+<Note type="warning" title="Containers: cattle, not pets">
+  SSHing into a container to "fix" it by hand, applying one-off patches, keeping it "because it is nicely configured": that is treating it like a VM. A container is **disposable** — you fix the **image** (or the Compose file), then **recreate**. That is the whole point of reproducibility.
+</Note>
+
+## Data: lose nothing
+
+**Putting durable data in the writable layer.** A database with no **volume**, and everything vanishes when the container is removed (seen at [step 4 of the lab](../tp-docker-wordpress/)). Persistent data ⇒ a **named volume** (or a controlled *bind mount*).
+
+**Believing a named volume is safe.** A volume that is **named but unused** can fall to a `docker volume prune --all`; naming it does not excuse you from **backing it up** (details at [step 4 of the lab](../tp-docker-wordpress/)).
+
+## Networking: don't expose yourself
+
+<Note type="danger" title="Docker bypasses your firewall">
+  Docker writes its own iptables/nftables rules **directly**. The counter-intuitive consequence: `-p 0.0.0.0:5432:5432` **actually opens the port to the outside**, even if UFW is supposed to block it — hence thousands of databases exposed by accident. Remedies: publish on the **loopback** (`-p 127.0.0.1:5432:5432`) when external access is not wanted, keep the firewall consistent (e.g. *ufw-docker*), and publish only what must be.
+</Note>
+
+**Publishing useless ports.** An internal service (a database, a cache) need not be reachable from the host: leave it on the **service network**, without `-p` (our lab does **not** publish MySQL's port, in fact). Every published port is an open door.
+
+## Recap
+
+<Note type="success" title="The pre-production check-list">
+  - No `docker.sock` mounted, no `--privileged`: isolation intact.
+  - Non-privileged `USER`; secrets **at runtime**, never in the image.
+  - **Official** images, **pinned** (digest), **scanned**.
+  - `update && install && clean` in a **single** `RUN`; `.dockerignore`; `COPY` rather than `ADD`.
+  - A **PID 1** that handles signals (`--init` / exec form); logs to **stdout**; resource **limits**; `HEALTHCHECK`.
+  - Data in **volumes** (and **backed up**).
+  - Publish (`-p`) **only** what is needed, and **not** on `0.0.0.0` by default.
+</Note>
+
+<Exercise id="audit-dockerfile" level={2}>
+  How many anti-patterns can you spot in this Dockerfile and its launch command?
+
+  ```dockerfile
+  FROM ubuntu:latest
+  RUN apt-get update
+  RUN apt-get install -y mariadb-server curl vim
+  ENV DB_PASSWORD=supersecret
+  ADD https://example.com/app.tar.gz /opt/
+  COPY . /app
+  CMD bash -c "service mariadb start && /app/run.sh"
+  ```
+
+  ```bash
+  docker run -d --privileged -p 0.0.0.0:3306:3306 \
+    -v /var/run/docker.sock:/var/run/docker.sock my_app
+  ```
+
+  <Fragment slot="solution">
+    At least nine:
+
+    1. `FROM ubuntu:latest` — moving tag, not reproducible (pin a version, or a digest).
+    2. `apt-get update` and `install` in **two** `RUN`s — stale cache guaranteed.
+    3. No `rm -rf /var/lib/apt/lists/*` — needlessly heavy layer.
+    4. `curl` and `vim` — superfluous in production (attack surface).
+    5. `ENV DB_PASSWORD=…` — secret **baked** into the image (visible via `docker history`).
+    6. `ADD https://…` — prefer `COPY`, or a controlled `RUN … wget`; `ADD` of a URL is to be avoided.
+    7. `COPY . /app` without a `.dockerignore` — `.git`, secrets and junk sent into the image.
+    8. `CMD bash -c "…"` — `bash` becomes PID 1 (does not relay SIGTERM), and two services run in one container.
+    9. At launch: `--privileged`, a port published on `0.0.0.0` **and** the Docker socket mounted — the winning trio for escape and exposure.
+  </Fragment>
+</Exercise>
