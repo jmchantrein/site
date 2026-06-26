@@ -512,11 +512,11 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 /* Barre humain ↔ IA : part HUMAINE en couleur d'accent (à gauche), part IA en
    gris (à droite). Plus la barre est « accent », plus c'est humain. */
 .prov__bar { flex: none; width: 32px; height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) 0 var(--human, 100%), var(--color-text-faint) var(--human, 100%) 100%); }
-.prov__model, .prov__trans { color: var(--color-text-faint); }
+.prov__model, .prov__trans, .prov__share { color: var(--color-text-faint); }
 /* « IA non relue par un humain » : mise en garde assumée (rompt la discrétion). */
 .prov--warn { color: var(--color-warning); background: var(--color-warning-weak); border-color: var(--color-warning); font-weight: var(--weight-medium); }
 .prov--warn:hover, .prov--warn:focus-visible { color: var(--color-warning); border-color: var(--color-warning); }
-.prov--warn .prov__model, .prov--warn .prov__trans { color: inherit; opacity: 0.85; }
+.prov--warn .prov__model, .prov--warn .prov__trans, .prov--warn .prov__share { color: inherit; opacity: 0.85; }
 
 /* STATUT transverse — « En construction » (chantier : bordure pointillée, ambre)
    et « Exemple » (démonstration : accent). Réutilise .pill + .prov__ic/.prov__txt. */

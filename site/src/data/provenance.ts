@@ -20,6 +20,9 @@ export interface Provenance {
   /** Version traduite : qui a assuré la traduction. Orthogonal à `by`/`reviewedBy`
       (le fond reste celui de la langue d'origine ; seule la traduction change). */
   translated?: "human" | "ai";
+  /** Part d'IA explicite (0–100). Optionnel : si fourni, il PRIME sur le défaut
+      du niveau pour régler finement la barre. ESTIMATION DÉCLARÉE, pas une mesure. */
+  aiShare?: number;
 }
 
 type Locale = "fr" | "en";
@@ -44,6 +47,8 @@ export interface ProvView {
   model?: string;
   /** Suffixe de traduction (ex. « trad. IA »), si version traduite. */
   trans?: string;
+  /** Pourcentage déclaré affiché (ex. « 25 % IA »), seulement si `aiShare` fourni. */
+  shareText?: string;
 }
 
 function provKey(by: ProvBy, rev: ProvReview): Key {
@@ -120,18 +125,23 @@ export function provenanceView(p: Provenance, locale: Locale = "fr"): ProvView {
   const key = provKey(p.by, rev);
   // Mise en garde dès que l'humain n'a PAS relu un contenu rédigé par une IA.
   const warn = p.by === "ai" && rev !== "human";
+  // Pourcentage explicite éventuel : il PRIME sur le défaut du niveau pour la barre.
+  const declared = typeof p.aiShare === "number";
+  const ai = declared ? Math.max(0, Math.min(100, Math.round(p.aiShare as number))) : SHARE[key];
   let title = TITLE[locale][key];
   if (p.model) title += locale === "fr" ? ` Modèle : ${p.model}.` : ` Model: ${p.model}.`;
   if (p.translated) title += TRANS_TITLE[locale][p.translated];
+  if (declared) title += locale === "fr" ? ` Part IA déclarée : ~${ai} %.` : ` Declared AI share: ~${ai}%.`;
   return {
     key,
     icon: warn ? "triangle-alert" : ICON[key],
-    ai: SHARE[key],
-    human: 100 - SHARE[key],
+    ai,
+    human: 100 - ai,
     warn,
     label: LABEL[locale][key],
     title,
     model: p.model,
     trans: p.translated ? TRANS[locale][p.translated] : undefined,
+    shareText: declared ? (locale === "fr" ? `${ai} % IA` : `${ai}% AI`) : undefined,
   };
 }
