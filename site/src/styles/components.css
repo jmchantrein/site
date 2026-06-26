@@ -333,6 +333,9 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .module-card__tags li { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px var(--space-3); }
 .module-card__tags li.multi { color: var(--color-accent-text); border-color: var(--color-accent); }
 .module-card__cta { margin-top: auto; padding-top: var(--space-2); font-weight: var(--weight-semibold); color: var(--color-accent-text); display: inline-flex; align-items: center; gap: var(--space-2); }
+/* Si la carte a une rangée de pastilles, c'est ELLE qui s'ancre en bas ; le CTA
+   la suit aussitôt (il abandonne son propre margin-top auto) pour rester collé dessous. */
+.module-card:has(.content-badges) .module-card__cta { margin-top: 0; padding-top: 0; }
 .module-card:hover .module-card__cta { gap: var(--space-3); }
 .module-card[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
 
@@ -520,8 +523,11 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .status--construction { color: var(--color-warning); border-color: var(--color-warning); border-style: dashed; }
 .status--example { color: var(--color-accent-text); border-color: var(--color-accent); }
 
-/* Rangée de pastilles (statut + provenance) sur les vignettes de cours/articles. */
-.content-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+/* Rangée de pastilles (statut + provenance) sur les vignettes de cours/articles :
+   toujours ancrée en bas de la carte, juste au-dessus de « Ouvrir » (position
+   constante d'une carte à l'autre). `margin-top: auto` pousse la rangée + le CTA
+   tout en bas ; le CTA cède alors son ancrage (cf. règle :has plus bas). */
+.content-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; }
 
 /* Navigation précédent / suivant en pied de cours */
 .course-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
