@@ -26,7 +26,10 @@ const Tag = link ? "a" : "span";
 <Tag class:list={["pill", "prov", v.warn && "prov--warn"]} data-prov={v.key} title={v.title} href={link ? href : undefined}>
   <span class="prov__gauge" aria-hidden="true">
     <Icon name="user" class="prov__pole prov__pole--h" />
-    <span class="prov__bar" style={`--human:${v.human}%`}></span>
+    <span class="prov__bar">
+      {v.human > 0 && <span class="prov__seg prov__seg--h" style={`flex-grow:${v.human}`}></span>}
+      {v.ai > 0 && <span class="prov__seg prov__seg--ai" style={`flex-grow:${v.ai}`}></span>}
+    </span>
     <Icon name="bot" class="prov__pole prov__pole--ai" />
   </span>
   {compact

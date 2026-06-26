@@ -509,9 +509,13 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .prov { text-decoration: none; color: var(--color-text-muted); }
 .prov:hover, .prov:focus-visible { color: var(--color-text); border-color: var(--color-text-faint); }
 .prov__ic svg { width: 14px; height: 14px; display: block; }
-/* Barre humain ↔ IA : part HUMAINE en couleur d'accent (à gauche), part IA en
-   gris (à droite). Plus la barre est « accent », plus c'est humain. */
-.prov__bar { flex: none; width: 46px; height: 7px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--color-border-strong); background: linear-gradient(to right, var(--color-accent) 0 var(--human, 100%), var(--prov-ai) var(--human, 100%) 100%); }
+/* Barre de RÉPARTITION humain ↔ IA : DEUX segments séparés par un interstice —
+   part HUMAINE en accent (gauche), part IA en gris (--prov-ai, adapté au thème,
+   droite). L'écart renforce le contraste : on lit deux parts, pas une jauge. */
+.prov__bar { flex: none; display: inline-flex; align-items: stretch; gap: 2px; width: 48px; height: 8px; }
+.prov__seg { flex-basis: 0; min-width: 2px; border-radius: 999px; }
+.prov__seg--h { background: var(--color-accent); }
+.prov__seg--ai { background: var(--prov-ai); }
 /* Pôles de la barre : logo HUMAIN (accent) à gauche, logo IA (gris) à droite —
    le sens « humain ↔ IA » devient explicite ; la couleur double la forme (WCAG). */
 .prov__gauge { display: inline-flex; align-items: center; gap: var(--space-1); flex: none; }
@@ -520,6 +524,8 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 .prov__pole--ai { color: var(--color-text-faint); }
 .prov--warn .prov__pole--h { color: var(--color-warning); opacity: 0.5; }
 .prov--warn .prov__pole--ai { color: var(--color-warning); }
+.prov--warn .prov__seg--h { background: var(--color-warning); opacity: 0.45; }
+.prov--warn .prov__seg--ai { background: var(--color-warning); }
 .prov__model, .prov__trans, .prov__share { color: var(--color-text-faint); }
 /* « IA non relue par un humain » : mise en garde assumée (rompt la discrétion). */
 .prov--warn { color: var(--color-warning); background: var(--color-warning-weak); border-color: var(--color-warning); font-weight: var(--weight-medium); }
