@@ -306,6 +306,13 @@ Toutes vos données importantes sont dans le conteneur : quid de leur pérennit�
   Historiquement, `docker volume prune` supprimait **aussi** les volumes nommés qui n'étaient utilisés par aucun conteneur. Depuis Docker 23, la commande ne supprime par défaut que les volumes **anonymes** ; les volumes nommés inutilisés ne sont supprimés qu'avec `docker volume prune --all`. Dans tous les cas, un volume nommé inutilisé n'est pas à l'abri d'un prune : nommer ne suffit pas, sauvegardez.
 </Note>
 
+<Note type="info" title="Évolution · docker volume prune">
+  - **Avant.** `docker volume prune` supprimait **tous** les volumes inutilisés, y compris les volumes **nommés** — un simple nettoyage pouvait effacer des données qu'on croyait protégées par leur nom.
+  - **Le problème.** Comportement trop agressif et contre-intuitif : nommer un volume ne suffisait pas à le mettre à l'abri d'un `prune`.
+  - **Aujourd'hui.** Depuis **Docker 23** (2023), `docker volume prune` ne retire par défaut que les volumes **anonymes** ; il faut `--all` pour inclure les volumes nommés inutilisés.
+  - **Pourquoi c'est mieux.** Le comportement par défaut est désormais sûr (les volumes nommés survivent à un nettoyage courant) — sans pour autant dispenser de **sauvegarder**, comme le rappelle l'avertissement ci-dessus.
+</Note>
+
 <Note title="N.B.">
   Si vous devez gérer des données temporaires, il vaut mieux utiliser la directive [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) plutôt que d'utiliser la couche en écriture de votre conteneur.
 </Note>
@@ -341,6 +348,13 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 
 - Bien que dépréciée, vous utiliserez ici l'option historique `--link` pour lier vos 2 conteneurs (mécanisme hérité, qui ne fonctionne que sur le réseau *bridge* par défaut — conservé ici à des fins pédagogiques).
 - Avec les fonctionnalités du réseau Docker, il nous faudrait plutôt créer notre propre réseau pour notre service (`docker network create`). Et cela nous montre qu'il est tout à fait possible d'avoir un réseau dédié pour chaque service ! Plus d'informations [ici (liens hérités)](https://docs.docker.com/engine/network/links/) et [ici (réseaux)](https://docs.docker.com/engine/network/).
+
+<Note type="info" title="Évolution · de --link aux réseaux définis par l'utilisateur">
+  - **Avant.** Pour qu'un conteneur en joigne un autre par son nom, on les reliait avec `--link` (ce que fait cette étape, à dessein).
+  - **Le problème.** `--link` est **déprécié** : il ne fonctionne que sur le réseau *bridge* par défaut, exige un ordre de démarrage précis et n'offre pas de vraie résolution dynamique.
+  - **Aujourd'hui.** On crée un **réseau défini par l'utilisateur** (`docker network create`) : Docker y fournit une **résolution DNS automatique** par nom de conteneur. Docker Compose (étape suivante) crée ce réseau tout seul — d'où la disparition de `--link`.
+  - **Pourquoi c'est mieux.** Plus d'ordre de démarrage imposé, isolation par service, et un nom de service qui résout de lui-même vers la bonne adresse.
+</Note>
 
 #### Quelques questions, remarques
 
@@ -379,6 +393,13 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
   ```
 
   La commande s'écrit `docker compose` (avec une espace). L'ancien binaire autonome `docker-compose` (v1), que ce TP installait par curl à l'époque, est en fin de vie depuis 2023.
+</Note>
+
+<Note type="info" title="Évolution · Docker Compose (v1 → v2)">
+  - **Avant.** Compose était un **binaire autonome** `docker-compose` (en Python), installé à part (souvent par `curl`), et les fichiers commençaient par une clé `version:`.
+  - **Le problème.** Outil séparé du client Docker, plus lent et désynchronisé de l'évolution du moteur ; la clé `version:` prêtait à confusion.
+  - **Aujourd'hui.** Compose v2 est un **plugin** du client Docker (en Go) : on écrit `docker compose` (avec une espace), la clé `version:` est **obsolète**, et le binaire v1 est en fin de vie depuis 2023.
+  - **Pourquoi c'est mieux.** Un seul outil intégré et maintenu, cohérent avec le reste du CLI. Sur les vieux tutoriels, méfiez-vous de `docker-compose` (avec un tiret) et de la clé `version:`.
 </Note>
 
 ### Étape 6 : une architecture de microservices décrite dans un fichier compose
@@ -495,8 +516,11 @@ Docker Swarm est un orchestrateur. C'est un outil permettant de gérer vos image
   Dans Swarm, nous allons introduire un nouveau terme : la pile (*stack*). La pile correspond à ce que nous appelons le service dans sa globalité (dans notre précédent exemple, on parlerait de pile WordPress) ; le service correspond à ce que nous appelions le microservice ; les conteneurs, quant à eux, sont appelés des tâches (*tasks*). Un microservice répliqué n fois correspond à l'instanciation de n conteneurs.
 </Note>
 
-<Note title="Kubernetes">
-  Il existe un concurrent très sérieux à Swarm : il s'agit de l'orchestrateur [Kubernetes](https://kubernetes.io/). Celui-ci est plus mature, plus stable et offre plus de fonctionnalités que Docker Swarm. En outre, il a été adopté massivement par le monde de l'industrie. Docker Swarm présente l'avantage d'être plus facile à prendre en main, mais les fonctionnalités présentées ici sont également présentes dans Kubernetes. Depuis, le marché a tranché : Kubernetes s'est imposé comme le standard de l'orchestration et Swarm, toujours fonctionnel, n'évolue plus guère — il reste un excellent marchepied conceptuel.
+<Note type="info" title="Évolution · de Swarm à Kubernetes">
+  - **Avant.** Pour orchestrer des conteneurs sur plusieurs machines, **Docker Swarm** — intégré au moteur Docker — était le choix simple et naturel.
+  - **Le problème.** Swarm reste facile à prendre en main mais offre moins de fonctionnalités, et son développement s'est essentiellement arrêté.
+  - **Aujourd'hui.** **Kubernetes** (CNCF) s'est imposé comme le **standard de fait** de l'orchestration : plus mature, immense écosystème, adopté massivement par l'industrie. Swarm, toujours fonctionnel, n'évolue plus guère.
+  - **Pourquoi c'est mieux.** Portabilité, communauté et fonctionnalités. Swarm garde toutefois sa valeur ici : un excellent **marchepied conceptuel** — ses notions (pile, service, tâche) se transposent à Kubernetes.
 </Note>
 
 ### Gestion native de l'équilibrage de charge d'un service

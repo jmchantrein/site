@@ -307,6 +307,13 @@ All your important data lives inside the container: what about its durability? W
   Historically, `docker volume prune` **also** removed named volumes that were not used by any container. Since Docker 23, by default the command only removes **anonymous** volumes; unused named volumes are only removed with `docker volume prune --all`. In any case, an unused named volume is not safe from a prune: naming is not enough — back up your data.
 </Note>
 
+<Note type="info" title="Evolution · docker volume prune">
+  - **Before.** `docker volume prune` removed **all** unused volumes, including **named** ones — a routine cleanup could wipe data you thought was protected by its name.
+  - **The problem.** Too aggressive and counter-intuitive: naming a volume was not enough to shield it from a `prune`.
+  - **Today.** Since **Docker 23** (2023), `docker volume prune` removes only **anonymous** volumes by default; you need `--all` to include unused named volumes.
+  - **Why it is better.** The default behavior is now safe (named volumes survive a routine cleanup) — though it is still no substitute for **backups**, as the warning above reminds you.
+</Note>
+
 <Note title="N.B.">
   If you need to handle temporary data, it is better to use the [`--tmpfs`](https://docs.docker.com/engine/storage/tmpfs/) directive rather than using your container's writable layer.
 </Note>
@@ -342,6 +349,13 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 
 - Although deprecated, you will use here the historical `--link` option to link your 2 containers (a legacy mechanism that only works on the default *bridge* network — kept here for pedagogical purposes).
 - With Docker's networking features, we should instead create our own network for our service (`docker network create`). And this shows us that it is entirely possible to have a dedicated network for each service! More information [here (legacy links)](https://docs.docker.com/engine/network/links/) and [here (networks)](https://docs.docker.com/engine/network/).
+
+<Note type="info" title="Evolution · from --link to user-defined networks">
+  - **Before.** To let one container reach another by name, you linked them with `--link` (which this step does, on purpose).
+  - **The problem.** `--link` is **deprecated**: it only works on the default *bridge* network, requires a specific startup order, and offers no real dynamic resolution.
+  - **Today.** You create a **user-defined network** (`docker network create`): Docker provides **automatic DNS resolution** by container name there. Docker Compose (next step) creates that network on its own — hence the disappearance of `--link`.
+  - **Why it is better.** No more imposed startup order, isolation per service, and a service name that resolves on its own to the right address.
+</Note>
 
 #### A few questions and remarks
 
@@ -380,6 +394,13 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
   ```
 
   The command is written `docker compose` (with a space). The old standalone `docker-compose` binary (v1), which this lab used to install via curl back in the day, has been end-of-life since 2023.
+</Note>
+
+<Note type="info" title="Evolution · Docker Compose (v1 → v2)">
+  - **Before.** Compose was a **standalone binary** `docker-compose` (written in Python), installed separately (often via `curl`), and files began with a `version:` key.
+  - **The problem.** A tool separate from the Docker client, slower and out of sync with the engine's evolution; the `version:` key was confusing.
+  - **Today.** Compose v2 is a **plugin** of the Docker client (written in Go): you write `docker compose` (with a space), the `version:` key is **obsolete**, and the v1 binary has been end-of-life since 2023.
+  - **Why it is better.** A single, integrated and maintained tool, consistent with the rest of the CLI. In old tutorials, beware of `docker-compose` (with a hyphen) and the `version:` key.
 </Note>
 
 ### Step 6: a microservices architecture described in a compose file
@@ -496,8 +517,11 @@ Docker Swarm is an orchestrator. It is a tool for managing your images, containe
   In Swarm, we will introduce a new term: the *stack*. The stack corresponds to what we call the service as a whole (in our previous example, we would speak of the WordPress stack); the service corresponds to what we used to call the microservice; the containers, for their part, are called *tasks*. A microservice replicated n times corresponds to the instantiation of n containers.
 </Note>
 
-<Note title="Kubernetes">
-  There is a very serious competitor to Swarm: the [Kubernetes](https://kubernetes.io/) orchestrator. It is more mature, more stable and offers more features than Docker Swarm. Furthermore, it has been massively adopted by the industry. Docker Swarm has the advantage of being easier to get started with, but the features presented here are also present in Kubernetes. Since then, the market has decided: Kubernetes has established itself as the orchestration standard and Swarm, while still functional, hardly evolves anymore — it remains an excellent conceptual stepping stone.
+<Note type="info" title="Evolution · from Swarm to Kubernetes">
+  - **Before.** To orchestrate containers across several machines, **Docker Swarm** — built into the Docker engine — was the simple, natural choice.
+  - **The problem.** Swarm remains easy to get started with but offers fewer features, and its development has essentially stopped.
+  - **Today.** **Kubernetes** (CNCF) has established itself as the **de facto standard** for orchestration: more mature, a huge ecosystem, massively adopted by the industry. Swarm, while still functional, hardly evolves anymore.
+  - **Why it is better.** Portability, community and features. Swarm still has value here, though: an excellent **conceptual stepping stone** — its notions (stack, service, task) carry over to Kubernetes.
 </Note>
 
 ### Native load-balancing management of a service
