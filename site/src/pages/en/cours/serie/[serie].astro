@@ -3,6 +3,7 @@
 import { getCollection } from "astro:content";
 import Base from "../../../../layouts/Base.astro";
 import ContentBadges from "../../../../components/ContentBadges.astro";
+import ProvBadge from "../../../../components/ProvBadge.astro";
 import { SERIES, SERIE_IDS, serieNumbers, type SerieId } from "../../../../data/series";
 
 export function getStaticPaths() {
@@ -24,6 +25,7 @@ const first = modules[0];
     <div class="course-meta serie-crumb">
       <span class="crumb"><a href={`${base}/en/`}>~</a> / <a href={`${base}/en/cours/`}>Courses</a></span>
       <span class="pill">{modules.length} modules{totalMin > 0 ? ` · ≈ ${totalMin} min` : ""}</span>
+      <ProvBadge provenance={meta.prov.en} locale="en" />
     </div>
     <div class="serie-hero">
       <p class="kicker"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></p>

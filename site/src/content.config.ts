@@ -25,6 +25,15 @@ const provenance = z
    Le rendu est dérivé dans src/data/status.ts (cf. StatusBadge). */
 const status = z.array(z.enum(STATUS_VALUES)).default([]);
 
+/* Dates éditoriales — toutes FACULTATIVES. `date` = première publication ;
+   `edited` = dates de révision successives (« multi-édition »). La plus
+   récente s'affiche comme « mis à jour le … » et sert au tri « dernier paru ».
+   Une chaîne ISO (YYYY-MM-DD) en frontmatter est coercée en Date. */
+const dateFields = {
+  date: z.coerce.date().optional(),
+  edited: z.array(z.coerce.date()).optional(),
+};
+
 /* La provenance est OBLIGATOIRE pour tout contenu publié et finalisé. En sont
    dispensés : les brouillons (`draft`) et les contenus marqués « en
    construction » ou « exemple » (rien à figer tant que non finalisé). */
@@ -44,6 +53,7 @@ const cours = defineCollection({
     /** Série d'appartenance (un cours = une série de modules) ;
         absent → cours autonome, sans numéro de module. */
     serie: z.enum(SERIE_IDS).optional(),
+    ...dateFields,
     topics: z.array(z.enum(TOPIC_IDS)).default([]),
     /** Durée de lecture estimée, en minutes. */
     duration: z.number().optional(),
@@ -56,13 +66,15 @@ const cours = defineCollection({
     terminalTitle: z.string().optional(),
     /** Commentaire bash de la 1re ligne du terminal. */
     terminalComment: z.string().optional(),
-    /** Provenance éditoriale (humain / IA / révision) — cf. ProvBadge. */
+    /** Provenance éditoriale. Pour un MODULE de série, elle est héritée du
+        cours (src/data/series.ts) et reste donc facultative ici ; un cours
+        autonome la déclare lui-même. */
     provenance,
     /** Statut transverse (« en construction » / « exemple ») — cf. StatusBadge. */
     status,
     draft: z.boolean().default(false),
   }).refine(
-    (d) => d.draft || d.status.includes("construction") || d.status.includes("example") || d.provenance !== undefined,
+    (d) => d.draft || d.status.includes("construction") || d.status.includes("example") || d.provenance !== undefined || d.serie !== undefined,
     PROVENANCE_RULE,
   ),
 });
@@ -74,7 +86,7 @@ const miscelanea = defineCollection({
     description: z.string(),
     topics: z.array(z.enum(TOPIC_IDS)).min(1),
     duration: z.number().optional(),
-    date: z.coerce.date().optional(),
+    ...dateFields,
     /** Provenance éditoriale (humain / IA / révision) — cf. ProvBadge. */
     provenance,
     /** Statut transverse (« en construction » / « exemple ») — cf. StatusBadge. */

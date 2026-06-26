@@ -31,10 +31,12 @@ const featuredCourse = !u0 ? null : u0.kind === "serie"
 
 const articles = await getCollection("miscelanea", ({ data, id }) =>
   !data.draft && (locale === "en" ? id.startsWith("en/") : !id.startsWith("en/")));
-// Article phare = le plus récent si daté, sinon le 1er par titre (tri stable).
+// Fraîcheur = la plus récente des dates connues (publication ou éditions).
+const fresh = (dt: { date?: Date; edited?: Date[] }) =>
+  Math.max(dt.date?.getTime() ?? 0, ...(dt.edited ?? []).map((e) => e.getTime()));
+// Article phare = le plus frais si daté, sinon le 1er par titre (tri stable).
 const a0 = [...articles].sort((a, b) =>
-  ((b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0)) ||
-  a.data.title.localeCompare(b.data.title, locale))[0];
+  (fresh(b.data) - fresh(a.data)) || a.data.title.localeCompare(b.data.title, locale))[0];
 const featuredArticle = !a0 ? null : {
   href: `${cpfx}/miscelanea/${slug(a0.id)}/`,
   title: a0.data.title,

@@ -2,7 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Reading from "../../../layouts/Reading.astro";
 import { mdxComponents } from "../../../components/mdx";
-import { SERIES, serieNumbers } from "../../../data/series";
+import { SERIES, serieNumbers, displayProvenance } from "../../../data/series";
 
 export async function getStaticPaths() {
   // Traductions anglaises : sous-dossier en/ de la collection (CLAUDE.md).
@@ -30,6 +30,10 @@ const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const slug = entry.id.slice(3);
 const d = entry.data;
+// Provenance héritée du cours (série) pour un module ; propre au contenu sinon.
+const provenance = displayProvenance(d, "en");
+const updated = d.edited?.length ? d.edited.reduce((a, b) => (b > a ? b : a)) : undefined;
+const dates = { published: d.date, updated };
 const badges = [d.badge, d.duration ? `≈ ${d.duration} min` : null].filter(Boolean) as string[];
 const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
 const crumbLabel = mod ? `${SERIES[mod.serie].en} · module ${mod.num}/${String(mod.total).padStart(2, "0")}` : "course";
@@ -45,7 +49,8 @@ const serieNav = serieItems
   crumb={{ href: crumbHref, label: crumbLabel }}
   badges={badges}
   lead={d.description}
-  provenance={d.provenance}
+  provenance={provenance}
+  dates={dates}
   status={d.status}
   terminal={d.terminal}
   terminalTitle={d.terminalTitle}

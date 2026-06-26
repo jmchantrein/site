@@ -19,6 +19,7 @@ const items = courseUnits(cours).map((u) => {
       topics: [...new Set(u.modules.flatMap((c) => c.data.topics))],
       meta: `${u.modules.length} modules${totalMin ? ` · ≈ ${totalMin} min` : ""}`,
       tags: [],
+      provenance: SERIES[u.serie].prov.en,
     };
   }
   const c = u.entry;
