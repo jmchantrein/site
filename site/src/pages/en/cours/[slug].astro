@@ -33,6 +33,8 @@ const d = entry.data;
 const badges = [d.badge, d.duration ? `≈ ${d.duration} min` : null].filter(Boolean) as string[];
 const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
 const crumbLabel = mod ? `${SERIES[mod.serie].en} · module ${mod.num}/${String(mod.total).padStart(2, "0")}` : "course";
+// Le fil d'Ariane remonte AU COURS (la série), pas à l'index plat.
+const crumbHref = mod ? `${base}/en/cours/serie/${mod.serie}/` : `${base}/en/cours/`;
 const serieNav = serieItems
   ? { items: serieItems.map((m) => ({ href: `${base}/en/cours/${m.id}/`, title: m.title, num: m.num })), current: serieIndex }
   : undefined;
@@ -40,7 +42,7 @@ const serieNav = serieItems
 <Reading
   title={d.title}
   description={d.description}
-  crumb={{ href: `${base}/en/cours/`, label: crumbLabel }}
+  crumb={{ href: crumbHref, label: crumbLabel }}
   badges={badges}
   lead={d.description}
   provenance={d.provenance}
