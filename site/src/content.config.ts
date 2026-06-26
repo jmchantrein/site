@@ -17,6 +17,7 @@ const provenance = z
     reviewedBy: z.enum(PROV_REVIEW).optional(),
     model: z.string().optional(),
     translated: z.enum(["human", "ai"]).optional(),
+    aiShare: z.number().min(0).max(100).optional(),
   })
   .optional();
 
