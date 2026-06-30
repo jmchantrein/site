@@ -441,13 +441,7 @@ Step 3/4 : RUN pwd
   - Try overriding the default command by replacing it with `ping qwant.com`.
 
   <Fragment slot="solution">
-    ```dockerfile
-    FROM ubuntu:24.04
-    RUN DEBIAN_FRONTEND=noninteractive apt update && \
-        apt install -yq iputils-ping && \
-        apt clean
-    CMD ["ping", "localhost"]
-    ```
+    <CodeFile path="docker-images/dockerfile-ping/Dockerfile" lang="dockerfile" />
 
     ```bash
     docker build . -t mon_image
@@ -460,14 +454,7 @@ Step 3/4 : RUN pwd
 <Exercise id="cmd-vs-entrypoint" level={2}>
   Difference between the `CMD` and `ENTRYPOINT` instructions: build the image from the following Dockerfile with `docker build . -t ping`:
 
-  ```dockerfile
-  FROM ubuntu:24.04
-  RUN DEBIAN_FRONTEND=noninteractive apt update && \
-      apt install -yq iputils-ping && \
-      apt clean
-  ENTRYPOINT ["ping", "-c", "2"]
-  CMD ["localhost"]
-  ```
+  <CodeFile path="docker-images/cmd-vs-entrypoint/Dockerfile" lang="dockerfile" />
 
   - Instantiate this image without overriding anything, with `docker run ping`.
   - Instantiate this image with an override, with `docker run ping qwant.com`.
@@ -481,6 +468,23 @@ Step 3/4 : RUN pwd
     - You can pin parameters in `ENTRYPOINT` (here `-c 2`), which will not be overridden by `CMD`.
   </Fragment>
 </Exercise>
+
+<Note title="The entrypoint pattern of official images">
+  `ENTRYPOINT` is also used to run a **bootstrap script** before the service. This is the pattern of official images: a `docker-entrypoint.sh` prepares the environment (permissions, configuration, first-run initialization), **drops root privileges** with `gosu` (or `su-exec`), then hands over to the process via `exec "$@"` (so it becomes PID 1). This is the **right** answer to "root in the container" — far cleaner than the lab's handcrafted `setuid`.
+
+  ```dockerfile
+  COPY docker-entrypoint.sh /usr/local/bin/
+  ENTRYPOINT ["docker-entrypoint.sh"]
+  CMD ["apache2", "-D", "FOREGROUND"]
+  ```
+
+  ```bash
+  #!/bin/sh
+  # docker-entrypoint.sh — prepare the environment, then drop privileges
+  chown -R www-data:www-data /var/www/html
+  exec gosu www-data "$@"
+  ```
+</Note>
 
 ## Multi-stage builds
 

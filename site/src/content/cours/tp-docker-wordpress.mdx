@@ -452,6 +452,15 @@ Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de D
   </Fragment>
 </Exercise>
 
+<Note type="info" title="Compose moderne : au-delà du strict nécessaire">
+  Notre fichier reste minimal, mais Compose v2 offre de quoi industrialiser :
+
+  - un fichier **`.env`** (chargé automatiquement) et l'**interpolation** `${VARIABLE}` dans le fichier compose, pour ne plus coder les valeurs en dur ;
+  - les **profils** (`profiles:`) pour n'activer certains services qu'à la demande (par ex. un service de debug) ;
+  - les fichiers d'**override** (`compose.override.yaml`) pour adapter la configuration dev/prod sans toucher au fichier de base ;
+  - **`docker compose watch`**, qui resynchronise le code dans le conteneur à chaque sauvegarde (boucle de développement rapide).
+</Note>
+
 ### Étape 7 : une architecture de microservices décrite dans un fichier compose fourni par la communauté
 
 #### Quelques contraintes

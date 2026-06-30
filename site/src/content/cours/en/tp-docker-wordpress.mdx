@@ -453,6 +453,15 @@ You have reached the end of your learning path through Docker's fundamentals. It
   </Fragment>
 </Exercise>
 
+<Note type="info" title="Modern Compose: beyond the bare minimum">
+  Our file stays minimal, but Compose v2 has what it takes to scale up:
+
+  - an **`.env`** file (loaded automatically) and `${VARIABLE}` **interpolation** in the compose file, to stop hard-coding values;
+  - **profiles** (`profiles:`) to enable certain services only on demand (e.g. a debug service);
+  - **override** files (`compose.override.yaml`) to adapt dev/prod configuration without touching the base file;
+  - **`docker compose watch`**, which re-syncs the code into the container on every save (fast development loop).
+</Note>
+
 ### Step 7: a microservices architecture described in a compose file provided by the community
 
 #### A few constraints

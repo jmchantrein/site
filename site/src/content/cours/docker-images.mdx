@@ -440,13 +440,7 @@ Step 3/4 : RUN pwd
   - Essayez de surcharger la commande par défaut en la remplaçant par `ping qwant.com`.
 
   <Fragment slot="solution">
-    ```dockerfile
-    FROM ubuntu:24.04
-    RUN DEBIAN_FRONTEND=noninteractive apt update && \
-        apt install -yq iputils-ping && \
-        apt clean
-    CMD ["ping", "localhost"]
-    ```
+    <CodeFile path="docker-images/dockerfile-ping/Dockerfile" lang="dockerfile" />
 
     ```bash
     docker build . -t mon_image
@@ -459,14 +453,7 @@ Step 3/4 : RUN pwd
 <Exercise id="cmd-vs-entrypoint" level={2}>
   Différence entre les instructions `CMD` et `ENTRYPOINT` : construisez l'image du Dockerfile suivant avec `docker build . -t ping` :
 
-  ```dockerfile
-  FROM ubuntu:24.04
-  RUN DEBIAN_FRONTEND=noninteractive apt update && \
-      apt install -yq iputils-ping && \
-      apt clean
-  ENTRYPOINT ["ping", "-c", "2"]
-  CMD ["localhost"]
-  ```
+  <CodeFile path="docker-images/cmd-vs-entrypoint/Dockerfile" lang="dockerfile" />
 
   - Instanciez cette image sans surcharge avec `docker run ping`.
   - Instanciez cette image en surchargeant avec `docker run ping qwant.com`.
@@ -480,6 +467,23 @@ Step 3/4 : RUN pwd
     - On peut figer des paramètres dans `ENTRYPOINT` (ici `-c 2`), qui ne seront pas surchargés par `CMD`.
   </Fragment>
 </Exercise>
+
+<Note title="Le patron entrypoint des images officielles">
+  `ENTRYPOINT` sert aussi à lancer un **script d'amorçage** avant le service. C'est le patron des images officielles : un `docker-entrypoint.sh` prépare l'environnement (droits, configuration, première initialisation), **abandonne les privilèges root** avec `gosu` (ou `su-exec`), puis passe la main au processus via `exec "$@"` (pour qu'il devienne PID 1). C'est la **bonne** réponse au « root dans le conteneur » — bien plus propre que le `setuid` artisanal du [TP](../tp-docker-wordpress/).
+
+  ```dockerfile
+  COPY docker-entrypoint.sh /usr/local/bin/
+  ENTRYPOINT ["docker-entrypoint.sh"]
+  CMD ["apache2", "-D", "FOREGROUND"]
+  ```
+
+  ```bash
+  #!/bin/sh
+  # docker-entrypoint.sh — prépare l'environnement puis abandonne les privilèges
+  chown -R www-data:www-data /var/www/html
+  exec gosu www-data "$@"
+  ```
+</Note>
 
 ## Le multistage build
 
