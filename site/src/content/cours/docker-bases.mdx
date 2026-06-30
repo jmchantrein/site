@@ -163,7 +163,7 @@ provenance:
 <Note title="Images particulières">
   - Une *top level image* n'est pas une image intermédiaire.
   - Une image taguée `<none>` est une image intermédiaire ; sinon c'est une top level image pendante (*dangling*).
-  - Une image marquée `<missing>` est une image manquante mais dont on a obtenu la couche associée (via `docker pull`).
+  - Une couche marquée `<missing>` dans `docker history` n'est pas une erreur : depuis la 1.10, Docker ne conserve pas d'**identifiant d'image intermédiaire local** pour les couches d'une image tirée (`docker pull`) ou construite ailleurs — on a bien la couche, mais aucun ID d'image à lui associer.
 </Note>
 
 <Note type="warning" title="Avant la version 1.10 (historique)">

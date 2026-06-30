@@ -164,7 +164,7 @@ provenance:
 <Note title="Special images">
   - A *top level image* is not an intermediate image.
   - An image tagged `<none>` is an intermediate image; otherwise it is a dangling top level image.
-  - An image marked `<missing>` is a missing image whose associated layer was nevertheless obtained (via `docker pull`).
+  - A layer marked `<missing>` in `docker history` is not an error: since 1.10, Docker keeps no **local intermediate-image ID** for the layers of an image that was pulled (`docker pull`) or built elsewhere — you do have the layer, but no image ID to attach to it.
 </Note>
 
 <Note type="warning" title="Before version 1.10 (historical)">

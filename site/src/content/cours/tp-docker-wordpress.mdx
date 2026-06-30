@@ -419,6 +419,25 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Avez-vous remarqué que lors de l'installation de WordPress, vous pouviez adresser le nom du service de la base de données à la place du hostname ? Comment est-ce possible ? Allez regarder du côté de la commande `docker container inspect nom_du_conteneur_mysql`.
 - Observez bien tous les [paramètres](https://docs.docker.com/reference/compose-file/) que vous pouvez fixer pour vos conteneurs dans le fichier compose, parmi les plus intéressants : `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`… Parmi ces options, deux retiennent mon attention : il s'agit de `deploy` et d'`overlay`, qui ne fonctionnent qu'avec l'usage de Docker Swarm ; nous verrons ces deux commandes plus tard dans la partie Docker Swarm.
 
+<Note type="info" title="depends_on n'attend pas que le service soit prêt">
+  Attention à un piège classique : `depends_on` garantit l'**ordre de démarrage**, pas la **disponibilité**. Compose démarre bien `mysql_wordpress` avant `apache_wordpress`, mais n'attend pas que MariaDB **accepte les connexions** ; au premier lancement, l'installateur WordPress peut donc se présenter avant que la base soit prête. La parade moderne : déclarer un `HEALTHCHECK` sur la base et **conditionner** le démarrage —
+
+  ```yaml
+  services:
+    mysql_wordpress:
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+        interval: 5s
+        retries: 10
+    apache_wordpress:
+      depends_on:
+        mysql_wordpress:
+          condition: service_healthy
+  ```
+
+  (Notre corrigé en reste au `depends_on` simple, suffisant ici parce que l'installation de WordPress est manuelle et postérieure.)
+</Note>
+
 Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de Docker. Ce fut peut-être long et difficile. Il est maintenant temps pour vous de savoir que tout ce que nous avons fait là à la main, d'autres personnes l'ont déjà fait, en beaucoup mieux, et pour notre usage. Nous allons donc maintenant nous servir de leurs travaux ; mais nous savons maintenant quels sont les mécanismes qui seront employés par les images officielles dont nous allons nous servir (variables d'environnement, fichier de bootstrap, setuid, volume). Il n'y a plus aucune ombre de magie dans Docker, nous savons désormais globalement comment tout cela s'articule.
 
 <Exercise id="solution-etape-6" level={3}>
@@ -558,6 +577,10 @@ for ((i=1;i<10;i++)); do docker service ps service_${i}; done
 ### Une introduction à Docker Swarm
 
 La partie ci-dessous est une introduction à Docker Swarm présente sous forme de cours sur le dépôt GitHub [play-with-docker](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/_posts/2017-01-28-swarm-stack-intro.markdown). Ce cours étant sous licence [Apache 2](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/LICENSE) et afin de ne pas réinventer la roue, je présente ici une traduction du cours original. Pour mettre en application ce cours, le plus simple est soit d'utiliser la version officielle et en anglais en [ligne](http://training.play-with-docker.com/swarm-stack-intro/), soit de suivre cette version en utilisant le site [play-with-docker](https://labs.play-with-docker.com).
+
+<Note type="warning" title="Tutoriel daté (2017) — à adapter">
+  Ce qui suit est la **traduction fidèle** d'un tutoriel de 2017, conservée pour sa valeur pédagogique. Mais le dépôt `docker/example-voting-app` a évolué : son `docker-stack.yml` actuel **ne correspond plus** aux images et aux sorties montrées ici (`postgres:9.4`, `…examplevotingapp_*:before` sont obsolètes). Suivez la **logique** (déployer une pile multi-services, mettre à l'échelle, mettre à jour), pas les versions exactes ; en cas d'écart, fiez-vous au `README` du dépôt que vous clonez.
+</Note>
 
 #### Objectif
 
@@ -733,6 +756,10 @@ On remarque qu'il y a eu une interruption de ce microservice pendant 2 secondes 
 - Déployez votre architecture de microservices avec `docker stack`.
 - Effectuez une mise à l'échelle de votre microservice Apache (2 réplicas).
 - Vérifiez que votre service fonctionne correctement.
+
+<Note type="danger" title="Montages liés et cluster multi-nœuds">
+  L'étape 8 persiste les données via des **montages liés** (*bind mounts*) vers `$HOME` (`source_code_wordpress`, `data_wordpress`). Or un *bind mount* est **local à un nœud** : sur un Swarm de plusieurs machines, le code et la base n'existent que sur le nœud où vous les avez créés, et **répartir Apache sur plusieurs nœuds** casse la cohérence (chaque réplica verrait un disque différent, voire vide). Pour un vrai cluster, il faut soit **contraindre le placement** des services à état sur un nœud précis (`deploy.placement.constraints`), soit un **stockage partagé** (volume NFS/cluster, ou une base managée). Sur play-with-docker, restez donc sur une démonstration **mono-nœud** pour les services à état.
+</Note>
 
 #### Quelques questions, remarques
 
