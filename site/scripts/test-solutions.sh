@@ -70,8 +70,12 @@ smoke(){ # $1 url
 }
 
 # Vérifie que le corps de la page (redirections suivies) contient un motif.
+# NB : on CAPTURE la réponse puis on teste en bash pur. Un « curl | grep -q »
+# échouerait sous pipefail : grep -q s'arrête au 1er match et ferme le tube,
+# curl reçoit alors SIGPIPE et sort en erreur → faux négatif.
 body_has(){ # $1 url  $2 motif
-  curl -sL --max-time 20 "$1" 2>/dev/null | grep -q "$2"
+  local body; body="$(curl -sL --max-time 20 "$1" 2>/dev/null || true)"
+  [[ "$body" == *"$2"* ]]
 }
 
 lint_dockerfile(){ # $1 dir
@@ -131,7 +135,7 @@ test_run_image(){ # $1 label  $2 dir  $3 motif-attendu  [$4… args de run]
   if docker build $nocache -t "wp-tp-$label" "$dir"; then ok "build $label"; else ko "build $label"; return 0; fi
   [ "$mode" = "up" ] || return 0
   local out; out="$(docker run --rm "wp-tp-$label" "$@" 2>&1 || true)"
-  if printf '%s\n' "$out" | grep -q "$want_out"; then ok "run $label (sortie attendue)"; else ko "run $label (sortie inattendue : $out)"; fi
+  if [[ "$out" == *"$want_out"* ]]; then ok "run $label (sortie attendue)"; else ko "run $label (sortie inattendue : $out)"; fi
 }
 
 # --- Étapes -----------------------------------------------------------------
