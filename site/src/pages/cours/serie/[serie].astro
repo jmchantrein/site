@@ -1,0 +1,75 @@
+---
+/**
+ * PAGE DE COURS (drill-down) — un « cours » au sens du site est une série de
+ * modules (cf. src/data/series.ts). L'onglet Cours mène à l'index des cours ;
+ * ici on présente UN cours (son chapeau) puis on liste ses modules. Le segment
+ * /serie/ distingue cette route de /cours/[slug] (pages de module).
+ */
+import { getCollection } from "astro:content";
+import Base from "../../../layouts/Base.astro";
+import ContentBadges from "../../../components/ContentBadges.astro";
+import ProvBadge from "../../../components/ProvBadge.astro";
+import { SERIES, SERIE_IDS, serieNumbers, type SerieId } from "../../../data/series";
+
+export function getStaticPaths() {
+  return SERIE_IDS.map((serie) => ({ params: { serie } }));
+}
+
+const serie = Astro.params.serie as SerieId;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const cours = (await getCollection("cours", ({ data, id }) => !data.draft && !id.startsWith("en/")))
+  .sort((a, b) => a.data.order - b.data.order);
+const nums = serieNumbers(cours);
+const modules = cours.filter((c) => c.data.serie === serie);
+const totalMin = modules.reduce((t, c) => t + (c.data.duration ?? 0), 0);
+const meta = SERIES[serie];
+const first = modules[0];
+---
+<Base title={meta.fr} description={meta.desc.fr} altUrl={`${base}/en/cours/serie/${serie}/`}>
+  <main id="main" class="wrap">
+    <div class="course-meta serie-crumb">
+      <span class="crumb"><a href={`${base}/`}>~</a> / <a href={`${base}/cours/`}>Cours</a></span>
+      <span class="pill">{modules.length} modules{totalMin > 0 ? ` · ≈ ${totalMin} min` : ""}</span>
+      <ProvBadge provenance={meta.prov.fr} locale="fr" />
+    </div>
+    <div class="serie-hero">
+      <p class="kicker"><span data-lang="fr">Cours</span><span data-lang="en">Course</span></p>
+      <h1>{meta.fr}</h1>
+      <p class="lead">{meta.desc.fr}</p>
+      {first && (
+        <p class="serie-hero__cta">
+          <a class="btn btn--primary" href={`${base}/cours/${first.id}/`}><span data-lang="fr">Commencer le cours</span><span data-lang="en">Start the course</span> →</a>
+        </p>
+      )}
+    </div>
+    <div class="card-grid">
+      {modules.map((c) => (
+        <a class="module-card" href={`${base}/cours/${c.id}/`}>
+          <div class="module-card__top">
+            <span class="module-card__num">{nums.get(c.id)?.num}</span>
+            {c.data.duration && <span class="module-card__meta">≈ {c.data.duration} min</span>}
+          </div>
+          <h2 class="module-card__title">{c.data.title}</h2>
+          <p class="module-card__desc">{c.data.description}</p>
+          <ul class="module-card__tags">{c.data.tags.map((t) => <li>{t}</li>)}</ul>
+          <ContentBadges provenance={c.data.provenance} status={c.data.status} locale="fr" />
+          <span class="module-card__cta"><span data-lang="fr">Ouvrir</span><span data-lang="en">Open</span> →</span>
+        </a>
+      ))}
+    </div>
+    <p class="serie-back">
+      <a href={`${base}/cours/`}>← <span data-lang="fr">Tous les cours</span><span data-lang="en">All courses</span></a>
+    </p>
+  </main>
+</Base>
+
+<style>
+  .serie-crumb { padding-top: var(--space-6); }
+  .serie-hero { padding-block: var(--space-5) var(--space-6); }
+  .serie-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); max-width: 24ch; margin-top: var(--space-3); }
+  .serie-hero .lead { margin-top: var(--space-4); }
+  .serie-hero__cta { margin-top: var(--space-5); }
+  .serie-back { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+  .serie-back a { color: var(--color-accent-text); font-weight: var(--weight-semibold); text-decoration: none; }
+  .serie-back a:hover { text-decoration: underline; }
+</style>

@@ -37,15 +37,27 @@ interface Props {
   altUrl?: string;
   /** Provenance éditoriale (pastille discrète dans le héro). */
   provenance?: Provenance;
+  /** Dates éditoriales facultatives (publication / dernière révision). */
+  dates?: { published?: Date; updated?: Date };
   /** Statuts transverses (« en construction » / « exemple »). */
   status?: Status[];
 }
 const {
   title, description, crumb, badges = [], topics = [], lead,
   terminal = false, terminalTitle, terminalComment, toc = [], serieNav, prev, next,
-  locale = "fr", altUrl, provenance, status = [],
+  locale = "fr", altUrl, provenance, dates, status = [],
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+// Ligne de dates (facultative) : « Publié le … · mis à jour le … ».
+const fmtDate = (dt: Date) =>
+  dt.toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { year: "numeric", month: "long", day: "numeric" });
+const pub = dates?.published
+  ? (locale === "en" ? `Published ${fmtDate(dates.published)}` : `Publié le ${fmtDate(dates.published)}`)
+  : null;
+const upd = dates?.updated
+  ? (locale === "en" ? `updated ${fmtDate(dates.updated)}` : `mis à jour le ${fmtDate(dates.updated)}`)
+  : null;
+const dateLine = [pub, upd].filter(Boolean).join(" · ");
 ---
 <Base title={title} description={description} progress locale={locale} altUrl={altUrl}>
   <main id="main" class="wrap">
@@ -58,6 +70,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         {badges.map((b) => <span class="pill">{b}</span>)}
         {status.map((s) => <StatusBadge status={s} locale={locale} />)}
         {provenance && <ProvBadge provenance={provenance} locale={locale} />}
+        {dateLine && <span class="reading-date">{dateLine}</span>}
       </div>
       {topics.length > 0 && (
         <ul class="article-tags" aria-label="Thématiques">
@@ -133,3 +146,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     </div>
   </main>
 </Base>
+
+<style>
+  /* Dates éditoriales dans le fil méta du héro (mono, discret comme le crumb). */
+  .reading-date { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+</style>

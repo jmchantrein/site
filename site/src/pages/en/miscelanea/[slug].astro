@@ -14,6 +14,8 @@ const { Content, headings } = await render(entry);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const slug = entry.id.slice(3);
 const d = entry.data;
+const updated = d.edited?.length ? d.edited.reduce((a, b) => (b > a ? b : a)) : undefined;
+const dates = { published: d.date, updated };
 const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, text: h.text }));
 ---
 <Reading
@@ -24,6 +26,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
   topics={d.topics.map((t) => TOPICS[t])}
   lead={d.description}
   provenance={d.provenance}
+  dates={dates}
   status={d.status}
   toc={toc}
   locale="en"

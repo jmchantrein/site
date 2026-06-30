@@ -2,23 +2,38 @@
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import TopicIndex from "../../components/TopicIndex.astro";
-import { serieNumbers } from "../../data/series";
+import { SERIES, courseUnits } from "../../data/series";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const cours = (await getCollection("cours", ({ data, id }) => !data.draft && !id.startsWith("en/")))
   .sort((a, b) => a.data.order - b.data.order);
-const nums = serieNumbers(cours);
-const items = cours.map((c) => ({
-  href: `${base}/cours/${c.id}/`,
-  title: c.data.title,
-  description: c.data.description,
-  topics: c.data.topics,
-  num: nums.get(c.id)?.num,
-  meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
-  tags: c.data.tags,
-  provenance: c.data.provenance,
-  status: c.data.status,
-}));
+// L'index liste les COURS (séries + cours autonomes), pas les modules : on
+// entre d'abord dans un cours, puis on atteint ses modules.
+const items = courseUnits(cours).map((u) => {
+  if (u.kind === "serie") {
+    const totalMin = u.modules.reduce((t, c) => t + (c.data.duration ?? 0), 0);
+    return {
+      href: `${base}/cours/serie/${u.serie}/`,
+      title: SERIES[u.serie].fr,
+      description: SERIES[u.serie].desc.fr,
+      topics: [...new Set(u.modules.flatMap((c) => c.data.topics))],
+      meta: `${u.modules.length} modules${totalMin ? ` · ≈ ${totalMin} min` : ""}`,
+      tags: [],
+      provenance: SERIES[u.serie].prov.fr,
+    };
+  }
+  const c = u.entry;
+  return {
+    href: `${base}/cours/${c.id}/`,
+    title: c.data.title,
+    description: c.data.description,
+    topics: c.data.topics,
+    meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
+    tags: c.data.tags,
+    provenance: c.data.provenance,
+    status: c.data.status,
+  };
+});
 ---
 <Base title="Cours" description="Les cours, classés par thématique : un parcours progressif, du fondamental à l'avancé." altUrl={`${base}/en/cours/`}>
   <main id="main" class="wrap">

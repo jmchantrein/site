@@ -2,23 +2,38 @@
 import { getCollection } from "astro:content";
 import Base from "../../../layouts/Base.astro";
 import TopicIndex from "../../../components/TopicIndex.astro";
-import { serieNumbers } from "../../../data/series";
+import { SERIES, courseUnits } from "../../../data/series";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const cours = (await getCollection("cours", ({ data, id }) => !data.draft && id.startsWith("en/")))
   .sort((a, b) => a.data.order - b.data.order);
-const nums = serieNumbers(cours);
-const items = cours.map((c) => ({
-  href: `${base}/en/cours/${c.id.slice(3)}/`,
-  title: c.data.title,
-  description: c.data.description,
-  topics: c.data.topics,
-  num: nums.get(c.id)?.num,
-  meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
-  tags: c.data.tags,
-  provenance: c.data.provenance,
-  status: c.data.status,
-}));
+// The index lists COURSES (series + standalone), not modules: you enter a
+// course first, then reach its modules.
+const items = courseUnits(cours).map((u) => {
+  if (u.kind === "serie") {
+    const totalMin = u.modules.reduce((t, c) => t + (c.data.duration ?? 0), 0);
+    return {
+      href: `${base}/en/cours/serie/${u.serie}/`,
+      title: SERIES[u.serie].en,
+      description: SERIES[u.serie].desc.en,
+      topics: [...new Set(u.modules.flatMap((c) => c.data.topics))],
+      meta: `${u.modules.length} modules${totalMin ? ` · ≈ ${totalMin} min` : ""}`,
+      tags: [],
+      provenance: SERIES[u.serie].prov.en,
+    };
+  }
+  const c = u.entry;
+  return {
+    href: `${base}/en/cours/${c.id.slice(3)}/`,
+    title: c.data.title,
+    description: c.data.description,
+    topics: c.data.topics,
+    meta: c.data.duration ? `≈ ${c.data.duration} min` : undefined,
+    tags: c.data.tags,
+    provenance: c.data.provenance,
+    status: c.data.status,
+  };
+});
 ---
 <Base title="Courses" description="Technical courses organised by topic: a progressive path, from fundamentals to advanced." locale="en" altUrl={`${base}/cours/`}>
   <main id="main" class="wrap">
