@@ -1,0 +1,128 @@
+---
+title: "Le réseau Docker"
+description: "Les réseaux Docker — bridge, host, none, réseaux définis par l'utilisateur — la résolution DNS par nom de conteneur, la publication de ports et l'isolation par réseau."
+order: 3.5
+serie: docker
+topics: [linux]
+duration: 20
+badge: "Fondations"
+tags: [docker, réseau, bridge, DNS, ports]
+terminal: false
+provenance:
+  by: ai
+  reviewedBy: human
+  model: "Claude Opus 4.x"
+---
+
+## Introduction
+
+Un conteneur isolé ne sert à rien : il doit **dialoguer** — avec ses voisins, avec l'hôte, avec l'extérieur. Docker bâtit son modèle réseau sur des primitives du noyau Linux (**espaces de noms réseau**, paires **veth**, **ponts**, **NAT** iptables). Ce module montre comment les conteneurs communiquent, et pourquoi un **réseau défini par l'utilisateur** change tout : c'est la clé de la transition `--link` → résolution par nom rencontrée au [TP](../tp-docker-wordpress/).
+
+<Note title="Prérequis et complément">
+  On suppose les notions d'image et de conteneur. Pour le détail du NAT (translation d'adresses, masquage), ce module se complète bien avec [Le masquage d'adresse IP](../masquage-ip/).
+</Note>
+
+## Les trois réseaux par défaut
+
+À l'installation, `docker network ls` montre déjà trois réseaux :
+
+| Réseau | Isolation | Accès | Quand l'utiliser |
+|---|---|---|---|
+| **bridge** (défaut) | espace de noms réseau dédié, IP privée, **sortie NATée** | entrée via `-p` | cas général |
+| **host** | **partage** la pile réseau de l'hôte — aucune isolation réseau | les ports s'ouvrent **directement** sur l'hôte, pas de `-p` | performance / cas particulier (**Linux uniquement**) |
+| **none** | aucune interface (hormis `lo`) | aucun | conteneur volontairement **sans réseau** |
+
+Sur le réseau **bridge** par défaut, chaque conteneur reçoit une **paire veth** raccordée au pont `docker0`, une **IP privée** (typiquement `172.17.x.x`), et son trafic **sortant** est **masqué (NAT)** vers le réseau de l'hôte. Le trafic **entrant**, lui, exige une publication de port (`-p`).
+
+<Note type="warning" title="host : puissant, mais à manier avec soin">
+  En mode `host`, le conteneur **n'est plus isolé sur le réseau** : il voit et occupe directement les ports de l'hôte. Pratique pour la performance ou certains outils réseau, mais on perd l'isolation — à réserver aux cas qui le justifient.
+</Note>
+
+## bridge par défaut vs réseau défini par l'utilisateur
+
+C'est **la** distinction à retenir, celle qui explique tout le reste :
+
+- Sur le réseau **bridge par défaut**, les conteneurs se joignent par **adresse IP**, mais il n'y a **aucune résolution de noms**. C'est précisément pourquoi il fallait l'option `--link` (aujourd'hui dépréciée) pour qu'un conteneur en désigne un autre par son nom.
+- Sur un **réseau défini par l'utilisateur** (créé avec `docker network create`), Docker fournit un **serveur DNS embarqué** (à l'adresse `127.0.0.11`) qui résout **automatiquement** les **noms de conteneurs** (et leurs alias réseau) vers la bonne IP. Plus besoin de `--link`.
+
+```bash
+docker network create app
+docker run -d  --network app --name db  mariadb
+docker run -it --network app --name web debian bash
+# Dans le conteneur web, le nom « db » se résout tout seul :
+getent hosts db      # → 172.18.0.2  db
+```
+
+<Note type="success" title="C'est ce que fait Docker Compose">
+  Compose crée pour vous un **réseau défini par l'utilisateur** et y attache tous les services. C'est pourquoi, au [TP (étape 6)](../tp-docker-wordpress/), Apache joint la base de données par le **nom du service** (`mysql_wordpress`) sans le moindre `--link` : la résolution DNS est automatique.
+</Note>
+
+## Publier des ports vers l'hôte
+
+Un conteneur sur le réseau bridge n'est **pas** joignable de l'extérieur tant qu'on n'a pas **publié** un port :
+
+- `-p 8080:80` crée une règle **DNAT** : le port 8080 de l'hôte est redirigé vers le port 80 du conteneur.
+- `-p 127.0.0.1:8080:80` **restreint** la publication à la **boucle locale** de l'hôte (aucun accès depuis le réseau).
+- `EXPOSE` dans le Dockerfile ne fait que **documenter** un port d'écoute : il **n'ouvre rien**.
+
+<Note type="danger" title="Docker contourne votre pare-feu">
+  Docker écrit **directement** ses règles iptables/nftables : `-p 0.0.0.0:5432:5432` **ouvre réellement** le port sur l'extérieur, même si UFW est censé le bloquer. Publiez sur `127.0.0.1` quand l'accès externe n'est pas voulu. Voir le module [erreurs à ne pas commettre](../docker-antipatterns/).
+</Note>
+
+## Segmenter : un réseau par service
+
+Rien n'oblige à tout mettre sur le même réseau — au contraire :
+
+- On ne place sur un même réseau que les conteneurs qui **doivent** se parler.
+- Un conteneur peut être attaché à **plusieurs** réseaux (`docker network connect`).
+- Exemple typique : un réseau `frontend` (le web, exposé) et un réseau `backend` (le web **et** la base) — la base n'est alors **jamais** joignable depuis l'extérieur. C'est l'esprit du TP, où le port de MySQL **n'est pas publié**.
+
+```bash
+docker network create frontend
+docker network create backend
+docker run -d --network backend  --name db   mariadb
+docker run -d --network frontend --name web  -p 80:80  mon_web
+docker network connect backend web    # web parle à db, db reste invisible de l'extérieur
+```
+
+## Au-delà d'une seule machine
+
+- **overlay** : un réseau virtuel qui s'étend sur **plusieurs hôtes** (encapsulation VXLAN). C'est le réseau des services **Docker Swarm** (cf. la partie Swarm du [TP](../tp-docker-wordpress/)) : deux conteneurs sur deux machines différentes communiquent comme s'ils étaient sur le même LAN.
+- **macvlan / ipvlan** : donnent au conteneur une adresse de **niveau 2** directement sur le réseau physique (le conteneur apparaît comme une machine à part entière sur le LAN). Usage avancé, pour des besoins d'intégration réseau spécifiques.
+
+## Sous le capot
+
+```bash
+docker network inspect app    # sous-réseau, passerelle, conteneurs connectés
+```
+
+- Chaque conteneur possède son **espace de noms réseau** ; une **paire veth** le relie au pont `docker0` (ou au pont du réseau défini par l'utilisateur).
+- La **sortie** vers l'extérieur est **masquée (NAT)** par une règle iptables `MASQUERADE` — exactement le mécanisme détaillé dans [Le masquage d'adresse IP](../masquage-ip/).
+- L'**entrée** publiée (`-p`) passe par une règle **DNAT** vers l'IP privée du conteneur.
+
+<Exercise id="dns-reseau" level={2}>
+  Montrez que la résolution par **nom** fonctionne sur un réseau défini par l'utilisateur, mais **pas** sur le bridge par défaut.
+
+  1. Sur un réseau défini par l'utilisateur, lancez deux conteneurs et faites en sorte que l'un joigne l'autre par son **nom**.
+  2. Recommencez sur le réseau **bridge par défaut** et observez la différence.
+
+  <Fragment slot="solution">
+    ```bash
+    # 1) Réseau défini par l'utilisateur : la résolution de noms fonctionne.
+    docker network create app
+    docker run -d  --network app --name db  alpine sleep infinity
+    docker run -it --network app --name web alpine sh
+    #   dans web :
+    getent hosts db        # → l'IP de db (DNS embarqué à 127.0.0.11)
+    ping -c1 db            # OK
+
+    # 2) Bridge par défaut : pas de résolution de noms.
+    docker run -d  --name db2  alpine sleep infinity
+    docker run -it --name web2 alpine sh
+    #   dans web2 :
+    getent hosts db2       # (rien) — il faudrait l'IP, ou l'option héritée --link
+    ```
+
+    Sur le réseau par défaut, seuls les **IP** fonctionnent ; le DNS par nom est une propriété des **réseaux définis par l'utilisateur**. D'où l'abandon de `--link` au profit de ces réseaux (et de Docker Compose, qui en crée un automatiquement).
+  </Fragment>
+</Exercise>

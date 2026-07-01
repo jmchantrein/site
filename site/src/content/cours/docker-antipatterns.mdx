@@ -1,0 +1,128 @@
+---
+title: "Docker : les erreurs à ne pas commettre"
+description: "Synthèse des anti-patterns Docker — sécurité, build, exploitation, données, réseau — et, pour chacun, quoi faire à la place."
+order: 6
+serie: docker
+topics: [linux]
+duration: 20
+badge: "Synthèse"
+tags: [docker, sécurité, anti-patterns, bonnes pratiques]
+terminal: false
+provenance:
+  by: ai
+  reviewedBy: human
+  model: "Claude Opus 4.x"
+---
+
+## Pourquoi cette section
+
+Au fil des modules précédents, nous avons rencontré des bonnes pratiques — et quelques **mauvaises**, parfois assumées à dessein pédagogique (le mot de passe en clair, le `setuid`, plusieurs processus dans un conteneur…). Cette page **rassemble en un seul endroit** les erreurs fondamentales, **y compris celles que le cours n'avait pas abordées**. Pour chacune : ce que l'on voit trop souvent, **pourquoi c'est grave**, et **quoi faire à la place**.
+
+<Note type="warning" title="À lire après le reste">
+  Cette synthèse suppose les notions des modules précédents (image, couche, conteneur, volume, réseau). Elle se lit aussi comme une **check-list** à relire avant toute mise en production.
+</Note>
+
+## Sécurité : ne pas désarmer l'isolation
+
+**Monter le socket Docker dans un conteneur.** `-v /var/run/docker.sock:/var/run/docker.sock` donne au conteneur le **contrôle total du démon** — donc, de fait, **root sur l'hôte** : il lui suffit de lancer un conteneur privilégié qui monte `/`. C'est l'une des évasions les plus courantes (et c'est pourquoi les bacs à sable comme play-with-docker tournent en *Docker-in-Docker*, pas avec le socket de l'hôte).
+
+**`--privileged` et `--cap-add ALL`.** `--privileged` retire l'essentiel de l'isolation (accès aux *devices*, à presque toutes les *capabilities*). On ne l'utilise quasiment jamais ; si un conteneur a besoin d'**une** capability précise, on l'ajoute **chirurgicalement** (`--cap-add NET_ADMIN`) et l'on retire le reste (`--cap-drop ALL`).
+
+**Être root dans le conteneur** (vu au [cours sur les bases](../docker-bases/)) : un `USER` non privilégié devrait être la norme, et le mode *rootless* du démon va plus loin.
+
+<Note type="danger" title="Secrets gravés dans l'image">
+  Un secret passé par `ENV` ou `ARG` **reste inscrit dans les couches** : `docker history --no-trunc` le révèle, et il voyage avec l'image sur le registre. **Notre propre TP en est coupable** : `ENV MYSQL_PASSWORD=tempo` finit dans l'image. En production : secrets **au runtime** (variables injectées au lancement, *Docker/Swarm secrets*, fichiers montés) ou, au build, `RUN --mount=type=secret` (BuildKit) — jamais en dur dans le Dockerfile.
+</Note>
+
+**Faire confiance à n'importe quelle image.** Une image tirée d'un registre inconnu peut tout contenir. Préférez les images **officielles** ou signées, **épinglez** par digest, et **scannez** vos images (`docker scout`, Trivy, Grype) avant de déployer.
+
+## Construire proprement
+
+**Casser le cache d'`apt`.** `RUN apt-get update` puis `RUN apt-get install …` dans **deux** instructions distinctes : le jour où vous ajoutez un paquet, Docker réutilise un `update` **mis en cache et périmé**, et installe des versions obsolètes. Mettez **toujours** `update && install` dans le **même** `RUN`.
+
+**Nettoyer dans une autre couche que celle qui salit.** Faire `rm -rf /var/lib/apt/lists/*` dans un `RUN` **postérieur** ne réduit en rien la taille : la couche précédente contient déjà ces fichiers, et une couche n'efface jamais le contenu de celle du dessous. Le nettoyage doit vivre dans **le même** `RUN` que l'installation.
+
+**`latest` en production.** `latest` est un tag mouvant : deux `pull` peuvent livrer deux images différentes. Pour la production, **épinglez** une version (`postgres:16.3`) ou, mieux, un **digest** (`postgres@sha256:…`) — la seule référence vraiment immuable.
+
+**`COPY . .` sans `.dockerignore`.** Vous envoyez alors tout le contexte au démon : `.git`, `node_modules`, fichiers de secrets, artefacts de build… Un `.dockerignore` (comme `.gitignore`) réduit le contexte, accélère le build et **évite de graver des secrets** par mégarde.
+
+**`ADD` quand `COPY` suffit.** `ADD` a des comportements surprenants : il **dézippe** automatiquement les archives tar locales et peut **télécharger** des URL. Utilisez `COPY` par défaut ; réservez `ADD` aux cas explicites et documentés.
+
+<Note type="warning" title="Pas de superflu dans l'image finale">
+  `vim`, `curl`, compilateurs… alourdissent l'image et **agrandissent la surface d'attaque**. Notre TP installe `vim` à dessein pédagogique ; en production, on s'en passe — et le [multistage build](../docker-images/) sert précisément à ne livrer que le nécessaire.
+</Note>
+
+## Faire tourner, vraiment
+
+<Note type="danger" title="Le problème de PID 1">
+  Le premier processus d'un conteneur (PID 1) a un rôle particulier : il doit **relayer les signaux** et **récolter les processus zombies**. Un `bash -c "…"`, un `sleep infinity` ou un serveur lancé sans soin **n'en font rien** : `docker stop` attend alors 10 s puis **tue brutalement** (SIGKILL), et les zombies s'accumulent. **Notre TP l'illustre** (`sleep infinity`, `mysqld_safe`). Remèdes : `docker run --init` (injecte *tini*), un vrai init léger, et la **forme *exec*** (`CMD ["nginx", "-g", "daemon off;"]`) pour que le binaire **soit** PID 1 et reçoive bien SIGTERM.
+</Note>
+
+**Écrire les logs dans des fichiers.** Un conteneur doit logger sur **stdout/stderr** : c'est ce que collecte `docker logs` et ce qu'attendent les agrégateurs. Écrire dans `/var/log/…` à l'intérieur du conteneur rend les journaux invisibles et **gonfle la couche d'écriture**. À l'inverse, le driver par défaut `json-file` n'est **pas borné** côté hôte : pensez à la **rotation** (`max-size`, `max-file`).
+
+**Ne pas limiter les ressources.** Sans `--memory` ni `--cpus`, un conteneur qui fuit peut **emporter tout l'hôte** (OOM, CPU saturé). En production, fixez des limites — et des politiques de redémarrage réfléchies, pas un `restart: always` aveugle.
+
+**Pas de sonde de santé.** Sans `HEALTHCHECK`, l'orchestrateur croit « sain » un conteneur qui a planté à l'intérieur. Et un `depends_on` **n'attend pas que le service soit prêt**, seulement qu'il soit démarré : couplez-le à une `condition: service_healthy`.
+
+<Note type="warning" title="Conteneurs : du bétail, pas des animaux de compagnie">
+  Se connecter en SSH dans un conteneur pour le « réparer » à la main, y appliquer des correctifs ponctuels, le conserver « parce qu'il est bien configuré » : c'est le traiter comme une VM. Un conteneur est **jetable** — on corrige l'**image** (ou le fichier Compose), puis on **recrée**. C'est tout l'intérêt de la reproductibilité.
+</Note>
+
+## Les données : ne rien perdre
+
+**Mettre des données durables dans la couche d'écriture.** Une base de données sans **volume**, et tout disparaît à la suppression du conteneur (vu à l'[étape 4 du TP](../tp-docker-wordpress/)). Données persistantes ⇒ **volume nommé** (ou *bind mount* maîtrisé).
+
+**Croire qu'un volume nommé est à l'abri.** Un volume **nommé mais inutilisé** peut tomber sous un `docker volume prune --all` ; le nommer ne dispense pas de **sauvegarder** (détails à l'[étape 4 du TP](../tp-docker-wordpress/)).
+
+## Réseau : ne pas s'exposer
+
+<Note type="danger" title="Docker contourne votre pare-feu">
+  Docker écrit **directement** ses propres règles iptables/nftables. Conséquence contre-intuitive : `-p 0.0.0.0:5432:5432` **ouvre réellement le port sur l'extérieur**, même si UFW est censé le bloquer — d'où des milliers de bases de données exposées par accident. Remèdes : publier sur la **boucle locale** (`-p 127.0.0.1:5432:5432`) quand l'accès externe n'est pas voulu, mettre le pare-feu en cohérence (par ex. *ufw-docker*), et ne publier que ce qui doit l'être.
+</Note>
+
+**Publier des ports inutiles.** Un service interne (une base, un cache) n'a pas à être joignable depuis l'hôte : laissez-le sur le **réseau du service**, sans `-p` (notre TP ne publie d'ailleurs **pas** le port de MySQL). Tout port publié est une porte ouverte.
+
+## Récapitulatif
+
+<Note type="success" title="La check-list avant la prod">
+  - Pas de `docker.sock` monté, pas de `--privileged` : isolation intacte.
+  - `USER` non privilégié ; secrets **au runtime**, jamais dans l'image.
+  - Images **officielles**, **épinglées** (digest), **scannées**.
+  - `update && install && clean` dans **un seul** `RUN` ; `.dockerignore` ; `COPY` plutôt qu'`ADD`.
+  - Un **PID 1** qui gère les signaux (`--init` / forme *exec*) ; logs sur **stdout** ; **limites** de ressources ; `HEALTHCHECK`.
+  - Données dans des **volumes** (et **sauvegardées**).
+  - Ne publier (`-p`) **que** le nécessaire, et **pas** sur `0.0.0.0` par défaut.
+</Note>
+
+<Exercise id="audit-dockerfile" level={2}>
+  Combien d'anti-patterns repérez-vous dans ce Dockerfile et sa commande de lancement ?
+
+  ```dockerfile
+  FROM ubuntu:latest
+  RUN apt-get update
+  RUN apt-get install -y mariadb-server curl vim
+  ENV DB_PASSWORD=supersecret
+  ADD https://example.com/app.tar.gz /opt/
+  COPY . /app
+  CMD bash -c "service mariadb start && /app/run.sh"
+  ```
+
+  ```bash
+  docker run -d --privileged -p 0.0.0.0:3306:3306 \
+    -v /var/run/docker.sock:/var/run/docker.sock mon_app
+  ```
+
+  <Fragment slot="solution">
+    Au moins neuf :
+
+    1. `FROM ubuntu:latest` — tag mouvant, non reproductible (épingler une version, ou un digest).
+    2. `apt-get update` et `install` dans **deux** `RUN` — cache périmé garanti.
+    3. Pas de `rm -rf /var/lib/apt/lists/*` — couche inutilement lourde.
+    4. `curl` et `vim` — superflus en production (surface d'attaque).
+    5. `ENV DB_PASSWORD=…` — secret **gravé** dans l'image (visible via `docker history`).
+    6. `ADD https://…` — préférer `COPY`, ou un `RUN … wget` maîtrisé ; `ADD` d'une URL est à proscrire.
+    7. `COPY . /app` sans `.dockerignore` — `.git`, secrets et déchets envoyés dans l'image.
+    8. `CMD bash -c "…"` — `bash` devient PID 1 (ne relaie pas SIGTERM), et l'on exécute deux services dans un même conteneur.
+    9. Au lancement : `--privileged`, port publié sur `0.0.0.0` **et** socket Docker monté — le trio gagnant de l'évasion et de l'exposition.
+  </Fragment>
+</Exercise>

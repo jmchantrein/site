@@ -175,7 +175,7 @@ Can we write this more cleanly? What are the best practices for writing a Docker
 ### Step 2: putting best practices in place
 
 <Note title="Multi-stage build">
-  In this lab we will not use the *multi-stage build* concept that will be presented to you in the best practices, but take the time to go look at and understand this concept.
+  In this lab we will not use the *multi-stage build* concept, now presented in the [Building Your Own Docker Images](../docker-images/) course (the "Multi-stage builds" section); but take the time to go look at it and understand it.
 </Note>
 
 #### A few constraints
@@ -415,6 +415,25 @@ RUN sed -i "s/bind-address/#bind-address/g" /etc/mysql/mariadb.conf.d/50-server.
 - Did you notice that during the WordPress installation, you could use the database service's name instead of the hostname? How is this possible? Go take a look at the `docker container inspect nom_du_conteneur_mysql` command.
 - Take a good look at all the [parameters](https://docs.docker.com/reference/compose-file/) you can set for your containers in the compose file; among the most interesting: `restart_policy`, `update_config`, `depends_on`, `restart`, `dns`... Among these options, two catch my attention: `deploy` and `overlay`, which only work when using Docker Swarm; we will look at these two commands later in the Docker Swarm part.
 
+<Note type="info" title="depends_on does not wait for the service to be ready">
+  Beware a classic pitfall: `depends_on` guarantees **start order**, not **readiness**. Compose does start `mysql_wordpress` before `apache_wordpress`, but it does not wait for MariaDB to **accept connections**; on the first launch the WordPress installer may therefore show up before the database is ready. The modern fix: declare a `HEALTHCHECK` on the database and **condition** the startup —
+
+  ```yaml
+  services:
+    mysql_wordpress:
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+        interval: 5s
+        retries: 10
+    apache_wordpress:
+      depends_on:
+        mysql_wordpress:
+          condition: service_healthy
+  ```
+
+  (Our solution sticks to the plain `depends_on`, enough here because the WordPress installation is manual and happens later.)
+</Note>
+
 You have reached the end of your learning path through Docker's fundamentals. It may have been long and difficult. It is now time for you to know that everything we just did by hand, other people have already done, much better, and for our use. We are therefore now going to make use of their work; but we now know which mechanisms the official images we are going to use will employ (environment variables, bootstrap file, setuid, volume). There is no shadow of magic left in Docker; we now know, broadly, how it all fits together.
 
 <Exercise id="solution-etape-6" level={3}>
@@ -428,6 +447,15 @@ You have reached the end of your learning path through Docker's fundamentals. It
     During the WordPress install, the database host is `mysql_wordpress` (the service name): no `--link` is needed.
   </Fragment>
 </Exercise>
+
+<Note type="info" title="Modern Compose: beyond the bare minimum">
+  Our file stays minimal, but Compose v2 has what it takes to scale up:
+
+  - an **`.env`** file (loaded automatically) and `${VARIABLE}` **interpolation** in the compose file, to stop hard-coding values;
+  - **profiles** (`profiles:`) to enable certain services only on demand (e.g. a debug service);
+  - **override** files (`compose.override.yaml`) to adapt dev/prod configuration without touching the base file;
+  - **`docker compose watch`**, which re-syncs the code into the container on every save (fast development loop).
+</Note>
 
 ### Step 7: a microservices architecture described in a compose file provided by the community
 
@@ -554,6 +582,10 @@ for ((i=1;i<10;i++)); do docker service ps service_${i}; done
 ### An introduction to Docker Swarm
 
 The part below is an introduction to Docker Swarm available as a course on the [play-with-docker](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/_posts/2017-01-28-swarm-stack-intro.markdown) GitHub repository. As this course is under the [Apache 2](https://github.com/play-with-docker/play-with-docker.github.io/blob/master/LICENSE) license, and in order not to reinvent the wheel, I present here a translation of the original course. To put this course into practice, the easiest way is either to use the official English version [online](http://training.play-with-docker.com/swarm-stack-intro/), or to follow this version using the [play-with-docker](https://labs.play-with-docker.com) website.
+
+<Note type="warning" title="Dated tutorial (2017) — adapt as needed">
+  What follows is a **faithful translation** of a 2017 tutorial, kept for its pedagogical value. But the `docker/example-voting-app` repository has changed: its current `docker-stack.yml` **no longer matches** the images and outputs shown here (`postgres:9.4`, `…examplevotingapp_*:before` are obsolete). Follow the **logic** (deploy a multi-service stack, scale it, update it), not the exact versions; if anything differs, trust the `README` of the repository you clone.
+</Note>
 
 #### Goal
 
@@ -729,6 +761,10 @@ We notice that this microservice was interrupted for 2 seconds and that there ar
 - Deploy your microservices architecture with `docker stack`.
 - Scale your Apache microservice (2 replicas).
 - Check that your service works correctly.
+
+<Note type="danger" title="Bind mounts and a multi-node cluster">
+  Step 8 persists data through **bind mounts** to `$HOME` (`source_code_wordpress`, `data_wordpress`). But a bind mount is **node-local**: on a Swarm of several machines, the code and the database only exist on the node where you created them, and **spreading Apache across several nodes** breaks consistency (each replica would see a different — possibly empty — disk). For a real cluster you need either to **constrain placement** of stateful services to a specific node (`deploy.placement.constraints`), or **shared storage** (an NFS/cluster volume, or a managed database). On play-with-docker, therefore, keep stateful services to a **single-node** demonstration.
+</Note>
 
 #### A few questions and remarks
 

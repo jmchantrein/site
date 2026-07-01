@@ -33,10 +33,10 @@ La machine virtuelle (*virtual machine*, abrégée VM) :
 
 - une machine virtuelle est une machine **émulée** par un logiciel ;
 - le logiciel d'émulation simule la présence de ressources matérielles telles que la mémoire, le(s) processeur(s), le(s) disque(s) dur(s) : il est capable de simuler un ordinateur complet ;
-- on appelle **hyperviseur** le logiciel ayant pour mission de gérer les VM (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen, Proxmox…) ;
+- on appelle **hyperviseur** le logiciel ayant pour mission de gérer les VM (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, lui, est une **plateforme de gestion** bâtie sur KVM et LXC) ;
 - il y a 2 types d'hyperviseurs :
-  - **type 1** (*bare metal*, natif) : l'hyperviseur est l'OS, meilleure performance (Xen, QEMU/KVM) ;
-  - **type 2** (*hosted*) : hyperviseur installé au-dessus d'un OS (VirtualBox).
+  - **type 1** (*bare metal*, natif) : l'hyperviseur s'exécute **directement sur le matériel**, meilleure performance (VMware ESXi, Xen, Hyper-V ; KVM, intégré au noyau Linux, en est un cas particulier) ;
+  - **type 2** (*hosted*) : hyperviseur installé **au-dessus d'un OS hôte** (VirtualBox, VMware Workstation ; QEMU employé seul relève plutôt de l'émulation en espace utilisateur).
 
 <ArchiStack kind="vm" />
 
@@ -45,7 +45,7 @@ La machine virtuelle (*virtual machine*, abrégée VM) :
   - Isolation des applications.
   - Mutualisation des ressources (plusieurs VM sur une seule machine réelle).
   - Ressources à la demande (mémoire, CPU modifiables).
-  - Démarrage plus rapide qu'une machine réelle.
+  - Démarrage et **provisionnement** rapides (clonage, instantanés ; pas d'attente du POST matériel).
 </Note>
 
 <Note type="warning" title="Inconvénients du modèle VM">
@@ -76,7 +76,7 @@ La conteneurisation :
   - Isolation des applications (plus ou moins).
   - Mutualisation des ressources, ressources à la demande.
   - Démarrage quasiment aussi rapide qu'une application native.
-  - Contrairement aux VM, pas de *overhead* : économie des ressources matérielles.
+  - Contrairement aux VM, *overhead* **négligeable** (pas de noyau ni de matériel émulé à faire tourner) : économie des ressources matérielles.
 </Note>
 
 <Note type="warning" title="Inconvénients du modèle conteneur">

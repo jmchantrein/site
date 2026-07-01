@@ -33,10 +33,10 @@ The virtual machine (abbreviated VM):
 
 - a virtual machine is a machine **emulated** by software;
 - the emulation software simulates the presence of hardware resources such as memory, processor(s), hard drive(s): it is able to simulate a complete computer;
-- the software in charge of managing VMs is called a **hypervisor** (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen, Proxmox...);
+- the software in charge of managing VMs is called a **hypervisor** (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, for its part, is a **management platform** built on KVM and LXC);
 - there are 2 types of hypervisors:
-  - **type 1** (*bare metal*, native): the hypervisor is the OS, best performance (Xen, QEMU/KVM);
-  - **type 2** (*hosted*): hypervisor installed on top of an OS (VirtualBox).
+  - **type 1** (*bare metal*, native): the hypervisor runs **directly on the hardware**, best performance (VMware ESXi, Xen, Hyper-V ; KVM, built into the Linux kernel, is a special case);
+  - **type 2** (*hosted*): hypervisor installed **on top of a host OS** (VirtualBox, VMware Workstation ; QEMU used on its own is closer to user-space emulation).
 
 <ArchiStack kind="vm" />
 
@@ -45,7 +45,7 @@ The virtual machine (abbreviated VM):
   - Application isolation.
   - Resource pooling (several VMs on a single real machine).
   - On-demand resources (adjustable memory, CPU).
-  - Faster startup than a real machine.
+  - Fast startup and **provisioning** (cloning, snapshots; no waiting for the hardware POST).
 </Note>
 
 <Note type="warning" title="Drawbacks of the VM model">
@@ -76,7 +76,7 @@ Containerization:
   - Application isolation (more or less).
   - Resource pooling, on-demand resources.
   - Startup almost as fast as a native application.
-  - Unlike VMs, no overhead: savings on hardware resources.
+  - Unlike VMs, **negligible** overhead (no kernel or emulated hardware to run): savings on hardware resources.
 </Note>
 
 <Note type="warning" title="Drawbacks of the container model">
