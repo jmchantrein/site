@@ -466,6 +466,10 @@ Vous êtes arrivé au bout de votre chemin d'apprentissage des fondamentaux de D
 
 <CodeFile path="tp-docker-wordpress/7_wordpress_official_stack/stack_wordpress.yml" lang="yaml" />
 
+<Note title="Image non épinglée : normal ici, à éviter en production">
+  Cet exemple officiel utilise `image: wordpress` **sans tag** (donc `latest`). On le laisse **tel quel** : c'est justement l'intérêt de reprendre le fichier de la communauté. Mais rappelez-vous le conseil de l'étape 2 — pour une **production**, on épingle une version (par ex. `wordpress:6`) ou, mieux, un digest, afin que le service reste reproductible.
+</Note>
+
 - Exécutez le service, observez les logs, testez le service.
 
 #### Quelques questions, remarques
