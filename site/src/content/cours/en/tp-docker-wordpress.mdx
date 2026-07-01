@@ -466,6 +466,10 @@ You have reached the end of your learning path through Docker's fundamentals. It
 
 <CodeFile path="tp-docker-wordpress/7_wordpress_official_stack/stack_wordpress.yml" lang="yaml" />
 
+<Note title="Unpinned image: fine here, avoid in production">
+  This official example uses `image: wordpress` **untagged** (so `latest`). We keep it **as-is**: that is precisely the point of reusing the community file. But remember the advice from step 2 — for **production**, pin a version (e.g. `wordpress:6`) or, better, a digest, so the service stays reproducible.
+</Note>
+
 - Run the service, watch the logs, test the service.
 
 #### A few questions and remarks
