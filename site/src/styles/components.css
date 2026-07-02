@@ -399,7 +399,7 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 
 /* RAIL DE LARGEUR — bord droit du contenu : glisser = largeur du site,
    clic = défaut, flèches au clavier (site.js · wireWidthGrip). */
-.width-rail { position: fixed; top: 0; bottom: 0; width: 18px; z-index: 90; cursor: ew-resize; touch-action: none; }
+.width-rail { position: fixed; top: 0; bottom: 0; width: 18px; z-index: var(--z-rail); cursor: ew-resize; touch-action: none; }
 .width-rail::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%);
   background: color-mix(in srgb, var(--color-border) 75%, transparent); border-radius: 3px;
@@ -435,7 +435,10 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
   overflow: hidden; box-shadow: var(--shadow-2);
   height: calc(100vh - 160px);
 }
-.course__aside iframe[data-term-frame] { width: 100%; flex: 1; min-height: 0; border: 0; background: #111; display: block; }
+/* Iframe de terminal — définition UNIQUE, partagée avec la fenêtre du dock
+   (dock.css n'ajuste que sa min-height). */
+iframe[data-term-frame] { width: 100%; flex: 1; border: 0; background: var(--term-bg); display: block; }
+.course__aside iframe[data-term-frame] { min-height: 0; }
 .course__aside .dockwin__framenote, .course__aside .dockwin__help { color: var(--term-dim); }
 
 /* Terminal déplacé à gauche (drag) */
@@ -477,8 +480,8 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 
 /* Élément en cours de drag : il suit le curseur (transform posé en JS). */
 .course__aside[data-dragging="true"], .course__reading[data-dragging="true"] {
-  z-index: 60;
-  box-shadow: 0 24px 64px rgba(2, 12, 20, 0.42);
+  z-index: var(--z-lift);
+  box-shadow: var(--shadow-float);
   opacity: 0.97; cursor: grabbing; pointer-events: none;
 }
 .course.is-dragging, .course.is-dragging * { cursor: grabbing !important; }
@@ -627,7 +630,7 @@ html[data-motion="off"] .slides__track { transition: none; }
 .slides__tool[aria-pressed="true"] { background: var(--color-accent-weak); border-color: var(--color-accent); color: var(--color-accent-text); }
 .slides__tool svg { width: 17px; height: 17px; }
 /* Vue étendue : pop-up centré au-dessus de tous les îlots (overlay assombri) */
-.slides--wide { position: fixed; inset: 4vh 4vw; z-index: 320; max-width: none; width: auto; height: 92vh; display: flex; flex-direction: column; box-shadow: 0 0 0 100vmax rgba(2, 12, 20, 0.62), 0 30px 80px rgba(2, 12, 20, 0.5); }
+.slides--wide { position: fixed; inset: 4vh 4vw; z-index: var(--z-popup); max-width: none; width: auto; height: 92vh; display: flex; flex-direction: column; box-shadow: 0 0 0 100vmax rgba(2, 12, 20, 0.62), 0 30px 80px rgba(2, 12, 20, 0.5); }
 .slides--wide .slides__viewport { flex: 1; min-height: 0; }
 .slides--wide .slides__track { height: 100%; }
 .slides--wide .slide { min-height: 0; height: 100%; overflow: auto; }
@@ -636,7 +639,7 @@ html[data-motion="off"] .slides__track { transition: none; }
 .slide--media iframe, .slide--media embed, .slide--media object, .slide--media .placeholder { width: 100%; height: min(58vh, 560px); border: 0; display: block; }
 .slides--wide .slide--media iframe, .slides--wide .slide--media embed, .slides--wide .slide--media object, .slides--wide .slide--media .placeholder { height: 100%; }
 /* Plein écran — repli CSS (fonctionne même quand l'API Fullscreen est bloquée) */
-.slides--fs { position: fixed; inset: 0; z-index: 340; max-width: none; width: auto; height: 100dvh; border-radius: 0; display: flex; flex-direction: column; background: var(--color-surface); }
+.slides--fs { position: fixed; inset: 0; z-index: var(--z-fullscreen); max-width: none; width: auto; height: 100dvh; border-radius: 0; display: flex; flex-direction: column; background: var(--color-surface); }
 .slides--fs .slides__viewport { flex: 1; min-height: 0; }
 .slides--fs .slides__track { height: 100%; }
 .slides--fs .slide { min-height: 0; height: 100%; overflow: auto; }
@@ -664,7 +667,7 @@ html[data-motion="off"] .slides__track { transition: none; }
 }
 
 /* Barre de progression de lecture (globale) — fil en haut, piste visible */
-.read-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 101; height: 4px; background: color-mix(in srgb, var(--color-border-strong) 50%, transparent); pointer-events: none; }
+.read-progress { position: fixed; top: 0; left: 0; right: 0; z-index: calc(var(--z-sticky) + 1); height: 4px; background: color-mix(in srgb, var(--color-border-strong) 50%, transparent); pointer-events: none; }
 .read-progress__bar { height: 100%; width: 0; background: var(--color-accent); transition: width 80ms linear; }
 html[data-motion="off"] .read-progress__bar { transition: none; }
 
@@ -681,10 +684,10 @@ h2:hover .h-anchor, h3:hover .h-anchor, .h-anchor:focus-visible { opacity: 1; }
 .h-anchor:hover { color: var(--color-accent-text); background: var(--color-accent-weak); }
 .h-anchor[data-copied="true"] { opacity: 1; color: var(--color-success); }
 @media (pointer: coarse) { .h-anchor { opacity: 0.55; } }
-@media print { .h-anchor { display: none; } }
+/* (impression : masqué par la liste du bloc @media print de base.css) */
 
 /* RECHERCHE LOCALE — palette Ctrl/Cmd+K, index généré au build (sans serveur) */
-.cmdk { position: fixed; inset: 0; z-index: 400; display: none; }
+.cmdk { position: fixed; inset: 0; z-index: var(--z-cmdk); display: none; }
 .cmdk[data-open="true"] { display: block; }
 .cmdk__backdrop { position: absolute; inset: 0; background: rgba(2, 12, 20, 0.55); }
 .cmdk__panel {
@@ -722,7 +725,7 @@ h2:hover .h-anchor, h3:hover .h-anchor, .h-anchor:focus-visible { opacity: 1; }
 .bypass__tool[aria-pressed="true"] { background: var(--color-accent-weak); border-color: var(--color-accent); color: var(--color-accent-text); }
 .bypass__tool svg { width: 17px; height: 17px; }
 .bypass__body { padding: var(--space-5); }
-.bypass--fs { position: fixed; inset: 0; z-index: 340; max-width: none; border-radius: 0; display: flex; flex-direction: column; }
+.bypass--fs { position: fixed; inset: 0; z-index: var(--z-fullscreen); max-width: none; border-radius: 0; display: flex; flex-direction: column; }
 .bypass--fs .bypass__body { flex: 1; min-height: 0; overflow: auto; }
 
 /* -----------------------------------------------------------------------------
@@ -748,3 +751,19 @@ h2:hover .h-anchor, h3:hover .h-anchor, .h-anchor:focus-visible { opacity: 1; }
 .stl__step.is-current a { color: var(--color-accent-text); font-weight: var(--weight-semibold); }
 .stl__num { font-family: var(--font-mono); font-size: var(--text-xs); }
 @media (max-width: 640px) { .stl__num { display: none; } }
+
+/* -----------------------------------------------------------------------------
+   ALERTE DE STOCKAGE — quota localStorage saturé (site.js · storageWarn).
+   Les saisies du lecteur ne se perdent jamais en silence : bandeau role=alert,
+   posé au-dessus de tout sauf de la palette Ctrl+K.
+   --------------------------------------------------------------------------- */
+.storage-warn {
+  position: fixed; left: 50%; bottom: var(--space-5); transform: translateX(-50%);
+  z-index: var(--z-drawer);
+  max-width: min(92vw, 46rem);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-warning-weak); color: var(--color-text-strong);
+  border: 1px solid var(--color-warning); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2); font-size: var(--text-sm);
+}
+@media print { .storage-warn { display: none; } }

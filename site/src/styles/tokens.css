@@ -55,6 +55,17 @@
   --term-warn:      #e3b341;  /* avertissement — 9,8:1 → AAA                          */
   --term-border:    #3a3a3a;
 
+  /* ---- ANNOTATIONS (surligneur + post-it) --------------------------------- */
+  /* Palette volontairement STABLE entre thèmes : les marques de l'apprenant
+     gardent la même identité de couleur quel que soit le thème (repère).
+     La couleur n'est jamais seule porteuse d'info (soulignement + post-it —
+     WCAG 1.4.1). La teinte pleine sert de fond dilué (color-mix) et de
+     pastille ; la teinte « line », plus foncée, de soulignement et de bord. */
+  --annot-amber: #f2b705;  --annot-amber-line: #c99300;
+  --annot-green: #2bbf6a;  --annot-green-line: #1c8f4d;
+  --annot-blue:  #3b9be0;  --annot-blue-line:  #1f6fae;
+  --annot-pink:  #e85aa0;  --annot-pink-line:  #b83b78;
+
   /* ---- TYPOGRAPHIE -------------------------------------------------------- */
   /* Familles pilotées par variables → l'exploration Tweaks réécrit ces 3 lignes. */
   --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;  /* titres : signalement / hiérarchie */
@@ -83,7 +94,7 @@
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* ---- ESPACEMENT (base 8px, segmentation des blocs) --------------------- */
+  /* ---- ESPACEMENT (base 4px, segmentation des blocs) --------------------- */
   --space-1: 0.25rem;  /*  4px */
   --space-2: 0.5rem;   /*  8px */
   --space-3: 0.75rem;  /* 12px */
@@ -106,6 +117,7 @@
   --radius-lg: 10px;
   --shadow-1: 0 1px 2px rgba(14, 20, 29, 0.06), 0 1px 3px rgba(14, 20, 29, 0.05);
   --shadow-2: 0 4px 14px rgba(14, 20, 29, 0.08);
+  --shadow-float: 0 24px 64px rgba(2, 12, 20, 0.42);  /* surface flottante (fenêtre du dock, panneau déplacé) */
 
   /* ---- FOCUS (WCAG 2.4.7 / 2.4.11 — toujours visible, ≥3:1) -------------- */
   --focus-ring: 3px solid var(--color-accent);
@@ -116,6 +128,25 @@
   --motion-base: 200ms;
   --motion-slow: 340ms;  /* apparitions douces (rail, révélations au survol) */
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* ---- PLANS (z-index) — échelle sémantique des surfaces superposées ------ */
+  /* Ordre garanti : élément soulevé < rail < chrome collant < infobulles <
+     menus < lien d'évitement < annotations < fenêtres flottantes < vue
+     étendue < plein écran < tiroirs a11y/paramètres (toujours atteignables,
+     même au-dessus du plein écran) < palette Ctrl+K. Les petits empilements
+     locaux (1 à 6) restent littéraux dans les composants. */
+  --z-lift:        60;  /* élément soulevé pendant un drag (panneau de cours) */
+  --z-rail:        90;  /* rail de largeur, bord de fenêtre                   */
+  --z-sticky:     100;  /* en-tête collant (+1 : fil de progression)          */
+  --z-tooltip:    120;  /* infobulles du chrome (+10 : celles du dock)        */
+  --z-menu:       160;  /* popovers du chrome (options du dock)               */
+  --z-skip:       200;  /* lien d'évitement (révélé au focus)                 */
+  --z-annot:      240;  /* rail d'annotations (+10 : barre de sélection)      */
+  --z-float:      300;  /* fenêtres flottantes du dock                        */
+  --z-popup:      320;  /* vue étendue du diaporama (overlay assombri)        */
+  --z-fullscreen: 340;  /* plein écran (diapo, bypass, fenêtre du dock)       */
+  --z-drawer:     360;  /* tiroirs a11y/paramètres (+1 : le panneau lui-même) */
+  --z-cmdk:       400;  /* palette Ctrl/Cmd+K — toujours au sommet            */
 }
 
 /* =============================================================================
@@ -140,13 +171,57 @@ html[data-contrast="high"][data-contrast="high"] {
   --color-accent-hover:  #07237a;
   --color-accent-weak:   #e4e9f7;
   --color-on-accent:     #ffffff;
-  --term-fg:             #f2f2f2;
-  --term-dim:            #c2c8cf;
+  /* Terminal : le fond reste --term-bg (#1a1a1a) ; encres poussées ≥7:1.     */
+  --term-fg:             #f2f2f2;  /* 15,5:1 sur --term-bg → AAA             */
+  --term-dim:            #c2c8cf;  /* 10,3:1 → AAA                           */
+  --term-prompt:         #a8ccff;  /* 10,6:1 → AAA                           */
+  --term-ok:             #9fe3ab;  /* 11,6:1 → AAA                           */
+  --term-warn:           #f0c95c;  /* 11:1 → AAA                             */
+  --term-border:         #6a6a6a;  /* bordure ~3,2:1 (non textuel : ≥3:1)    */
   --color-info:          #0a2f9c; --color-info-weak: #e7ebf8;
   --color-success:       #0f5224; --color-success-weak: #e3efe6;
   --color-warning:       #6e4700; --color-warning-weak: #f6efdc;
   --color-danger:        #8f1812; --color-danger-weak: #f8e7e5;
   --prov-ai:             #5a6573;  /* segment IA : gris foncé, visible sur blanc      */
+}
+
+/* Préférence système (prefers-contrast: more) — même modèle que le mouvement
+   réduit ci-dessous : la préférence de l'OS s'applique tant qu'aucun réglage
+   manuel n'est posé (le panneau a11y pose html[data-contrast="high"] ;
+   désactivé = attribut retiré, la préférence système reprend alors la main).
+   Sélecteur :not doublé à dessein : spécificité (0,2,1) > thèmes (0,1,1).
+   Contenu = DOUBLE EXACT du bloc manuel ci-dessus (CSS ne permet pas de
+   partager un bloc avec une @media) : toute modification se fait aux DEUX. */
+@media (prefers-contrast: more) {
+  html:not([data-contrast]):not([data-contrast]) {
+    color-scheme: light;
+    --color-bg:            #ffffff;
+    --color-surface:       #ffffff;
+    --color-surface-sunken:#eef1f5;
+    --color-text:          #000000;  /* 21:1                                   */
+    --color-text-strong:   #000000;
+    --color-text-muted:    #20262e;  /* ~15:1                                  */
+    --color-text-faint:    #2c333c;
+    --color-border:        #5a6573;
+    --color-border-strong: #2c333c;
+    --color-accent:        #0b3bd0;
+    --color-accent-text:   #0a2f9c;  /* ~10:1                                  */
+    --color-accent-hover:  #07237a;
+    --color-accent-weak:   #e4e9f7;
+    --color-on-accent:     #ffffff;
+    /* Terminal : le fond reste --term-bg (#1a1a1a) ; encres poussées ≥7:1.     */
+    --term-fg:             #f2f2f2;  /* 15,5:1 sur --term-bg → AAA             */
+    --term-dim:            #c2c8cf;  /* 10,3:1 → AAA                           */
+    --term-prompt:         #a8ccff;  /* 10,6:1 → AAA                           */
+    --term-ok:             #9fe3ab;  /* 11,6:1 → AAA                           */
+    --term-warn:           #f0c95c;  /* 11:1 → AAA                             */
+    --term-border:         #6a6a6a;  /* bordure ~3,2:1 (non textuel : ≥3:1)    */
+    --color-info:          #0a2f9c; --color-info-weak: #e7ebf8;
+    --color-success:       #0f5224; --color-success-weak: #e3efe6;
+    --color-warning:       #6e4700; --color-warning-weak: #f6efdc;
+    --color-danger:        #8f1812; --color-danger-weak: #f8e7e5;
+    --prov-ai:             #5a6573;  /* segment IA : gris foncé, visible sur blanc      */
+  }
 }
 
 /* =============================================================================
