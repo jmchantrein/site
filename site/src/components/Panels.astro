@@ -7,6 +7,39 @@
  * Le comportement (ouverture, persistance) est câblé par scripts/site.js.
  */
 import Icon from "./Icon.astro";
+
+interface Props {
+  locale?: "fr" | "en";
+}
+const { locale = "fr" } = Astro.props;
+/* Attributs (aria-label…) : localisés via la prop — le doublon data-lang ne
+   vaut que pour le contenu d'élément. */
+const T = {
+  fr: {
+    close: "Fermer le panneau",
+    scaleDown: "Réduire la taille du texte",
+    scaleUp: "Augmenter la taille du texte",
+    lead: "Interligne",
+    letter: "Espacement des lettres",
+    word: "Espacement des mots",
+    font: "Police de lecture",
+    theme: "Thème de couleurs",
+    width: "Largeur globale du site",
+    measure: "Largeur de la colonne de lecture",
+  },
+  en: {
+    close: "Close the panel",
+    scaleDown: "Decrease text size",
+    scaleUp: "Increase text size",
+    lead: "Line height",
+    letter: "Letter spacing",
+    word: "Word spacing",
+    font: "Reading font",
+    theme: "Color theme",
+    width: "Overall site width",
+    measure: "Reading column width",
+  },
+}[locale];
 ---
 <div class="a11y-overlay" data-a11y-overlay></div>
 
@@ -17,33 +50,33 @@ import Icon from "./Icon.astro";
       <h2 id="a11y-title"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></h2>
       <span class="sub">WCAG 1.4.12 / 2.3.3 / 1.4.6</span>
     </div>
-    <button class="a11y-close" data-a11y-close aria-label="Fermer le panneau">✕</button>
+    <button class="a11y-close" data-a11y-close aria-label={T.close}>✕</button>
   </div>
   <div class="a11y-panel__body">
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Taille du texte</span><span data-lang="en">Text size</span></span><span class="a11y-field__value" data-a11y-scaleval>100%</span></span>
       <div class="a11y-stepper">
-        <button data-a11y-scale="-1" aria-label="Réduire la taille du texte">A−</button>
+        <button data-a11y-scale="-1" aria-label={T.scaleDown}>A−</button>
         <output data-a11y-scaleout>100%</output>
-        <button data-a11y-scale="1" aria-label="Augmenter la taille du texte">A+</button>
+        <button data-a11y-scale="1" aria-label={T.scaleUp}>A+</button>
       </div>
     </div>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Interligne</span><span data-lang="en">Line height</span></span><span class="a11y-field__value" data-a11y-leadval>1.6</span></span>
-      <input class="a11y-range" type="range" min="1.4" max="2" step="0.05" data-a11y-lead aria-label="Interligne" />
+      <input class="a11y-range" type="range" min="1.4" max="2" step="0.05" data-a11y-lead aria-label={T.lead} />
       <p class="a11y-field__help"><span data-lang="fr">Seuil recommandé : 1,5× minimum.</span><span data-lang="en">Recommended threshold: at least 1.5×.</span></p>
     </div>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Espacement des lettres</span><span data-lang="en">Letter spacing</span></span><span class="a11y-field__value" data-a11y-letterval>0.00em</span></span>
-      <input class="a11y-range" type="range" min="0" max="0.12" step="0.01" data-a11y-letter aria-label="Espacement des lettres" />
+      <input class="a11y-range" type="range" min="0" max="0.12" step="0.01" data-a11y-letter aria-label={T.letter} />
     </div>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Espacement des mots</span><span data-lang="en">Word spacing</span></span><span class="a11y-field__value" data-a11y-wordval>0.00em</span></span>
-      <input class="a11y-range" type="range" min="0" max="0.16" step="0.01" data-a11y-word aria-label="Espacement des mots" />
+      <input class="a11y-range" type="range" min="0" max="0.16" step="0.01" data-a11y-word aria-label={T.word} />
       <div class="a11y-preview" aria-hidden="true"><p><span data-lang="fr">Un conteneur isole un processus et son système de fichiers.</span><span data-lang="en">A container isolates a process and its filesystem.</span></p></div>
     </div>
 
@@ -65,7 +98,7 @@ import Icon from "./Icon.astro";
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Police de lecture</span><span data-lang="en">Reading font</span></span>
-      <div class="a11y-seg" data-a11y-font role="group" aria-label="Police de lecture">
+      <div class="a11y-seg" data-a11y-font role="group" aria-label={T.font}>
         <button data-set-font="default"><span data-lang="fr">Défaut</span><span data-lang="en">Default</span></button>
         <button data-set-font="atkinson">Atkinson</button>
         <button data-set-font="dyslexic">OpenDyslexic</button>
@@ -87,13 +120,13 @@ import Icon from "./Icon.astro";
       <h2 id="set-title"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></h2>
       <span class="sub"><span data-lang="fr">apparence &amp; préférences</span><span data-lang="en">appearance &amp; preferences</span></span>
     </div>
-    <button class="a11y-close" data-settings-close aria-label="Fermer le panneau">✕</button>
+    <button class="a11y-close" data-settings-close aria-label={T.close}>✕</button>
   </div>
   <div class="a11y-panel__body">
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Thème de couleurs</span><span data-lang="en">Color theme</span></span>
-      <div class="a11y-themes" data-a11y-theme role="group" aria-label="Thème de couleurs">
+      <div class="a11y-themes" data-a11y-theme role="group" aria-label={T.theme}>
         <button data-set-theme="abysse" type="button"><span class="sw" style="background:linear-gradient(135deg,#0a1822 50%,#6fc7e6 50%)"></span><span data-lang="fr">Abysse</span><span data-lang="en">Abyss</span></button>
         <button data-set-theme="marine" type="button"><span class="sw" style="background:linear-gradient(135deg,#e9f0f3 50%,#0b5067 50%)"></span>Marine</button>
         <button data-set-theme="ardoise" type="button"><span class="sw" style="background:linear-gradient(135deg,#f4f6f9 50%,#1e40af 50%)"></span>Ardoise</button>
@@ -112,13 +145,13 @@ import Icon from "./Icon.astro";
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value" data-a11y-widthval>72 rem</span></span>
-      <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label="Largeur globale du site" />
+      <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label={T.width} />
       <p class="a11y-field__help"><span data-lang="fr">De compact à quasi pleine largeur (borné à la fenêtre).</span><span data-lang="en">From compact to nearly full width (capped to the window).</span></p>
     </div>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Largeur de la colonne de lecture</span><span data-lang="en">Reading column width</span></span><span class="a11y-field__value" data-a11y-measureval>66 ch</span></span>
-      <input class="a11y-range" type="range" min="56" max="96" step="2" data-a11y-measure aria-label="Largeur de la colonne de lecture" />
+      <input class="a11y-range" type="range" min="56" max="96" step="2" data-a11y-measure aria-label={T.measure} />
       <p class="a11y-field__help"><span data-lang="fr">En caractères par ligne — 66 est le défaut typographique, augmentez pour exploiter l'écran.</span><span data-lang="en">In characters per line — 66 is the typographic default; increase to use more of the screen.</span></p>
     </div>
 

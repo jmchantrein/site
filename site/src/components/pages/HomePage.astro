@@ -66,7 +66,7 @@ const featuredArticle = !a0 ? null : {
         <a class="btn btn--ghost" href={`${base}/systeme/`}><span data-lang="fr">Voir le système de design</span><span data-lang="en">See the design system</span></a>
       </div>
 
-      <div class="principles" aria-label="Principes du cadre">
+      <div class="principles" aria-label={locale === "en" ? "Framework principles" : "Principes du cadre"}>
         <div class="principle">
           <h3><span data-lang="fr">Colonne ≤ 66 caractères</span><span data-lang="en">≤ 66-character column</span></h3>
           <p><span data-lang="fr">La longueur de ligne optimale soutient le suivi visuel.</span><span data-lang="en">Optimal line length supports visual tracking.</span> <code>max-width: 66ch</code></p>

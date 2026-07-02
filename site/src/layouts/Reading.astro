@@ -73,8 +73,8 @@ const dateLine = [pub, upd].filter(Boolean).join(" · ");
         {dateLine && <span class="reading-date">{dateLine}</span>}
       </div>
       {topics.length > 0 && (
-        <ul class="article-tags" aria-label="Thématiques">
-          {topics.length > 1 && <li class="multi">↔ {topics.length} thématiques</li>}
+        <ul class="article-tags" aria-label={locale === "en" ? "Topics" : "Thématiques"}>
+          {topics.length > 1 && <li class="multi">↔ {topics.length} <span data-lang="fr">thématiques</span><span data-lang="en">topics</span></li>}
           {topics.map((t) => <li>{t}</li>)}
         </ul>
       )}

@@ -11,18 +11,23 @@
  *   </Bypass>
  */
 import Icon from "./Icon.astro";
+import { pageLocale } from "../lib/locale";
 
 interface Props {
   /** Nom de l'application affiché dans le chapeau. */
   title: string;
 }
 const { title } = Astro.props;
+const T = {
+  fr: { region: `Application interactive : ${title}`, fs: "Plein écran" },
+  en: { region: `Interactive application: ${title}`, fs: "Full screen" },
+}[pageLocale(Astro.url)];
 ---
-<section class="bypass" data-bypass aria-label={`Application interactive : ${title}`}>
+<section class="bypass" data-bypass aria-label={T.region}>
   <div class="bypass__head">
     <span class="bypass__tag"><Icon name="zap" /> bypass</span>
     <span class="bypass__title">{title}</span>
-    <button class="bypass__tool" data-bypass-fs type="button" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+    <button class="bypass__tool" data-bypass-fs type="button" aria-pressed="false" aria-label={T.fs} title={T.fs}>
       <Icon name="expand" />
     </button>
   </div>

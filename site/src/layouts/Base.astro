@@ -48,6 +48,17 @@ interface Props {
 const { title, description, progress = false, locale = "fr", altUrl } = Astro.props;
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+/* Adresses absolues pour canonical / hreflang / Open Graph. */
+const canonical = new URL(path, Astro.site).href;
+const altAbs = altUrl ? new URL(altUrl, Astro.site).href : undefined;
+/* x-default = la version française (langue par défaut du site). */
+const frAbs = locale === "fr" ? canonical : altAbs;
+/* Attributs du chrome (aria-label…) : localisés via la prop — le doublon
+   data-lang ne vaut que pour le contenu d'élément. */
+const A11Y = {
+  fr: { progress: "Progression de lecture", nav: "Navigation principale", search: "Rechercher (Ctrl+K)" },
+  en: { progress: "Reading progress", nav: "Main navigation", search: "Search (Ctrl+K)" },
+}[locale];
 const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const nav = [
   { href: `${base}/`, fr: "Accueil", en: "Home" },
@@ -84,11 +95,27 @@ const isCurrent = (href: string) =>
     <title>{title} — Site Astro</title>
     {description && <meta name="description" content={description} />}
     <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    {/* Le thème réel suit la préférence système (cf. anti-FOUC) : la couleur
+        de la barre du navigateur suit la même logique — Marine / Abysse. */}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e9f0f3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1a26" />
+    <link rel="canonical" href={canonical} />
+    {altAbs && <link rel="alternate" hreflang={locale === "fr" ? "en" : "fr"} href={altAbs} />}
+    {altAbs && <link rel="alternate" hreflang={locale} href={canonical} />}
+    {frAbs && altAbs && <link rel="alternate" hreflang="x-default" href={frAbs} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Site Astro" />
+    <meta property="og:locale" content={locale === "en" ? "en_US" : "fr_FR"} />
+    {altAbs && <meta property="og:locale:alternate" content={locale === "en" ? "fr_FR" : "en_US"} />}
   </head>
   <body>
     <a class="skip-link" href="#main"><span data-lang="fr">Aller au contenu</span><span data-lang="en">Skip to content</span></a>
     {progress && (
-      <div class="read-progress" role="progressbar" aria-label="Progression de lecture" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="read-progress" role="progressbar" aria-label={A11Y.progress} aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div class="read-progress__bar" data-read-progress></div>
       </div>
     )}
@@ -99,14 +126,14 @@ const isCurrent = (href: string) =>
           <span class="brand__mark" aria-hidden="true">$_</span>
           <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en">teaching framework</small></span>
         </a>
-        <nav class="site-nav" aria-label="Navigation principale">
+        <nav class="site-nav" aria-label={A11Y.nav}>
           {nav.map((item) => (
             <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
               <span data-lang="fr">{item.fr}</span><span data-lang="en">{item.en}</span>
             </a>
           ))}
         </nav>
-        <Dock />
+        <Dock locale={locale} />
         <div class="header-utils">
           {altUrl && (
             <a class="util-btn lang-toggle" href={altUrl} aria-label={locale === "fr" ? "Read this page in English" : "Lire cette page en français"}>
@@ -119,7 +146,7 @@ const isCurrent = (href: string) =>
             <span class="annot-count" data-annot-count aria-hidden="true">0</span>
             <span class="util-btn__label"><span data-lang="fr">Mes notes</span><span data-lang="en">My notes</span></span>
           </button>
-          <button class="util-btn util-btn--icon" data-search-trigger type="button" aria-label="Rechercher (Ctrl+K)">
+          <button class="util-btn util-btn--icon" data-search-trigger type="button" aria-label={A11Y.search}>
             <Icon name="search" class="util-btn__icon" />
             <span class="util-btn__label"><span data-lang="fr">Rechercher</span><span data-lang="en">Search</span> <kbd>Ctrl K</kbd></span>
           </button>
@@ -149,7 +176,7 @@ const isCurrent = (href: string) =>
       </div>
     </footer>
 
-    <Panels />
+    <Panels locale={locale} />
     <script src="../scripts/site.js"></script>
     <script src="../scripts/annotate.js"></script>
     <script src="../scripts/dock.js"></script>
