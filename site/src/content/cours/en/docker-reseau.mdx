@@ -1,18 +1,13 @@
 ---
 title: "Docker Networking"
 description: "Docker networks — bridge, host, none, user-defined networks — DNS resolution by container name, port publishing and per-network isolation."
-order: 3.5
+order: 4
 serie: docker
 topics: [linux]
 duration: 20
 badge: "Foundations"
 tags: [docker, networking, bridge, DNS, ports]
 terminal: false
-provenance:
-  by: ai
-  reviewedBy: human
-  model: "Claude Opus 4.x"
-  translated: ai
 ---
 
 ## Introduction
@@ -20,7 +15,7 @@ provenance:
 An isolated container is useless: it must **talk** — to its neighbours, to the host, to the outside world. Docker builds its networking model on Linux kernel primitives (**network namespaces**, **veth** pairs, **bridges**, iptables **NAT**). This module shows how containers communicate, and why a **user-defined network** changes everything: it is the key to the `--link` → name-resolution transition met in the [lab](../tp-docker-wordpress/).
 
 <Note title="Prerequisites and companion">
-  We assume the notions of image and container. For the details of NAT (address translation, masquerading), this module pairs well with [IP address masking](../masquage-ip/).
+  We assume the notions of image and container, as well as the basics of IP addressing (CIDR, address translation).
 </Note>
 
 ## The three default networks
@@ -98,7 +93,7 @@ docker network inspect app    # subnet, gateway, connected containers
 ```
 
 - Each container has its own **network namespace**; a **veth pair** wires it to the `docker0` bridge (or to the user-defined network's bridge).
-- **Egress** to the outside is **masqueraded (NAT)** by an iptables `MASQUERADE` rule — exactly the mechanism detailed in [IP address masking](../masquage-ip/).
+- **Egress** to the outside is **masqueraded (NAT)** by an iptables `MASQUERADE` rule: the container's private address is replaced by the host's on the way out.
 - Published **ingress** (`-p`) goes through a **DNAT** rule to the container's private IP.
 
 <Exercise id="dns-reseau" level={2}>
