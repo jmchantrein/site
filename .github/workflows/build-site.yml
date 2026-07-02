@@ -1,0 +1,34 @@
+# Build de garde du site sur les branches de travail : `npm run build` valide
+# notamment l'existence des fichiers affichés par <CodeFile> (le composant
+# casse le build si un chemin de corrigé manque) et le schéma des contenus.
+# Complète test-solutions.yml (qui ne se déclenche pas sur les .mdx) et
+# pages.yml (qui ne construit que main).
+name: Construire le site (garde)
+
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/build-site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Installer les dépendances
+        run: npm ci
+        working-directory: site
+      - name: Construire le site
+        run: npm run build
+        working-directory: site

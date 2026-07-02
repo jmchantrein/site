@@ -16,7 +16,7 @@ npm run build   # production → dist/ (servi sous /site/ — GitHub Pages)
 | Couche | Où | Rôle |
 |---|---|---|
 | 1 · Tokens | `src/styles/tokens.css` | Couleurs (ratios WCAG annotés), typo, espacement, largeurs. Modifier ici → tout le site suit. |
-| 1bis · Thèmes | `src/styles/themes.css` | 5 thèmes qui ne redéfinissent **que** les tokens couleur (Abysse sombre par défaut). |
+| 1bis · Thèmes | `src/styles/themes.css` | 5 thèmes qui ne redéfinissent **que** les tokens couleur (défaut : la préférence système — Marine en clair, Abysse en sombre). |
 | 2 · Composants | `src/components/`, `src/styles/components.css` | Composants contraints qui encodent les principes (le bon usage est automatique). |
 | 3 · Gabarits | `src/layouts/` | Chrome (en-tête, tiroirs, pied) et mise en page de lecture. |
 | 4 · Contenu | `src/content/` | **MDX pur** : frontmatter + composants. Jamais de HTML/CSS à la main. |

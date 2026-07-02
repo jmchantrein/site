@@ -25,6 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # ubuntu-latest fournit déjà Docker Engine + le plugin docker compose v2.
+      # Mode : choix du dispatch ; sinon `up` (smoke test HTTP complet) sur
+      # main — le contrat « le code affiché est le code testé » est vérifié en
+      # exécution réelle à chaque changement livré — et `build` sur les autres
+      # branches (plus rapide en itération).
       - name: Tester les corrigés
         working-directory: site
-        run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || 'build' }}"
+        run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
