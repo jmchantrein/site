@@ -22,7 +22,13 @@
   var lastColor = "amber";
 
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
-  function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+  function save(list) {
+    try { localStorage.setItem(KEY, JSON.stringify(list)); }
+    catch (e) {
+      // Quota saturé : jamais de perte silencieuse (alerte partagée de site.js).
+      if (window.SiteAstro && window.SiteAstro.storageWarn) window.SiteAstro.storageWarn();
+    }
+  }
   var items = load();
 
   /* ---- Identité du lecteur (globale au navigateur) + client-id anonyme ---
@@ -155,9 +161,9 @@
 
   /* ---- Barre flottante de sélection -------------------------------------- */
   var bar = document.createElement("div");
-  bar.className = "annot-bar"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Annoter la sélection");
+  bar.className = "annot-bar"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", T("Annoter la sélection", "Annotate the selection"));
   bar.innerHTML =
-    COLORS.map(function (c) { return '<button class="annot-bar__sw" data-c="' + c + '" type="button" aria-label="Surligner ' + c + '"></button>'; }).join("") +
+    COLORS.map(function (c) { return '<button class="annot-bar__sw" data-c="' + c + '" type="button" aria-label="' + T("Surligner ", "Highlight ") + c + '"></button>'; }).join("") +
     '<span class="annot-bar__div"></span>' +
     '<button class="annot-bar__note" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>' + T("Noter", "Note") + '</span></button>';
   document.body.appendChild(bar);

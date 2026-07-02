@@ -1,0 +1,37 @@
+---
+/**
+ * PAGE 404 — servie par GitHub Pages (dist/404.html) pour toute adresse
+ * inconnue, quelle que soit la langue demandée : le contenu est donc bilingue
+ * à l'écran (les deux langues visibles), contrairement au reste du site où la
+ * langue est portée par la route.
+ */
+import Base from "../layouts/Base.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<Base title="404" description="Page introuvable — page not found.">
+  <main id="main" class="wrap">
+    <div class="nf">
+      <p class="kicker kicker--bar">404</p>
+      <h1>Page introuvable <span class="nf__en">· Page not found</span></h1>
+      <p class="lead">
+        Cette adresse ne correspond à aucune page — le contenu a peut-être été
+        déplacé ou supprimé. <em>This address doesn't match any page — the
+        content may have moved or been removed.</em>
+      </p>
+      <div class="nf__actions">
+        <a class="btn btn--primary" href={`${base}/`}>Accueil · Home</a>
+        <a class="btn btn--ghost" href={`${base}/cours/`}>Cours</a>
+        <a class="btn btn--ghost" href={`${base}/en/cours/`}>Courses</a>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .nf { padding-block: var(--space-8); }
+  .nf h1 { font-size: clamp(2rem, 5vw, 3rem); margin-top: var(--space-4); }
+  .nf__en { color: var(--color-text-muted); font-weight: var(--weight-normal); }
+  .nf .lead { margin-top: var(--space-5); max-width: 60ch; }
+  .nf__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+</style>

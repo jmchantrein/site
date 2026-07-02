@@ -13,7 +13,14 @@ export default defineConfig({
   // chemins absolus. `astro preview` sert le site sous /site/ en local.
   site: "https://jmchantrein.github.io",
   base: "/site",
-  integrations: [mdx(), sitemap()],
+  integrations: [
+    mdx(),
+    // i18n : annote le sitemap d'alternates hreflang FR ↔ EN (les pages EN
+    // vivent sous /en/, le français est la langue par défaut).
+    sitemap({
+      i18n: { defaultLocale: "fr", locales: { fr: "fr", en: "en" } },
+    }),
+  ],
   markdown: {
     processor: unified({
       // Les maths s'écrivent $…$ / $$…$$ dans le MDX et sont rendues au build.

@@ -12,9 +12,15 @@ interface Props {
   /** Libellé du bloc (ex. « Prérequis », « Astuce », « Attention », « Piège »). */
   title?: string;
 }
+import { pageLocale } from "../lib/locale";
+
 const { type = "info", title } = Astro.props;
 const GLYPHS = { info: "i", success: "✓", warning: "!", danger: "✕" };
-const LABELS = { info: "Note", success: "Astuce", warning: "Attention", danger: "Piège" };
+/* Libellés par défaut dans la langue de la page (un title explicite prime). */
+const LABELS = {
+  fr: { info: "Note", success: "Astuce", warning: "Attention", danger: "Piège" },
+  en: { info: "Note", success: "Tip", warning: "Warning", danger: "Pitfall" },
+}[pageLocale(Astro.url)];
 ---
 <aside class:list={["note", type !== "info" && `note--${type}`]} role="note">
   <div class="note__icon" aria-hidden="true">{GLYPHS[type]}</div>

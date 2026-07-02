@@ -18,12 +18,20 @@ interface Props {
   /** État final : met en avant la top level image. */
   final?: boolean;
 }
+import { pageLocale } from "../lib/locale";
+
 const { images, container, final = false } = Astro.props;
 const topDown = [...images].reverse();
 const step = images.length;
-const label = final
-  ? `Pile finale de ${step} images intermédiaires ; l'image du dessus est la top level image.`
-  : `Étape ${step} : le conteneur temporaire ${container ?? ""} est exécuté depuis l'image précédente, puis committé en image ${topDown[0]} et supprimé.`;
+/* Alternative textuelle de la figure, dans la langue de la page. */
+const label = {
+  fr: final
+    ? `Pile finale de ${step} images intermédiaires ; l'image du dessus est la top level image.`
+    : `Étape ${step} : le conteneur temporaire ${container ?? ""} est exécuté depuis l'image précédente, puis committé en image ${topDown[0]} et supprimé.`,
+  en: final
+    ? `Final stack of ${step} intermediate images; the topmost one is the top level image.`
+    : `Step ${step}: temporary container ${container ?? ""} is run from the previous image, then committed as image ${topDown[0]} and removed.`,
+}[pageLocale(Astro.url)];
 ---
 <figure class="bstack" role="img" aria-label={label}>
   <div class="bstack__col">

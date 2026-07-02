@@ -4,10 +4,14 @@
  * Contenu arbitraire (HTML/JS/visualisation custom), marqué visuellement
  * comme hors cadre. C'est le SEUL endroit où le contenu libre est attendu.
  */
+import { pageLocale } from "../lib/locale";
+
 interface Props { label?: string }
-const { label = "Hors cadre — pleine liberté" } = Astro.props;
+const locale = pageLocale(Astro.url);
+const { label = locale === "en" ? "Off-framework — full freedom" : "Hors cadre — pleine liberté" } = Astro.props;
 ---
-<section class="escape">
+{/* Région nommée : au lecteur d'écran aussi, on signale qu'on sort du cadre. */}
+<section class="escape" aria-label={label}>
   <span class="escape__tab" aria-hidden="true">⤣ {label}</span>
   <div class="escape__body">
     <slot />

@@ -6,8 +6,14 @@
  * Tout est local (aucune dépendance) ; gère /31 (RFC 3021) et /32.
  */
 import Icon from "./Icon.astro";
+import { pageLocale } from "../lib/locale";
+
+const T = {
+  fr: { region: "Simulateur de masque IP", ip: "Adresse IPv4", prefix: "Préfixe CIDR", out: "Résultats du calcul" },
+  en: { region: "IP mask simulator", ip: "IPv4 address", prefix: "CIDR prefix", out: "Computed results" },
+}[pageLocale(Astro.url)];
 ---
-<section class="ipsim" data-ipsim aria-label="Simulateur de masque IP">
+<section class="ipsim" data-ipsim aria-label={T.region}>
   <div class="ipsim__head">
     <span class="tag"><Icon name="network" /> <span data-lang="fr">Simulateur de masque</span><span data-lang="en">Mask simulator</span></span>
   </div>
@@ -15,13 +21,13 @@ import Icon from "./Icon.astro";
     <div class="ipsim__controls">
       <div class="ipsim__field">
         <label for="ipsim-ip"><span data-lang="fr">Adresse IPv4</span><span data-lang="en">IPv4 address</span></label>
-        <input id="ipsim-ip" class="ipsim__ip" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="192.168.1.130" data-ipsim-ip aria-label="Adresse IPv4" />
+        <input id="ipsim-ip" class="ipsim__ip" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="192.168.1.130" data-ipsim-ip aria-label={T.ip} />
       </div>
       <div class="ipsim__field">
         <label for="ipsim-prefix"><span data-lang="fr">Préfixe CIDR</span><span data-lang="en">CIDR prefix</span></label>
         <div class="ipsim__prefix">
           <span class="ipsim__cidr" data-ipsim-cidr>/24</span>
-          <input id="ipsim-prefix" type="range" min="0" max="32" step="1" value="24" data-ipsim-prefix aria-label="Préfixe CIDR" />
+          <input id="ipsim-prefix" type="range" min="0" max="32" step="1" value="24" data-ipsim-prefix aria-label={T.prefix} />
         </div>
       </div>
     </div>
@@ -34,7 +40,9 @@ import Icon from "./Icon.astro";
       </div>
     </div>
 
-    <div class="ipsim__out">
+    {/* aria-live : au lecteur d'écran, bouger le préfixe annonce le résultat
+        (la grille de bits, purement redondante/visuelle, reste aria-hidden). */}
+    <div class="ipsim__out" role="group" aria-label={T.out} aria-live="polite">
       <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Masque</span><span data-lang="en">Mask</span></div><div class="val" data-ipsim-mask>255.255.255.0</div></div>
       <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Adresse réseau</span><span data-lang="en">Network</span></div><div class="val accent" data-ipsim-network>192.168.1.0</div></div>
       <div class="ipsim__cell"><div class="lbl"><span data-lang="fr">Diffusion</span><span data-lang="en">Broadcast</span></div><div class="val" data-ipsim-broadcast>192.168.1.255</div></div>

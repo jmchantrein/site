@@ -24,8 +24,15 @@ const LEVELS = { 1: "Niveau 1 · base", 2: "Niveau 2 · intermédiaire", 3: "Niv
 const LEVELS_EN = { 1: "Level 1 · basics", 2: "Level 2 · intermediate", 3: "Level 3 · advanced" };
 const fieldId = `ex-${id}`;
 import Icon from "./Icon.astro";
+import { pageLocale } from "../lib/locale";
+/* Attributs (aria-label, placeholder) : résolus au build dans la langue de
+   la page — le doublon data-lang ne vaut que pour le contenu d'élément. */
+const T = {
+  fr: { label: "Exercice", placeholder: "Posez votre raisonnement ici avant d'afficher la solution…" },
+  en: { label: "Exercise", placeholder: "Lay out your reasoning here before revealing the solution…" },
+}[pageLocale(Astro.url)];
 ---
-<section class="exercise" data-level={level} data-gate-mode={gate} aria-label="Exercice">
+<section class="exercise" data-level={level} data-gate-mode={gate} aria-label={T.label}>
   <header class="exercise__head">
     <span class="exercise__tag"><span data-lang="fr">Exercice</span><span data-lang="en">Exercise</span></span>
     <span class="exercise__level"><span data-lang="fr">{LEVELS[level]}</span><span data-lang="en">{LEVELS_EN[level]}</span></span>
@@ -38,7 +45,7 @@ import Icon from "./Icon.astro";
       <span data-lang="fr">Votre réponse</span><span data-lang="en">Your answer</span>
       <span class="req"><span data-lang="fr">requise</span><span data-lang="en">required</span></span>
     </label>
-    <textarea id={fieldId} class="exercise__answer-field" rows="2" placeholder="Posez votre raisonnement ici avant d'afficher la solution…"></textarea>
+    <textarea id={fieldId} class="exercise__answer-field" rows="2" placeholder={T.placeholder}></textarea>
     <p class="exercise__answer-hint">
       <span data-lang="fr">Rédigez une réponse pour débloquer la solution (effet de test).</span><span data-lang="en">Write an answer to unlock the solution (testing effect).</span>
     </p>

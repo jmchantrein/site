@@ -13,14 +13,25 @@
 interface Props {
   state: "image" | "conteneur" | "commit" | "partage";
 }
+import { pageLocale } from "../lib/locale";
+
 const { state } = Astro.props;
 
+/* Alternative textuelle de la figure, dans la langue de la page. */
 const LABELS = {
-  image: "L'image x est une pile de couches en lecture seule, de la couche 1 à la couche n.",
-  conteneur: "Le conteneur x ajoute une couche en lecture/écriture au-dessus des couches en lecture seule de l'image x.",
-  commit: "Après docker commit, la couche RW devient la couche n+1, en lecture seule, de la nouvelle image y.",
-  partage: "Les images x (couches 1 à n) et y (couches 1 à n+1) coexistent et partagent n couches.",
-};
+  fr: {
+    image: "L'image x est une pile de couches en lecture seule, de la couche 1 à la couche n.",
+    conteneur: "Le conteneur x ajoute une couche en lecture/écriture au-dessus des couches en lecture seule de l'image x.",
+    commit: "Après docker commit, la couche RW devient la couche n+1, en lecture seule, de la nouvelle image y.",
+    partage: "Les images x (couches 1 à n) et y (couches 1 à n+1) coexistent et partagent n couches.",
+  },
+  en: {
+    image: "Image x is a stack of read-only layers, from layer 1 to layer n.",
+    conteneur: "Container x adds a read/write layer on top of image x's read-only layers.",
+    commit: "After docker commit, the RW layer becomes layer n+1, read-only, of the new image y.",
+    partage: "Images x (layers 1 to n) and y (layers 1 to n+1) coexist and share n layers.",
+  },
+}[pageLocale(Astro.url)];
 
 /* Libellés bilingues — [fr, en] ; rendus en doubles <span data-lang>. */
 const L_N = ["Couche n : z3d56…", "Layer n: z3d56…"];

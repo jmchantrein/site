@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Marque du site : invite de terminal « ❯_ » sur le fond Abysse
+       (tokens : --color-bg #0b1a26, --color-accent #3aa6cd, --term-fg). -->
+  <rect width="64" height="64" rx="12" fill="#0b1a26"/>
+  <path d="M17 20l15 12-15 12" fill="none" stroke="#3aa6cd" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="36" y="41" width="13" height="7" rx="2" fill="#e0e0e0"/>
+</svg>

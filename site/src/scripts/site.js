@@ -34,6 +34,23 @@ function load() {
 }
 function save(p) { try { localStorage.setItem(STORE, JSON.stringify(p)); } catch (e) {} }
 
+/* Échec d'écriture localStorage (quota saturé) : les saisies du lecteur
+   (réponses, annotations) ne doivent JAMAIS se perdre en silence — une alerte
+   unique par page l'invite à exporter puis alléger ses données. */
+let storageWarned = false;
+function storageWarn() {
+  if (storageWarned) return;
+  storageWarned = true;
+  const el = document.createElement("div");
+  el.className = "storage-warn";
+  el.setAttribute("role", "alert");
+  el.innerHTML =
+    '<span data-lang="fr">Stockage local saturé — votre dernière saisie n\'a pas été enregistrée. Exportez vos données (Paramètres) puis faites de la place.</span>' +
+    '<span data-lang="en">Local storage is full — your latest input was not saved. Export your data (Settings), then free up space.</span>';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 12000);
+}
+
 let prefs = load();
 const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* Thème par défaut : la préférence système (lisibilité d'abord — clair en
@@ -309,9 +326,9 @@ function applyTermTheme(theme) {
   });
   document.querySelectorAll("[data-term-theme-btn]").forEach((b) => {
     b.setAttribute("aria-pressed", String(theme === "light"));
-    b.setAttribute("aria-label", theme === "light"
-      ? "Thème du terminal : clair — basculer en sombre"
-      : "Thème du terminal : sombre — basculer en clair");
+    b.setAttribute("aria-label", curLang() === "en"
+      ? (theme === "light" ? "Terminal theme: light — switch to dark" : "Terminal theme: dark — switch to light")
+      : (theme === "light" ? "Thème du terminal : clair — basculer en sombre" : "Thème du terminal : sombre — basculer en clair"));
   });
 }
 function wireTermThemes() {
@@ -449,7 +466,7 @@ function saveAnswer(id, text) {
     const all = loadAnswers();
     if (text.trim()) all[id] = text; else delete all[id];
     localStorage.setItem(ANSWERS_KEY, JSON.stringify(all));
-  } catch (e) {}
+  } catch (e) { storageWarn(); }
 }
 function wireExercises() {
   const list = document.querySelectorAll(".exercise");
@@ -460,7 +477,6 @@ function wireExercises() {
     if (!details) return;
     const summary = details.querySelector("summary");
     if (field && field.id && answers[field.id] && !field.value) field.value = answers[field.id];
-    if (field && curLang() === "en") field.placeholder = "Write your reasoning here before revealing the solution…";
     refreshExercise(ex);
     if (field) field.addEventListener("input", () => { refreshExercise(ex); if (field.id) saveAnswer(field.id, field.value); });
     if (summary) {
@@ -585,7 +601,7 @@ function wireAnchors() {
     const id = h.id;
     const b = document.createElement("button");
     b.type = "button"; b.className = "h-anchor"; b.textContent = "#";
-    b.setAttribute("aria-label", "Copier le lien vers cette section");
+    b.setAttribute("aria-label", curLang() === "en" ? "Copy the link to this section" : "Copier le lien vers cette section");
     b.addEventListener("click", () => {
       const url = location.origin + location.pathname + "#" + id;
       const fb = () => {
@@ -607,12 +623,13 @@ function wireSearch() {
   let ui = null, input, list, items = [], sel = 0, prevFocus = null;
   const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   function build() {
+    const en = curLang() === "en";
     ui = document.createElement("div");
     ui.className = "cmdk";
     ui.innerHTML = '<div class="cmdk__backdrop"></div>' +
-      '<div class="cmdk__panel" role="dialog" aria-modal="true" aria-label="Recherche sur le site">' +
+      '<div class="cmdk__panel" role="dialog" aria-modal="true" aria-label="' + (en ? "Site search" : "Recherche sur le site") + '">' +
       '<div class="cmdk__input"><span class="p" aria-hidden="true">❯</span>' +
-      '<input type="text" autocomplete="off" spellcheck="false" aria-label="Rechercher une section">' +
+      '<input type="text" autocomplete="off" spellcheck="false" aria-label="' + (en ? "Search a section" : "Rechercher une section") + '">' +
       '<kbd>Esc</kbd></div><ul class="cmdk__list" role="listbox"></ul></div>';
     document.body.appendChild(ui);
     input = ui.querySelector("input"); list = ui.querySelector(".cmdk__list");
@@ -627,9 +644,16 @@ function wireSearch() {
       else if (e.key === "Enter") { const a = items[sel]; if (a) a.click(); }
     });
   }
+  /* L'index couvre les deux langues : on ne montre que celle de la page
+     (les contenus EN vivent sous /en/), sinon chaque résultat sort en double. */
+  const inCurLang = (entry) => {
+    const isEn = entry.page === BASE + "/en/" || entry.page.startsWith(BASE + "/en/");
+    return (curLang() === "en") === isEn;
+  };
   function render(q) {
     const nq = norm(q || "");
-    const res = (INDEX || []).filter((en) => !nq || norm(en.t + " " + en.p + " " + (en.b || "")).indexOf(nq) !== -1).slice(0, 14);
+    const res = (INDEX || []).filter(inCurLang)
+      .filter((en) => !nq || norm(en.t + " " + en.p + " " + (en.b || "")).indexOf(nq) !== -1).slice(0, 14);
     list.innerHTML = ""; items = []; sel = 0;
     let lastPage = null;
     res.forEach((en) => {
@@ -734,7 +758,7 @@ function wireSlides() {
     }
     const dots = slides.map((_, n) => {
       const d = document.createElement("button");
-      d.className = "slides__dot"; d.type = "button"; d.setAttribute("aria-label", "Diapositive " + (n + 1));
+      d.className = "slides__dot"; d.type = "button"; d.setAttribute("aria-label", (curLang() === "en" ? "Slide " : "Diapositive ") + (n + 1));
       d.addEventListener("click", () => go(n));
       if (dotsWrap) dotsWrap.appendChild(d);
       return d;
@@ -934,7 +958,9 @@ function wireWidthGrip() {
   grip.className = "width-rail";
   grip.setAttribute("role", "slider");
   grip.setAttribute("tabindex", "0");
-  grip.setAttribute("aria-label", "Largeur du site — glisser pour ajuster, cliquer pour réinitialiser, flèches gauche/droite");
+  grip.setAttribute("aria-label", curLang() === "en"
+    ? "Site width — drag to adjust, click to reset, left/right arrows"
+    : "Largeur du site — glisser pour ajuster, cliquer pour réinitialiser, flèches gauche/droite");
   grip.setAttribute("aria-valuemin", "60");
   grip.setAttribute("aria-valuemax", "160");
   grip.innerHTML = '<span class="knob" aria-hidden="true"><i></i><i></i></span><span class="width-rail__tip"><span data-lang="fr">Glisser pour ajuster · cliquer : largeur par défaut</span><span data-lang="en">Drag to adjust · click: default width</span></span>';
@@ -1100,4 +1126,4 @@ function init() {
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();
 
-window.SiteAstro = { open: openPanel, close: closePanel };
+window.SiteAstro = { open: openPanel, close: closePanel, storageWarn };

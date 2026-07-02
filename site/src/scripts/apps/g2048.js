@@ -1,4 +1,4 @@
-/* 2048 — passe-temps du dock (grille DOM 4×4, flèches). */
+/* 2048 — passe-temps du dock (grille DOM 4×4, flèches ou ZQSD/WASD). */
 export function mount2048(body, T) {
   body.innerHTML = "";
   const wrap = document.createElement("div");
@@ -7,7 +7,7 @@ export function mount2048(body, T) {
     '<div class="dockapp__bar"><span class="score">0</span>' +
     '<button class="dockapp__btn" data-restart type="button">' + T("Rejouer", "Restart") + "</button></div>" +
     '<div class="g2048" tabindex="0" role="application" aria-label="2048"></div>' +
-    '<p class="dockapp__hint">' + T("Flèches pour fusionner les tuiles — atteignez 2048.", "Arrow keys to merge tiles — reach 2048.") + "</p>";
+    '<p class="dockapp__hint">' + T("Flèches ou ZQSD pour fusionner les tuiles — atteignez 2048.", "Arrow keys or WASD to merge tiles — reach 2048.") + "</p>";
   body.appendChild(wrap);
   const grid = wrap.querySelector(".g2048"), scoreEl = wrap.querySelector(".score");
   let g, score;
@@ -52,7 +52,11 @@ export function mount2048(body, T) {
     if (JSON.stringify(g) !== before) { add(); paint(); }
   }
   grid.addEventListener("keydown", (e) => {
-    const m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    // Flèches + ZQSD/WASD (mêmes touches que Snake).
+    const m = {
+      ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+      q: [-1, 0], a: [-1, 0], d: [1, 0], z: [0, -1], w: [0, -1], s: [0, 1],
+    }[e.key.length === 1 ? e.key.toLowerCase() : e.key];
     if (m) { move(m[0], m[1]); e.preventDefault(); }
   });
   wrap.querySelector("[data-restart]").addEventListener("click", () => { reset(); grid.focus(); });

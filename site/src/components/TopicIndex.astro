@@ -28,6 +28,12 @@ interface Props {
   locale?: "fr" | "en";
 }
 const { items, flatLabel, locale = "fr" } = Astro.props;
+/* Attributs (aria-label…) : localisés via la prop, comme ContentBadges —
+   le doublon data-lang ne vaut que pour le contenu d'élément. */
+const A11Y = {
+  fr: { filter: "Filtrer par thématique", view: "Mode d'affichage" },
+  en: { filter: "Filter by topic", view: "Display mode" },
+}[locale];
 
 const counts = new Map<TopicId, number>();
 for (const it of items) for (const t of it.topics) counts.set(t, (counts.get(t) ?? 0) + 1);
@@ -35,19 +41,24 @@ const topicIds = (Object.keys(TOPICS) as TopicId[]).filter((t) => counts.has(t) 
 const weight = (n: number) => (n >= 3 ? 3 : n);
 ---
 <div data-topic-index>
+  {items.length === 0 && (
+    <p class="lead"><span data-lang="fr">Rien à afficher pour l'instant — le contenu arrive.</span><span data-lang="en">Nothing to show yet — content is on its way.</span></p>
+  )}
+  {items.length > 0 && (
   <div class="misc-controls">
-    <div class="tag-cloud" role="group" aria-label="Filtrer par thématique">
+    <div class="tag-cloud" role="group" aria-label={A11Y.filter}>
       <span class="tag-cloud__label"><span data-lang="fr">Naviguer par thématique</span><span data-lang="en">Browse by topic</span></span>
       <button class="tag-chip" data-filter="all" data-weight="3" type="button" aria-pressed="true"><span data-lang="fr">Toutes</span><span data-lang="en">All</span> <span class="n">{items.length}</span></button>
       {topicIds.map((t) => (
         <button class="tag-chip" data-filter={t} data-weight={weight(counts.get(t) ?? 0)} type="button" aria-pressed="false">{TOPICS[t]} <span class="n">{counts.get(t) ?? 0}</span></button>
       ))}
     </div>
-    <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+    <div class="view-toggle" role="group" aria-label={A11Y.view}>
       <button data-view="topic" type="button" aria-pressed="true"><span data-lang="fr">Par thématique</span><span data-lang="en">By topic</span></button>
       <button data-view="flat" type="button" aria-pressed="false">{flatLabel}</button>
     </div>
   </div>
+  )}
 
   {topicIds.filter((t) => (counts.get(t) ?? 0) > 0).map((t) => (
     <section class="theme-block" data-topic-block={t}>
@@ -65,7 +76,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
             <h3 class="module-card__title">{it.title}</h3>
             <p class="module-card__desc">{it.description}</p>
             <ul class="module-card__tags">
-              {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
+              {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} <span data-lang="fr">thématiques</span><span data-lang="en">topics</span></li>}
               {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
             </ul>
             <ContentBadges provenance={it.provenance} status={it.status} locale={locale} />
@@ -87,7 +98,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
           <h3 class="module-card__title">{it.title}</h3>
           <p class="module-card__desc">{it.description}</p>
           <ul class="module-card__tags">
-            {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} thématiques</li>}
+            {it.topics.length > 1 && <li class="multi">↔ {it.topics.length} <span data-lang="fr">thématiques</span><span data-lang="en">topics</span></li>}
             {(it.tags ?? []).map((tag) => <li>{tag}</li>)}
           </ul>
           <ContentBadges provenance={it.provenance} status={it.status} locale={locale} />

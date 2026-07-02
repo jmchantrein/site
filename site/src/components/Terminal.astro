@@ -8,6 +8,7 @@
  * Usage : <Terminal id="term-1" title="bash — atelier-conteneurs" comment="…" />
  */
 import Icon from "./Icon.astro";
+import { pageLocale } from "../lib/locale";
 
 interface Props {
   id: string;
@@ -15,7 +16,21 @@ interface Props {
   /** Commentaire bash affiché en première ligne. */
   comment?: string;
 }
-const { id, title = "bash", comment = "# tapez « help » pour la liste des commandes" } = Astro.props;
+const T = {
+  fr: {
+    comment: "# tapez « help » pour la liste des commandes",
+    reset: "Réinitialiser le terminal",
+    screen: "Sortie du terminal",
+    input: "Saisir une commande, puis Entrée. Tapez help pour la liste.",
+  },
+  en: {
+    comment: "# type “help” for the list of commands",
+    reset: "Reset the terminal",
+    screen: "Terminal output",
+    input: "Type a command, then Enter. Type help for the list.",
+  },
+}[pageLocale(Astro.url)];
+const { id, title = "bash", comment = T.comment } = Astro.props;
 ---
 <div class="terminal" id={id} data-terminal>
   <div class="terminal__bar">
@@ -27,19 +42,19 @@ const { id, title = "bash", comment = "# tapez « help » pour la liste des comm
         <span class="to-dark" aria-hidden="true"><Icon name="moon" /></span>
         <span class="term-tip"><span class="to-light"><span data-lang="fr">Mode clair</span><span data-lang="en">Light mode</span></span><span class="to-dark"><span data-lang="fr">Mode sombre</span><span data-lang="en">Dark mode</span></span></span>
       </button>
-      <button class="term-icon-btn" data-term-replay type="button" aria-label="Réinitialiser le terminal">
+      <button class="term-icon-btn" data-term-replay type="button" aria-label={T.reset}>
         <Icon name="rotate-ccw" />
         <span class="term-tip"><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></span>
       </button>
     </span>
   </div>
-  <div class="terminal__screen" role="log" aria-live="polite" aria-label="Sortie du terminal"></div>
+  <div class="terminal__screen" role="log" aria-live="polite" aria-label={T.screen}></div>
   <template class="term-initial">
     <div class="term-line term-line--out">{comment}</div>
   </template>
   <form class="terminal__input" data-term-input>
     <span class="p" aria-hidden="true">$</span>
-    <input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Saisir une commande, puis Entrée. Tapez help pour la liste." placeholder="help · ls · podman ps" />
+    <input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label={T.input} placeholder="help · ls · podman ps" />
   </form>
   <div class="terminal__hint">
     <span aria-hidden="true">▶</span>

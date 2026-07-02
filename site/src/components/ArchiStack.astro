@@ -11,11 +11,19 @@
 interface Props {
   kind: "vm" | "conteneur";
 }
+import { pageLocale } from "../lib/locale";
+
 const { kind } = Astro.props;
 const isVm = kind === "vm";
-const label = isVm
-  ? "Architecture du modèle VM / hyperviseur : trois machines virtuelles, chacune avec son OS invité et ses applications, au-dessus de l'hyperviseur et de la machine physique."
-  : "Architecture du modèle conteneur / OS : trois conteneurs, chacun avec ses seules applications, au-dessus du noyau partagé de l'hôte et de la machine physique.";
+/* Alternative textuelle de la figure, dans la langue de la page. */
+const label = {
+  fr: isVm
+    ? "Architecture du modèle VM / hyperviseur : trois machines virtuelles, chacune avec son OS invité et ses applications, au-dessus de l'hyperviseur et de la machine physique."
+    : "Architecture du modèle conteneur / OS : trois conteneurs, chacun avec ses seules applications, au-dessus du noyau partagé de l'hôte et de la machine physique.",
+  en: isVm
+    ? "VM / hypervisor architecture: three virtual machines, each with its guest OS and applications, on top of the hypervisor and the physical machine."
+    : "Container / OS architecture: three containers, each with only its applications, on top of the host's shared kernel and the physical machine.",
+}[pageLocale(Astro.url)];
 ---
 <figure class="archi" role="img" aria-label={label}>
   <div class="archi__guests">

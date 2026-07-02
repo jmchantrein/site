@@ -58,9 +58,6 @@ p { text-wrap: pretty; }
 .kicker--bar { display: inline-flex; align-items: center; gap: var(--space-3); }
 .kicker--bar::before { content: ""; width: 28px; height: 2px; background: var(--color-accent); }
 
-/* Icône alignée dans une ligne de texte */
-.ico-inline { vertical-align: -3px; }
-
 /* Espacement vertical : segmentation (charge cognitive extrinsèque ↓) */
 .prose > * + * { margin-top: var(--space-4); }
 .prose > h2 + *, .prose > h3 + * { margin-top: var(--space-3); }
@@ -136,7 +133,7 @@ a:hover { color: var(--color-accent-hover); text-decoration-thickness: 2px; }
   color: var(--color-on-accent);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
-  z-index: 200;
+  z-index: var(--z-skip);
   transition: top var(--motion-fast) var(--ease);
 }
 .skip-link:focus { top: var(--space-3); color: var(--color-on-accent); }
@@ -154,7 +151,7 @@ a:hover { color: var(--color-accent-hover); text-decoration-thickness: 2px; }
 
 /* ---- EN-TÊTE GLOBAL ----------------------------------------------------- */
 .site-header {
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 0; z-index: var(--z-sticky);
   background: color-mix(in srgb, var(--color-bg) 88%, transparent);
   backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--color-border);
@@ -206,7 +203,7 @@ html[data-motion="off"] .site-header { backdrop-filter: none; background: var(--
   background: var(--color-text-strong); color: var(--color-bg);
   font-family: var(--font-sans); font-size: var(--text-xs); font-weight: 600; line-height: 1;
   white-space: nowrap; padding: 6px 9px; border-radius: 6px;
-  opacity: 0; pointer-events: none; z-index: 120;
+  opacity: 0; pointer-events: none; z-index: var(--z-tooltip);
   transition: opacity var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
 }
 .util-btn__label::after { content: ""; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-bottom-color: var(--color-text-strong); }
@@ -269,17 +266,24 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
     --term-bg: #ffffff; --term-bg-raised: #f2f2f2; --term-fg: #000000;
     --term-dim: #333333; --term-prompt: #000000; --term-ok: #000000;
     --term-warn: #000000; --term-border: #999999;
+    --prov-ai: #555555;  /* segment IA : gris encre, distinct du segment humain (noir) */
   }
   .site-header, .site-footer, .read-progress, .skip-link,
   .course__aside, .course-nav, .toc, .toc-m,
   .cmd__hint, .slides__foot, .slides__tools, .h-anchor,
-  .exercise__answer, .a11y-panel, .cmdk { display: none !important; }
-  body { background: #ffffff; }
+  .exercise__answer, .a11y-panel, .a11y-overlay, .cmdk,
+  .dockwin, .annot-rail, .annot-bar, .width-rail { display: none !important; }
+  body { background: var(--color-bg); }
   pre, .note, .exercise, .slide { break-inside: avoid; }
   /* L'URL des liens externes est imprimée à côté du libellé. */
-  .prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #333; }
+  .prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: var(--color-text-faint); }
   /* Toutes les diapositives s'impriment, empilées. */
   .slides__viewport { overflow: visible; }
   .slides__track { display: block; transform: none !important; }
-  .slide { display: block; border-top: 1px dashed #999; }
+  .slide { display: block; border-top: 1px dashed var(--color-border); }
+  /* Annotations : le surlignage s'efface, seul le soulignement (encre noire)
+     reste — papier blanc, encre noire. !important : annotate.css est chargé
+     après base.css et redéfinirait ces propriétés à spécificité égale. */
+  mark.annot { background: transparent !important; border-bottom-color: var(--color-text) !important; }
+  mark.annot[data-note="true"]::after { color: var(--color-text) !important; }
 }

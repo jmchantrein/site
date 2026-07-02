@@ -1,17 +1,13 @@
 ---
 title: "Le réseau Docker"
 description: "Les réseaux Docker — bridge, host, none, réseaux définis par l'utilisateur — la résolution DNS par nom de conteneur, la publication de ports et l'isolation par réseau."
-order: 3.5
+order: 4
 serie: docker
 topics: [linux]
 duration: 20
 badge: "Fondations"
 tags: [docker, réseau, bridge, DNS, ports]
 terminal: false
-provenance:
-  by: ai
-  reviewedBy: human
-  model: "Claude Opus 4.x"
 ---
 
 ## Introduction
@@ -19,7 +15,7 @@ provenance:
 Un conteneur isolé ne sert à rien : il doit **dialoguer** — avec ses voisins, avec l'hôte, avec l'extérieur. Docker bâtit son modèle réseau sur des primitives du noyau Linux (**espaces de noms réseau**, paires **veth**, **ponts**, **NAT** iptables). Ce module montre comment les conteneurs communiquent, et pourquoi un **réseau défini par l'utilisateur** change tout : c'est la clé de la transition `--link` → résolution par nom rencontrée au [TP](../tp-docker-wordpress/).
 
 <Note title="Prérequis et complément">
-  On suppose les notions d'image et de conteneur. Pour le détail du NAT (translation d'adresses, masquage), ce module se complète bien avec [Le masquage d'adresse IP](../masquage-ip/).
+  On suppose les notions d'image et de conteneur, ainsi que les bases de l'adressage IP (CIDR, translation d'adresses).
 </Note>
 
 ## Les trois réseaux par défaut
@@ -97,7 +93,7 @@ docker network inspect app    # sous-réseau, passerelle, conteneurs connectés
 ```
 
 - Chaque conteneur possède son **espace de noms réseau** ; une **paire veth** le relie au pont `docker0` (ou au pont du réseau défini par l'utilisateur).
-- La **sortie** vers l'extérieur est **masquée (NAT)** par une règle iptables `MASQUERADE` — exactement le mécanisme détaillé dans [Le masquage d'adresse IP](../masquage-ip/).
+- La **sortie** vers l'extérieur est **masquée (NAT)** par une règle iptables `MASQUERADE` : l'adresse privée du conteneur est remplacée par celle de l'hôte à la sortie.
 - L'**entrée** publiée (`-p`) passe par une règle **DNAT** vers l'IP privée du conteneur.
 
 <Exercise id="dns-reseau" level={2}>

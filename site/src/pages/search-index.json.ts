@@ -37,12 +37,19 @@ export const GET: APIRoute = async () => {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const index: { p: string; t: string; page: string; hash?: string; b?: string }[] = [];
 
+  // Pages statiques, dans les deux langues : le client filtre l'index par
+  // langue (préfixe /en/), chaque langue doit donc avoir ses entrées.
   index.push(
     { p: "Accueil", t: "Accueil", page: `${base}/` },
     { p: "Cours", t: "Index des cours", page: `${base}/cours/` },
     { p: "Miscelánea", t: "Index des articles", page: `${base}/miscelanea/` },
     { p: "Aide", t: "Guide d'utilisation", page: `${base}/aide/` },
     { p: "Système", t: "Système de design", page: `${base}/systeme/` },
+    { p: "Home", t: "Home", page: `${base}/en/` },
+    { p: "Courses", t: "Course index", page: `${base}/en/cours/` },
+    { p: "Miscellanea", t: "Article index", page: `${base}/en/miscelanea/` },
+    { p: "Help", t: "User guide", page: `${base}/en/aide/` },
+    { p: "System", t: "Design system", page: `${base}/en/systeme/` },
   );
 
   const cours = (await getCollection("cours", ({ data }) => !data.draft))
