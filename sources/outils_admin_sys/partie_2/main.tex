@@ -1,0 +1,473 @@
+\documentclass[10pt]{beamer}
+\usetheme{Warsaw}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+%\usepackage{emoji}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{color}
+\usepackage{animate}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{array,multirow,rotating,hhline,subfig}
+\usepackage[
+    type={CC},    
+    modifier={by-nc-sa},
+    version={3.0},
+]{doclicense}
+
+% Debut Ecriture et la coloration syntaxique de code
+\usepackage{listings} 
+% Configuration de l'affichage pour le code Bash
+% Définition du style de listing pour Bash
+\lstset{
+    language=bash,                      % Langage Bash
+    basicstyle=\ttfamily\small,         % Police de base
+    keywordstyle=\color{orange},          % Style des mots-clés
+    stringstyle=\color{red},          % Style des chaînes de caractères
+    commentstyle=\color{blue},          % Style des commentaires
+    showstringspaces=false,             % Ne montre pas les espaces dans les chaînes
+    numberstyle=\tiny\color{gray},      % Style des numéros de ligne
+    numbers=left,                       % Numéros de ligne à gauche
+    stepnumber=1,                       % Chaque ligne numérotée
+    tabsize=4,                          % Taille des tabulations
+    breaklines=true,                    % Coupe les lignes trop longues
+    frame=none,                       % Cadre autour du code
+    captionpos=b,                       % Position de la légende (en bas)
+}
+
+%\lstset{escapechar=@,style=bash}
+
+\lstset{literate=
+{á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+{à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+{À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+{ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+{Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+{â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+{Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+{œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+{ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
+{ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+{€}{{\EUR}}1 {£}{{\pounds}}1 {'}{{'}}1
+}
+
+% Fin Ecriture et la coloration syntaxique de code
+
+
+\newenvironment<>{shell}[1]{%
+	\setbeamercolor{block title}{fg=white,bg=black}%
+	\setbeamercolor{block body}{fg=white,bg=black}
+	\begin{block}#2{\underline{Terminal:}}}{\normalsize \end{block}
+}
+
+\newcommand\prompt{\textcolor{green}{jmc@laptop}\textcolor{cyan}{ /home/jmc \$ }}
+
+\title{Introduction aux outils d'administration systèmes: partie 2}
+\author{Jean-Mathieu Chantrein}
+\institute{Université d'Angers}
+%\date{2024}
+\setbeamertemplate{navigation symbols}{} 
+%\logo{\vspace{-0.47cm}\includegraphics[scale=0.15]{img/logos}}
+
+\institute{LERIA} 
+
+
+\setbeamercovered{dynamic}
+
+\setbeamertemplate{navigation symbols}{}
+\addtobeamertemplate{footline}{\hfill\insertframenumber/\inserttotalframenumber\hspace{2em}\null}
+
+\setbeamersize{text margin left=10px}
+\setbeamersize{text margin right=10px}
+
+%Configuration listing
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+
+
+
+\begin{document}
+
+\AtBeginSection[]
+{
+	\begin{frame}{Plan}
+	\tableofcontents[currentsection] %,hideallsubsections
+	\end{frame}
+}
+
+\begin{frame}
+\titlepage
+
+\end{frame}
+
+\begin{frame}{Licence}
+	\begin{block}{}
+		\doclicenseThis
+	\end{block}
+\end{frame}
+
+\begin{frame}{Plan}
+	\tableofcontents
+\end{frame}
+
+\section{Git : versionner et collaborer}
+\begin{frame}
+    \frametitle{Introduction à \texttt{Git}}
+
+    \begin{block}{Qu'est-ce que \texttt{Git} ?}
+    \texttt{Git} est un système de contrôle de version distribué qui permet aux utilisateurs de suivre les modifications dans des fichiers, de collaborer à plusieurs sur des projets, et de maintenir un historique des modifications.
+    \end{block}
+
+    \vfill
+    \textbf{Principales caractéristiques de Git :}
+    \begin{itemize}
+        \item \textbf{Versionnement :} Suivi des changements et gestion des différentes versions d'un projet.
+        \item \textbf{Collaboration :} Permet à plusieurs utilisateurs de travailler simultanément sur un projet.
+        \item \textbf{Décentralisé :} Chaque utilisateur possède une copie complète du dépôt, contrairement aux systèmes centralisés.
+        \item \textbf{Retour en arrière :} Facilité de revenir à une version précédente du projet en cas de problème.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Initialiser un dépôt git}
+    \texttt{git init}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Git en tant qu'outil de collaboration}
+
+    \begin{block}{Pourquoi utiliser Git pour collaborer ?}
+    Git facilite la collaboration sur des projets en permettant à plusieurs personnes de travailler sur les mêmes fichiers "simultanément", tout en assurant une gestion fine des conflits.
+    \end{block}
+
+    \vfill
+    \textbf{Fonctionnalités de collaboration :}
+    \begin{itemize}
+        \item \textbf{Branches :} Chaque utilisateur peut travailler sur sa propre branche sans perturber le projet principal.
+        \item \textbf{Fusion (Merge) :} Combine les changements de différentes branches ou utilisateurs.
+        \item \textbf{Pull Requests :} Propose des changements avant de les intégrer dans la branche principale.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Commandes courantes}
+    \texttt{git clone URL\_du\_dépôt} \# Cloner un dépôt distant \\
+    \texttt{git pull} \# Récupérer les dernières modifications d'un dépôt distant \\
+    \texttt{git push} \# Pousser les dernières modifications sur un dépôt distant
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Concepts de base de \texttt{Git}}
+
+    \textbf{1. Dépôt Git (Repository) :}
+    \begin{itemize}
+        \item Un dépôt Git est un projet contenant tous les fichiers du projet et l’historique de leurs changements.
+        \item Il peut être local ou distant (hébergé sur des plateformes comme GitHub, GitLab).
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Commit :}
+    \begin{itemize}
+        \item Un commit est un instantané des fichiers à un moment donné.
+        \item Chaque commit possède un identifiant unique et conserve un historique de toutes les modifications.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Branche (Branch) :}
+    \begin{itemize}
+        \item Une branche est une ligne de développement séparée. La branche par défaut s'appelle généralement \texttt{main} ou \texttt{master}.
+        \item Les branches permettent de travailler sur de nouvelles fonctionnalités sans affecter la branche principale.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Commande pour créer une nouvelle branche}
+    \texttt{git branch nom\_branche} 
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Les étapes de base d'un cycle \texttt{Git}}
+
+    \begin{block}{Cycle de base d'utilisation de Git}
+    Un cycle Git classique se compose de trois étapes principales : modification des fichiers, staging des changements, et commit des modifications.
+    \end{block}
+
+    \vfill
+    \textbf{1. Modifier les fichiers :}
+    \begin{itemize}
+        \item Vous modifiez les fichiers de votre projet directement dans votre environnement de travail.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Ajouter les modifications à l'index (staging) :}
+    \begin{itemize}
+        \item Avant de sauvegarder définitivement les modifications, vous devez les ajouter à l'index avec \texttt{git add}.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Committer les modifications :}
+    \begin{itemize}
+        \item Une fois ajoutées à l'index, les modifications sont sauvegardées dans l'historique des commits avec \texttt{git commit}.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Commandes courantes}
+    \texttt{git add fichier.txt} \# Ajouter un fichier à l'index \\
+    \texttt{git commit -m "Message du commit"} \# Committer les modifications
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Résolution des conflits avec \texttt{Git}}
+
+    \begin{block}{Conflits Git}
+    Les conflits surviennent lorsque plusieurs personnes modifient les mêmes parties d'un fichier en même temps. Git ne peut pas fusionner automatiquement ces modifications.
+    \end{block}
+
+    \vfill
+    \textbf{Étapes pour résoudre un conflit :}
+    \begin{itemize}
+        \item \textbf{1. Identifier le conflit} : Git marque les parties du fichier en conflit dans le fichier.
+        \item \textbf{2. Modifier le fichier manuellement} : Choisir quelle partie du code doit être conservée ou fusionner les deux versions.
+        \item \textbf{3. Ajouter le fichier corrigé} : Après avoir résolu le conflit, ajouter le fichier corrigé avec \texttt{git add}.
+        \item \textbf{4. Terminer la fusion} : Utiliser \texttt{git commit} pour finaliser la fusion.
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conseil}
+    Avant de résoudre les conflits, effectuez un \texttt{git status} pour identifier les fichiers en conflit.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bonnes pratiques avec \texttt{Git}}
+
+    \textbf{1. Faire des commits fréquents et descriptifs :}
+    \begin{itemize}
+        \item Commitez régulièrement avec des messages clairs décrivant les modifications.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Utiliser des branches pour les nouvelles fonctionnalités :}
+    \begin{itemize}
+        \item Créez une nouvelle branche pour chaque nouvelle fonctionnalité ou correctif. Cela permet d'éviter de compromettre la branche principale.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Rester à jour avec \texttt{git pull} :}
+    \begin{itemize}
+        \item Récupérez régulièrement les dernières modifications avec \texttt{git pull} pour minimiser les conflits de fusion.
+    \end{itemize}
+
+    \vfill
+    \textbf{4. Utiliser des outils d'intégration continue :}
+    \begin{itemize}
+        \item Utilisez des outils comme \texttt{GitLab CI}, \texttt{GitHub Actions} ou \texttt{Jenkins} pour automatiser les tests après chaque commit.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{\texttt{Git} et l'administration système}
+
+    \begin{block}{Utilisation de Git pour les administrateurs système}
+    Git est un outil précieux pour les administrateurs système. Il permet de gérer les configurations, les scripts d'automatisation, et de collaborer avec d'autres équipes sur les infrastructures.
+    \end{block}
+
+    \vfill
+    \textbf{Cas d'usage typiques :}
+    \begin{itemize}
+        \item \textbf{Gestion des scripts :} Versionner les scripts d'administration (Bash, Python) pour faciliter le suivi des modifications et les collaborations.
+        \item \textbf{Gestion des fichiers de configuration :} Versionner les configurations critiques (Apache, Nginx, Ansible, etc.) pour revenir facilement à une version fonctionnelle en cas d'erreur.
+        \item \textbf{Collaboration avec les équipes DevOps :} Utiliser Git pour partager les configurations d'infrastructure avec les équipes DevOps et garantir une documentation claire des changements.
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conseil}
+    Combinez Git avec des outils comme Ansible pour gérer les déploiements et assurer une cohérence dans les configurations système.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{}
+
+    \begin{exampleblock}{Exercice : Utilisation de Git en local}
+       \begin{enumerate}
+           \item Créez un nouveau répertoire nommé \texttt{mon\_projet} et initialisez Git dedans.
+           \item Avec Vim, créez un fichier \texttt{index.html}, ajoutez du contenu, ajoutez le fichier \texttt{index.html} à l'index de git  puis commitez-le.
+           \item Modifiez le fichier \texttt{index.html} en ajoutant un paragraphe et faites un nouveau commit.
+           \item Utilisez la commande \texttt{git log} pour visualiser l'historique des commits et vérifier vos changements.
+           \item Ajoutez "une erreur" dans le fichier index.html et supprimer ces changements en utilisant \texttt{git checkout}.
+           \item Utilisez la commande \texttt{git revert} pour faire revenir le code dans l'état du tout premier commit.
+           \item Observez l'historique des commits avec \texttt{git log}. Que constatez vous ?
+           \item Utilisez la commande \texttt{git reset} pour revenir au premier commit.
+           \item Observez l'historique des commits avec \texttt{git log}. Que constatez vous ?
+           \item Expliquez quelle est la différence entre \texttt{git revert} et \texttt{git reset}.
+       \end{enumerate} 
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}{Correction}
+    \vfill
+    \begin{exampleblock}{1) Créez un nouveau répertoire nommé \texttt{mon\_projet} et initialisez Git dedans.}
+    \texttt{mkdir mon\_projet} \\
+    \texttt{cd mon\_projet} \\
+    \texttt{git init} \\
+    \end{exampleblock}
+    
+    \begin{exampleblock}{2) Avec Vim, créez un fichier \texttt{index.html}, ajoutez du contenu, ajoutez le fichier \texttt{index.html} à l'index de git  puis commitez-le.} \\
+    \texttt{echo "<h1>Bienvenue sur mon site</h1>" > index.html} \\
+    \texttt{git add index.html} \\
+    \texttt{git status \# indique qu'il y a un nouveau fichier} \\
+    \texttt{git commit index.html -m "Ajout de la page d'accueil"} \\
+    \end{exampleblock}
+    
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Suite de la correction}
+    
+    \begin{exampleblock}{3) Modifiez le fichier \texttt{index.html} en ajoutant un paragraphe et faites un nouveau commit.}
+    \texttt{echo "<p>Ceci est un paragraphe.</p>" >> index.html} \\
+    \texttt{\# Notez qu'il n'y a pas besoin de faire git add puisque index.html est déjà indexé par git} \\
+    \texttt{git status \# indique que index.html a été modifié} \\
+    \texttt{git commit index.html -m "Ajout d'un paragraphe"} \\
+    \texttt{git status} \\
+    \texttt{Sur la branche master} \\
+    \texttt{rien à valider, la copie de travail est propre}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Suite de la correction}
+    \begin{exampleblock}{4) Utilisez la commande \texttt{git log} pour visualiser l'historique des commits et vérifier vos changements.}
+    \texttt{git log} \\
+    \texttt{commit 6fb81b46b50d859a2a1ee14d6e932a4d48ee10ec (HEAD -> master)} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:16:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Ajout d'un paragraphe}
+    \texttt{commit b1160cc00a4a01ce432db264fa0ce8116ac6ac9c} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:15:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Ajout de la page d'accueil}
+    \end{exampleblock}
+\end{frame}
+% 
+\begin{frame}
+    \frametitle{Suite de la correction}
+    \begin{exampleblock}{5) Ajoutez "une erreur" dans le fichier index.html et supprimer ces changements en utilisant \texttt{git checkout}.}
+    \texttt{echo "<p>une erreur" >> index.html} \\
+    \texttt{cat index.html} \\
+    \texttt{<h1>Bienvenue sur mon site</h1>} \\
+    \texttt{<p>Ceci est un paragraphe.</p>} \\
+    \texttt{une erreur} \\
+    \texttt{git checkout index.html} \\
+    \texttt{cat index.html} \\
+    \texttt{<h1>Bienvenue sur mon site</h1>} \\
+    \texttt{<p>Ceci est un paragraphe.</p>}
+    \end{exampleblock}
+    
+    \begin{exampleblock}{6) Utilisez la commande \texttt{git revert} pour faire revenir le code dans l'état du tout premier commit.}
+    \texttt{git revert 6fb81b46b50d859a2a1ee14d6e932a4d48ee10ec} \\
+    \texttt{cat index.html} \\
+    \texttt{<h1>Bienvenue sur mon site</h1>} \\
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Suite de la correction}
+    \begin{exampleblock}{7) Observez l'historique des commits avec \texttt{git log}. Que constatez vous ?}
+    \texttt{git log} \\
+    \texttt{commit 6fb81b46b50d859a2a1ee14d6e932a4d48ee10ec (HEAD -> master)} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:17:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Revert "Ajout d'un paragraphe"} \\
+    \texttt{    This reverts commit 6fb81b46b50d859a2a1ee14d6e932a4d48ee10ec} \\
+    \texttt{commit 6fb81b46b50d859a2a1ee14d6e932a4d48ee10ec} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:16:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Ajout d'un paragraphe} \\
+    \texttt{commit b1160cc00a4a01ce432db264fa0ce8116ac6ac9c} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:15:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Ajout de la page d'accueil}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Suite de la correction}
+
+    On constate que le dernier commit \textbf{n'a pas été supprimé}, mais qu'il y a un nouveau commit qui s'est ajouté. L'arborescence est dans le même état que lors du premier commit, mais on n'est pas au premier commit. Cela permet d'avoir aussi dans les logs l'historique du retour en arrière. Intéressant si c'est une information à conserver.
+    \vfill
+    \begin{exampleblock}{8) Utilisez la commande \texttt{git reset} pour revenir au premier commit}
+    \texttt{git reset b1160cc00a4a01ce432db264fa0ce8116ac6ac9c} \\
+    \texttt{cat index.html} \\
+    \texttt{<h1>Bienvenue sur mon site</h1>} 
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Suite de la correction}
+
+    \begin{exampleblock}{9) Observez l'historique des commits avec \texttt{git log}. Que constatez vous ?}
+    \texttt{git log} \\
+    \texttt{commit b1160cc00a4a01ce432db264fa0ce8116ac6ac9c (HEAD -> master)} \\
+    \texttt{Author: login <login@laptop} \\
+    \texttt{Date:   Thu Aug 30 03:15:20 1984 +0200} \\
+    \texttt{}\\
+    \texttt{    Ajout de la page d'accueil} \\
+    \end{exampleblock}
+
+    On constate que les 2 derniers commit ont été \textbf{supprimé}. Contrairement à \texttt{git revert}, nous n'avons pas de trace du retour en arrière. Intéressant si l'on ne veut pas conserver cette information, mais commande "destructrice".
+\end{frame}
+
+\begin{frame}
+    \frametitle{Suite de la correction}
+    
+    \begin{exampleblock}{10) Expliquez quelle est la différence entre \texttt{git revert} et \texttt{git reset}.}
+    \texttt{git reset} modifie l'historique en supprimant ou réécrivant des commits, tandis que \texttt{git revert} crée un nouveau commit qui annule les changements d'un commit précédent sans altérer l'historique.
+    \end{exampleblock}
+\vfill
+    \begin{alertblock}{Attention}
+        Dans notre exemple, seul un fichier est impacté par \texttt{revert} et \texttt{reset}, mais c'est parce que nous ne manipulons qu'un fichier. Si il y a plusieurs fichiers concernés par un commit, ces commandes impactent alors \textbf{l'ensemble des fichiers} concernés par le commit.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice : Utilisation de Git avec un dépôt distant}
+
+\begin{exampleblock}{Apprendre à travailler avec un dépôt distant sur GitHub ou GitLab.}
+    \begin{enumerate}
+        \item Faire un compte sur github (ou gitlab) si ce n'est pas déjà fait
+        \item Créer un dépôt sur la plateforme avec un fichier README.md
+        \item Cloner le dépôt distant localement
+        \item Faire une modification du fichier README.md sur le dépôt distant via la plateforme (et donc faire un commit)
+        \item Mettre à jour le dépôt local pour être à jour des derniers changements
+        \item Faire une modification localement du fichier README.md
+        \item Faire en sorte de pousser cette modification sur le dépôt distant
+    \end{enumerate}
+\end{exampleblock}
+\end{frame}
+ 
+%\section{YAML et JSON : langage et format de données pour l'administration systèmes et réseaux}
+%\begin{frame}
+%Voir \href{https://github.com/jmchantrein/yaml_et_json}{ici}
+%\end{frame}
+% 
+%\section{Ansible : automatiser les tâches d'administration}
+% 
+\end{document}
+
+ 
+ 

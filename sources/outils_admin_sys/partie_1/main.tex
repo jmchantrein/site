@@ -1,0 +1,2040 @@
+\documentclass[10pt]{beamer}
+\usetheme{Warsaw}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+%\usepackage{emoji}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{color}
+\usepackage{animate}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{array,multirow,rotating,hhline,subfig}
+\usepackage[
+    type={CC},    
+    modifier={by-nc-sa},
+    version={3.0},
+]{doclicense}
+
+% Debut Ecriture et la coloration syntaxique de code
+\usepackage{listings} 
+% Configuration de l'affichage pour le code Bash
+% Définition du style de listing pour Bash
+\lstset{
+    language=bash,                      % Langage Bash
+    basicstyle=\ttfamily\small,         % Police de base
+    keywordstyle=\color{orange},          % Style des mots-clés
+    stringstyle=\color{red},          % Style des chaînes de caractères
+    commentstyle=\color{blue},          % Style des commentaires
+    showstringspaces=false,             % Ne montre pas les espaces dans les chaînes
+    numberstyle=\tiny\color{gray},      % Style des numéros de ligne
+    numbers=left,                       % Numéros de ligne à gauche
+    stepnumber=1,                       % Chaque ligne numérotée
+    tabsize=4,                          % Taille des tabulations
+    breaklines=true,                    % Coupe les lignes trop longues
+    frame=none,                       % Cadre autour du code
+    captionpos=b,                       % Position de la légende (en bas)
+}
+
+%\lstset{escapechar=@,style=bash}
+
+\lstset{literate=
+{á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+{à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+{À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+{ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+{Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+{â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+{Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+{œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
+{ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
+{ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
+{€}{{\EUR}}1 {£}{{\pounds}}1 {'}{{'}}1
+}
+
+% Fin Ecriture et la coloration syntaxique de code
+
+
+\newenvironment<>{shell}[1]{%
+	\setbeamercolor{block title}{fg=white,bg=black}%
+	\setbeamercolor{block body}{fg=white,bg=black}
+	\begin{block}#2{\underline{Terminal:}}}{\normalsize \end{block}
+}
+
+\newcommand\prompt{\textcolor{green}{jmc@laptop}\textcolor{cyan}{ /home/jmc \$ }}
+
+\title{Introduction aux outils d'administration systèmes: partie 1}
+\author{Jean-Mathieu Chantrein}
+\institute{Université d'Angers}
+%\date{2024}
+\setbeamertemplate{navigation symbols}{} 
+%\logo{\vspace{-0.47cm}\includegraphics[scale=0.15]{img/logos}}
+
+\institute{LERIA} 
+
+
+%\setbeamercovered{transparent}
+
+\setbeamertemplate{navigation symbols}{}
+\addtobeamertemplate{footline}{\hfill\insertframenumber/\inserttotalframenumber\hspace{2em}\null}
+
+\setbeamersize{text margin left=10px}
+\setbeamersize{text margin right=10px}
+
+%Configuration listing
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+
+
+
+\begin{document}
+
+\AtBeginSection[]
+{
+	\begin{frame}{Plan}
+	\tableofcontents[currentsection] %,hideallsubsections
+	\end{frame}
+}
+
+\begin{frame}
+\titlepage
+
+\end{frame}
+
+\begin{frame}{Licence}
+	\begin{block}{}
+		\doclicenseThis
+	\end{block}
+\end{frame}
+
+\begin{frame}{Plan}
+	\tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Objectifs du cours}
+    \begin{itemize}
+        \item Découvrir une partie des outils fondamentaux des administrateurs systèmes/réseaux.
+        \item Comprendre le lien entre ces outils et les deux cours futurs : \textbf{Virtualisation avec KVM} et \textbf{conteneurisations avec Docker}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Pourquoi ce cours est-il important ?}
+    \begin{itemize}
+        \item Acquisition de compétences en administration de systèmes Linux.
+        \begin{itemize}
+            \item 80\% des serveurs dans le monde fonctionne sur des systèmes Unix/Unix-like
+            \item 100\% des supercalculateurs dans le monde fonctionne sur des systèmes GNU/Linux
+        \end{itemize}
+        \item Préparation à travailler dans des environnements non graphiques: c'est le cas de la majorité des serveurs pro.
+        \item Comprendre l'intérêt de l'automatisation des configurations.
+        \item Comprendre l'intérêt de passer du temps à monter en compétences sur des outils complexes pour pouvoir \textbf{gagner} du temps par la suite
+        \item Connaitre les règles de bases en sécurité des accès des systèmes (notamment les accès distants) 
+    \end{itemize}
+\end{frame}
+
+\subsection{Plan du cours (27 heures)}
+
+\begin{frame}
+    \frametitle{Plan du cours (27 heures)}
+    \begin{block}{Partie 1}
+    \begin{enumerate}
+        \item \textbf{Vim} : éditeur de texte pour environnements non graphiques (2h)
+        \item \textbf{Markdown} : format de documentation technique (2h)
+        \item \textbf{Bash, sed, awk} : commandes basiques et script d'automatisation (5h)
+        \item \textbf{SSH} : accès distant sécurisé (2h)
+        \item \textbf{Wireguard} : VPN pour accès distant sécurisé (2h)
+    \end{enumerate}
+    \end{block}
+    \begin{block}{Partie 2}
+    \begin{enumerate}
+        \item \textbf{Git} : gestion de version et collaboration (3h)
+        \item \textbf{YAML et JSON} : langages pour la structuration des données (2h)
+        \item \textbf{Ansible} : automatisation des configurations (9h)
+    \end{enumerate}
+    \end{block}
+\end{frame}
+
+\section{Éditeurs CLI et documentation basique}
+\subsection{Vim, l'éditeur de texte non graphique incontournable}
+\begin{frame}
+    \frametitle{Objectifs de la partie}
+    \begin{itemize}
+        \item Comprendre l'importance de Vim dans les environnements non graphiques.
+        \item Maîtriser les commandes de base pour la navigation et l'édition.
+        \item Utiliser Vim efficacement dans le cadre de l'administration système.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Pourquoi Vim ?}
+    \begin{itemize}
+        \item Outil incontournable pour éditer des fichiers texte sur des serveurs sans interface graphique.
+        \item Légèreté, rapidité, et présence par défaut sur la majorité des distributions Linux.
+        \item Courbe d'apprentissage abrupte mais efficacité accrue une fois maîtrisé par rapport à d'autres éditeurs "user-friendly".
+        \item Utilisation dans des tâches critiques : édition de fichiers de configuration, scripts, etc.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Modes de Vim}
+    \begin{itemize}
+        \item \textbf{Mode normal} : pour la navigation, la suppression, la copie, etc.
+        \item \textbf{Mode insertion} : pour ajouter du texte.
+        \item \textbf{Mode commande} : pour effectuer des tâches plus complexes (sauvegarde, fermeture, etc.).
+        \item \textbf{Mode visuel colonne} : pour travailler sur une/des colonnes
+        \item \textbf{Mode visuel ligne} : pour travailler sur une/des lignes
+    \end{itemize}
+    \vfill
+    \begin{block}{Changer de mode}
+        \begin{itemize}
+            \item \texttt{i} : passer en mode insertion.
+            \item \texttt{Esc} : revenir en mode normal.
+            \item \texttt{:} : passer en mode commande.
+            \item \texttt{Ctrl + V} : passer en mode visuel colonne.
+            \item \texttt{V} : passer en mode visuel ligne.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Commandes de base en mode normal}
+    \begin{itemize}
+        \item \textbf{Déplacement}
+        \begin{itemize}
+            \item \texttt{h} : gauche
+            \item \texttt{j} : bas
+            \item \texttt{k} : haut
+            \item \texttt{l} : droite
+            \item ou flèches directionnelles
+            \item \texttt{/mot} : recherche le mot \texttt{mot}
+        \end{itemize}
+        \item \textbf{Suppression et copie}
+        \begin{itemize}
+            \item \texttt{dw} (Delete Word) : supprimer un mot.
+            \item \texttt{dd} (Delete Delete) : supprimer une ligne.
+            \item \texttt{yy} (Yank Yank) : copier une ligne.
+            \item \texttt{p} (Put/Paste) : coller.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Commandes de base en mode commande}
+        \item \textbf{Sauvegarder et quitter}
+        \begin{itemize}
+            \item \texttt{:w} : sauvegarder.
+            \item \texttt{:q} : quitter.
+            \item \texttt{:wq} : sauvegarder et quitter.
+            \item \texttt{:q!} : quitter sans sauvegarder.
+            \item \texttt{:\%s/chaine1/chaine2/g} : remplace toutes les occurences de chaine1 par chaine2
+        \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Créer, modifier, sauvegarder et quitter un fichier}
+    \begin{itemize}
+        \item Ouvrir Vim : \texttt{vim fichier.txt}
+        \item Passer en mode insertion : \texttt{i}
+        \item Écrire : "Hello World !"
+        \item Sauvegarder et quitter : \texttt{Esc}, puis \texttt{:wq}
+    \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Navigation avancée dans Vim}
+    \begin{itemize}
+        \item \texttt{gg} (go go) : aller au début du fichier.
+        \item \texttt{G} (Go) : aller à la fin du fichier.
+        \item \texttt{/mot} : rechercher un mot dans le fichier.
+        \item \texttt{n} : aller à l'occurrence suivante du mot recherché.
+        \item \texttt{N} : aller à l'occurrence précédente du mot recherché.
+        \item \texttt{\%} : trouver la parenthèse ou accolade correspondante.
+        \item \texttt{r} : remplacer le caractère sous le curseur.
+        \item \texttt{R} : remplacer plusieurs caractères à partir du curseur.
+        \item ... (beaucoup d'autres possibilitées)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Manipulation de blocs de texte}
+    \begin{itemize}
+        \item \texttt{v} : commencer la sélection en mode visuel (en bloc).
+        \item \texttt{V} : sélectionner une ligne entière (en ligne).
+        \item \texttt{y} : copier la sélection.
+        \item \texttt{d} : supprimer la sélection.
+        \item \texttt{p} : coller la sélection précédemment copié.
+    \end{itemize}
+    \vfill
+    \begin{block}{Astuce :}
+        Utiliser les sélections visuelles pour manipuler rapidement de grandes portions de texte:
+        \begin{itemize}
+            \item Supprimer/substituer dans une zone de texte prédéfinis
+            \item Insérer des caractères en colone sur une sélection de texte (pratique pour mettre en commentaire par exemple)
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Configuration de Vim}
+    \begin{itemize}
+        \item Fichier de configuration : \texttt{\$HOME/.vimrc}
+        \item Quelques options utiles :
+        \begin{itemize}
+            \item \texttt{set number} : afficher les numéros de ligne.
+            \item \texttt{set autoindent} : indenter automatiquement le code.
+            \item \texttt{set tabstop=2} : définir la taille des tabulations.
+            \item \texttt{syntax on} : coloration syntaxique.
+            \item ... (hautement paramétrable)
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Objectif}
+        Créer un fichier de configuration pour Vim avec Vim et y ajouter du texte.
+    \begin{enumerate}
+        \item Écrire une configuration simple :  
+        ```
+        set number
+        set tabstop=4
+        ```
+        \item Sauvegarder le fichier et quitter.
+        \item Ouvrir à nouveau le fichier et remplacer 4 par 2 en utilisant \texttt{r}.
+    \end{enumerate}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Utiliser les commandes de navigation et de sélection.}
+    \begin{enumerate}
+        \item Ouvrir un fichier de texte existant avec Vim.
+        \item Naviguer dans le fichier en utilisant les commandes \texttt{gg}, \texttt{G}, et \texttt{/}.
+        \item Sélectionner plusieurs lignes et les copier dans une nouvelle partie du fichier.
+        \item Rechercher un mot et remplacer le à plusieurs endroits.
+    \end{enumerate}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Tutoriel Vim}
+    \begin{enumerate}
+        \item Ouvrir un terminal et exécuter la commande \texttt{vimtutor} .
+        \item Faire le tutoriel.
+        \item Refaire le tutoriel tous les jours jusqu'à ce qu'il n'y ait plus aucune difficulté.
+        \item Se servir de Vim tous les jours.
+        \item Ne pas basculer dans le côté obscur et ne pas se servir de \texttt{emacs} ;-) .%\emoji{scream} \emoji{wink}.
+    \end{enumerate}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Récapitulatif}
+    \begin{itemize}
+        \item Vim est un outil très puissant et indispensable pour tout administrateur système.
+        \item Maîtriser les commandes de base est essentiel pour éditer rapidement et efficacement des fichiers de configuration.
+        \item Avec la pratique, Vim devient un éditeur extrêmement productif.
+        \item Une fois les commandes de bases maitrisées, il peut être intéressant de regarder du côté des plugins de Vim
+        \item Beaucoup d'IDE graphique moderne propose des options qui permettent d'éditer à la manière de Vim.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Ressources supplémentaires}
+    \leftskip=5cm
+    \begin{itemize}
+        \item https://www.openvim.com : un simulateur interactif pour apprendre Vim.
+        \item https://vim-adventures.com : un jeu pour apprendre Vim de manière ludique.
+        \item https://vim.rtorr.com : Cheat Sheet pour les commandes Vim.
+    \end{itemize}
+\end{frame}
+
+\subsection{Markdown, format de documentation technique}
+
+\begin{frame}
+    \frametitle{Objectifs}
+    \begin{itemize}
+        \item Comprendre le format Markdown et son utilité.
+        \item Apprendre à structurer efficacement la documentation avec Markdown.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Pourquoi utiliser Markdown ?}
+    \begin{itemize}
+        \item Format léger et facile à lire, largement utilisé pour la documentation technique.
+        \item Compatible avec de nombreuses plateformes et outils (GitHub, GitLab, etc.).
+        \item Permet de structurer des documents sans avoir besoin d'un traitement de texte complexe.
+        \item Idéal pour créer des fichiers README, de la documentation utilisateur ou technique.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Structure de base d’un fichier Markdown}
+    Voir \textit{\href{https://github.com/jmchantrein/Markdown} {Présentation du langage Markdown (rédigé en Markdown)}}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Objectif}
+        Créer (avec Vim) un fichier Markdown documentant une commande Linux.
+    \end{exampleblock}
+    \begin{enumerate}
+        \item Créer (avec Vim) un fichier \texttt{doc.md}.
+        \item Ajouter un titre de niveau 1 : ``Documentation de la commande `ls`''.
+        \item Ajouter un paragraphe expliquant à quoi sert la commande.
+        \item Insérer un bloc de code pour montrer comment utiliser \texttt{ls}.
+        \item Ajouter une liste à puces des options les plus courantes de \texttt{ls}.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Objectif}
+        Créer (avec Vim) un fichier README.md pour un projet fictif.
+    \end{exampleblock}
+    \begin{enumerate}
+        \item Créer (avec Vim) un fichier \texttt{README.md}.
+        \item Ajouter un titre de niveau 1 : ``Mon projet''.
+        \item Ajouter une section de description avec un texte simple.
+        \item Insérer un lien vers un site externe (ex. GitHub).
+        \item Ajouter une liste numérotée des étapes pour installer le projet.
+        \item Ajouter un bloc de code montrant une commande d'installation.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exercice}
+    \begin{exampleblock}{Objectif}
+        Convertir du markdown avec pandoc
+    \end{exampleblock}
+    \begin{enumerate}
+        \item Installer \texttt{pandoc}, \texttt{texlive-latex-base} et\texttt{texlive-latex-recommended}
+        \item Consulter son manuel
+        \item Convertir vos 2 précédents fichiers en HTML, latex, odt et PDF
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Récapitulatif}
+    \begin{itemize}
+        \item Markdown est un format léger et flexible pour la rédaction de documents techniques.
+        \item Facile à lire et à écrire, il permet de structurer des documents avec des titres, des listes, des liens et des images.
+        \item Idéal pour les fichiers README, la documentation de projets et la rédaction technique en général.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Ressources supplémentaires}
+    \begin{itemize}
+        \item [\href{https://www.markdownguide.org/}{Markdown Guide}] : Guide complet sur l'utilisation de Markdown.
+        \item [\href{https://dillinger.io/}{Dillinger}] : Un éditeur Markdown en ligne.
+        \item [\href{https://guides.github.com/features/mastering-markdown/}{GitHub Markdown Guide}] : Guide pour maîtriser Markdown dans GitHub.
+    \end{itemize}
+\end{frame}
+
+\section{Bash, sed, awk : les bases de l'administration système}
+\subsection{Bash}
+\begin{frame}
+    \frametitle{Objectifs de la partie}
+    \begin{itemize}
+        \item Comprendre l’importance de Bash en administration système.
+        \item Maîtriser les bases de l’utilisation du shell pour des tâches répétitives.
+        \item Automatiser les tâches avec des scripts Bash.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Pourquoi utiliser Bash ?}
+    \begin{itemize}
+        \item Bash est présent sur la majorité des systèmes Unix/Linux par défaut.
+        \item Outil puissant pour automatiser les tâches répétitives (gestion de fichiers, installation de logiciels, etc.).
+        \item Syntaxe relativement simple à apprendre, permettant de créer rapidement des scripts.
+        \item Essentiel pour les tâches d’administration système : gestion des utilisateurs, sauvegardes, etc.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Commandes de base en Bash}
+    \begin{itemize}
+        \item \texttt{cd} : changer de répertoire.
+        \item \texttt{ls} : lister les fichiers.
+        \item \texttt{mkdir} : créer un répertoire.
+        \item \texttt{cp} : copier des fichiers ou des répertoires.
+        \item \texttt{mv} : déplacer ou renommer des fichiers.
+    \end{itemize}
+    \vfill
+    \begin{exampleblock}{Exemple de commandes basiques :}
+        \texttt{cd /home/username/} \\
+        \texttt{ls -l} \\
+        \texttt{mkdir mon\_repertoire}
+    \end{exampleblock}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Qu'est-ce qu'un pipe en Bash ?}
+
+    \begin{block}{Définition :}
+    Un pipe (\texttt{|}) en Bash permet de rediriger la sortie standard d'une commande comme entrée standard pour une autre commande.
+    \end{block}
+    
+    \textbf{Fonctionnement du pipe :}
+    \begin{itemize}
+        \item La sortie d'une commande devient l'entrée de la commande suivante.
+        \item Permet de chaîner plusieurs commandes pour effectuer des traitements successifs.
+    \end{itemize}
+
+    \vfill
+    \textbf{Syntaxe :}
+    \begin{itemize}
+        \item \texttt{commande1 | commande2}
+        \item Exécute \texttt{commande1}, et sa sortie est redirigée vers \texttt{commande2}.
+    \end{itemize}
+
+    \vfill
+    \textbf{Avantages :}
+    \begin{itemize}
+        \item Permet de combiner des outils simples pour créer des pipelines complexes.
+        \item Évite l'utilisation de fichiers temporaires.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exemple simple de pipe}
+
+    \textbf{Exemple d'utilisation d'un pipe :}
+    
+    \vfill
+    \texttt{ls -l | grep ".txt"}
+
+    \vfill
+    \textbf{Explication :}
+    \begin{itemize}
+        \item \texttt{ls -l} : Liste les fichiers du répertoire courant en mode détaillé.
+        \item \texttt{|} : Redirige la sortie de \texttt{ls} vers \texttt{grep}.
+        \item \texttt{grep ".txt"} : Filtre les fichiers dont le nom contient ".txt".
+    \end{itemize}
+    
+    \vfill
+    \textbf{Résultat :}
+    \begin{itemize}
+        \item Affiche uniquement les lignes correspondant aux fichiers ".txt" dans la sortie de \texttt{ls}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Pipes avec plusieurs commandes}
+
+    \textbf{Les pipes permettent de chaîner plusieurs commandes successivement.}
+
+    \vfill
+    \texttt{cat fichier.txt | sort | uniq | wc -l}
+
+    \vfill
+    \textbf{Explication :}
+    \begin{itemize}
+        \item \texttt{cat fichier.txt} : Affiche le contenu du fichier.
+        \item \texttt{| sort} : Trie les lignes du fichier.
+        \item \texttt{| uniq} : Supprime les doublons dans le fichier trié.
+        \item \texttt{| wc -l} : Compte le nombre de lignes uniques.
+    \end{itemize}
+
+    \vfill
+    \textbf{Résultat :}
+    \begin{itemize}
+        \item Affiche le nombre de lignes uniques dans le fichier \texttt{fichier.txt}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Combinaison de redirections et pipes}
+
+    \textbf{Les pipes peuvent être combinés avec des redirections pour une gestion avancée des flux.}
+
+    \vfill
+    \texttt{commande1 | commande2 > sortie.txt}
+
+    \vfill
+    \textbf{Explication :}
+    \begin{itemize}
+        \item \texttt{commande1} : Exécute la première commande.
+        \item \texttt{| commande2} : Redirige la sortie de \texttt{commande1} vers \texttt{commande2}.
+        \item \texttt{> sortie.txt} : Redirige la sortie de \texttt{commande2} vers un fichier \texttt{sortie.txt}.
+    \end{itemize}
+
+    \vfill
+    \textbf{Exemple :}
+    \begin{itemize}
+        \item \texttt{ls -l | grep ".txt" > resultats.txt} : Recherche les fichiers ".txt" dans le répertoire courant et enregistre le résultat dans \texttt{resultats.txt}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{}
+    \begin{alertblock}{Attention}
+        Ne pas confondre \\
+        \texttt{commande1 | commande2} \\
+        avec \\
+        \texttt{commande1 || commande2} \\
+    \end{alertblock}
+    \begin{exampleblock}{Exercice :}
+        Se familiariser avec les commandes basiques et le terminal en jouant à \item https://github.com/phyver/GameShell.
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Variables dans Bash}
+    \begin{itemize}
+        \item Les variables permettent de stocker des valeurs temporaires.
+        \item Syntaxe pour définir une variable : \texttt{NOM\_VAR="valeur"}.
+        \item Accès à la valeur d'une variable : \texttt{\$NOM\_VAR}.
+    \end{itemize}
+    \vfill
+    \begin{exampleblock}{Exemple}
+        \texttt{nom="Charlie"} \\
+        \texttt{echo "Bonjour \$nom"}
+    \end{exampleblock}
+    \vfill
+    \begin{itemize}
+        \item Le résultat affichera : \texttt{Bonjour Charlie}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Conditions et boucles dans Bash}
+    \textbf{Condition \texttt{if} :} \\
+        \texttt{if [ condition ]; then} \\
+        \texttt{\ \ \ \ commandes} \\
+        \texttt{fi} \\
+    \vfill
+    \textbf{Boucle \texttt{for} :} \\
+        \texttt{for var in liste; do} \\
+        \texttt{\ \ \ \ commandes} \\
+        \texttt{done} \\
+    \vfill
+    \begin{exampleblock}{Exemple boucle for}
+        \texttt{for fichier in \$(ls); do} \\
+        \texttt{\ \ \ \ echo "Fichier : \$fichier"} \\
+        \texttt{done}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{La boucle \texttt{while}}
+
+    \textbf{Syntaxe :}
+    \begin{exampleblock}{Syntaxe générale}
+    \texttt{while [ condition ]; do \\
+    \ \ \ \ commandes \\
+    done}
+    \end{exampleblock}
+
+    \vfill
+    \textbf{Exemple :}
+    \begin{exampleblock}{Exemple d'une boucle \texttt{while} simple}
+    \texttt{count=1 \\
+    while [ \$count -le 5 ]; do \\
+    \ \ \ \ echo "Itération \$count" \\
+    \ \ \ \ count=\$((count + 1)) \\
+    done}
+    \end{exampleblock}
+
+    \vfill
+    \textbf{Résultat :}
+    \begin{itemize}
+        \item Affiche "Itération 1", "Itération 2", etc., jusqu'à "Itération 5".
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Écriture d’un script Bash}
+    \begin{itemize}
+        \item Un script Bash est un fichier texte contenant une série de commandes Bash.
+        \item Début d’un script : \texttt{\#!/bin/bash} (indique l’interpréteur à utiliser).
+        \item Rendre le script exécutable avec \texttt{chmod +x script.sh}.
+        \item Exécution du script : \texttt{./script.sh}.
+    \end{itemize}
+    \vfill
+    \begin{exampleblock}{Exemple de script :}
+        \texttt{\#!/bin/bash} \\
+        \texttt{echo "Script lancé"} \\
+        \texttt{for i in \{1..5\}; do} \\
+        \texttt{\ \ \ \ echo "Itération \$i"} \\
+        \texttt{done} \\
+        \texttt{\# Un commentaire en bash} \\
+        \texttt{\# Notez que le code de retour en bash est 0 lorsque tout se passe bien} \\
+        \texttt{return 0} \\
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exemple : Script pour sauvegarder des fichiers}
+    \textbf{Objectif :} Sauvegarder tous les fichiers d'un répertoire dans un fichier compressé.
+    \vfill
+    \begin{exampleblock}{}
+        \texttt{\#!/bin/bash} \\
+        \texttt{DATE=\$(date +\%Y\%m\%d)} \\
+        \texttt{tar -czf backup\_\$DATE.tar.gz /chemin/vers/dossier}
+    \end{exampleblock}
+    \vfill
+    \textbf{Explication :}
+    \begin{itemize}
+        \item Le script crée un fichier compressé avec une date dans le nom.
+        \item Il utilise la commande \texttt{tar} pour archiver et compresser le contenu du répertoire \texttt{/chemin/vers/dossier}.
+        \item il suffit ensuite de cronner le script pour qu'il soit exécuté à une certaine fréquence.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Digression: \texttt{cron} et \texttt{crontab}}
+    \begin{itemize}
+        \item \textbf{cron} est un service permettant d'automatiser l'exécution de tâches à des intervalles de temps réguliers ou prédéfinis.
+        \item Il est souvent utilisé pour des tâches récurrentes telles que la sauvegarde des fichiers, la surveillance des systèmes, ou l'envoi de rapports.
+        \item \textbf{crontab} est le fichier de configuration qui contient les tâches à exécuter par le service \texttt{cron}.
+        \item Chaque utilisateur peut avoir son propre fichier \texttt{crontab}, permettant de planifier ses propres tâches.
+    \end{itemize}
+
+    \vfill
+    \textbf{Principaux usages de \texttt{cron} :}
+    \begin{itemize}
+        \item Sauvegardes automatiques
+        \item Envoi de mails de rapport quotidien
+        \item Synchronisation de fichiers
+        \item Tâches de maintenance système (nettoyage, mise à jour)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Digression : format d'une entrée dans \texttt{crontab}}
+
+    \texttt{crontab} suit une syntaxe spécifique pour définir la fréquence d'exécution d'une tâche :
+    
+    \begin{center}
+    \texttt{minute heure jour mois jour\_de\_la\_semaine login commande}
+    \end{center}
+
+    \textbf{Explication des champs} :
+    \begin{itemize}
+        \item \texttt{minute} : de 0 à 59
+        \item \texttt{heure} : de 0 à 23
+        \item \texttt{jour} : de 1 à 31
+        \item \texttt{mois} : de 1 à 12
+        \item \texttt{jour\_de\_la\_semaine} : de 0 (dimanche) à 6 (samedi)
+        \item \texttt{login} : utilisateurice qui exécute la commande
+        \item \texttt{commande} : la commande bash à exécuter
+    \end{itemize}
+
+    \begin{exampleblock}{Exemple d'entrée \texttt{crontab} :}
+        \texttt{0 2 * * 1 root /usr/bin/backup.sh}
+    \end{exampleblock}
+    \vfill
+    \textbf{Interprétation :} Exécuter le script \texttt{/usr/bin/backup.sh} en tant que root chaque lundi à 2h00 du matin.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Tests conditionnels dans Bash}
+
+    \textbf{Les tests conditionnels permettent d'exécuter des commandes selon certaines conditions.}
+
+    \begin{block}{Syntaxe des tests conditionnels :}
+        \texttt{if [ condition ]; then \\
+        \ \ \ \ commandes \\
+        fi}
+    \end{block}
+    \vfill
+    \begin{exampleblock}{Exemple de tests conditionnels}
+        \lstinputlisting[language=bash]{code/exemple_tests.bash}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Tests conditionnels sur les fichiers}
+
+    \textbf{Principaux tests sur les fichiers :}
+    \begin{itemize}
+        \item \texttt{-d "fichier"} : Vrai si "fichier" est un répertoire
+        \item \texttt{-f "fichier"} : Vrai si "fichier" est un fichier régulier
+        \item \texttt{-r "fichier"} : Vrai si "fichier" est lisible
+        \item \texttt{-w "fichier"} : Vrai si "fichier" est modifiable
+        \item \texttt{-x "fichier"} : Vrai si "fichier" est exécutable
+        \item \texttt{-s "fichier"} : Vrai si "fichier" n'est pas vide
+        \item \texttt{-e "fichier"} : Vrai si "fichier" existe
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Tests conditionnels sur les chaînes de caractères}
+
+    \textbf{Principaux tests sur les chaînes :}
+    \begin{itemize}
+        \item \texttt{-z "chaine"} : Vrai si la chaîne est vide
+        \item \texttt{-n "chaine"} : Vrai si la chaîne n'est pas vide
+        \item \texttt{"chaine1" = "chaine2"} : Vrai si \texttt{chaine1} est égale à \texttt{chaine2}
+        \item \texttt{"chaine1" != "chaine2"} : Vrai si \texttt{chaine1} est différente de \texttt{chaine2}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Tests conditionnels sur les nombres}
+
+    \textbf{Principaux tests numériques :}
+    \begin{itemize}
+        \item \texttt{"\$a" -eq "\$b"} : Vrai si \texttt{\$a} est égal à \texttt{\$b}
+        \item \texttt{"\$a" -ne "\$b"} : Vrai si \texttt{\$a} est différent de \texttt{\$b}
+        \item \texttt{"\$a" -lt "\$b"} : Vrai si \texttt{\$a} est inférieur à \texttt{\$b}
+        \item \texttt{"\$a" -le "\$b"} : Vrai si \texttt{\$a} est inférieur ou égal à \texttt{\$b}
+        \item \texttt{"\$a" -gt "\$b"} : Vrai si \texttt{\$a} est supérieur à \texttt{\$b}
+        \item \texttt{"\$a" -ge "\$b"} : Vrai si \texttt{\$a} est supérieur ou égal à \texttt{\$b}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Opérateurs logiques pour combiner des conditions}
+
+    \textbf{Opérateurs logiques pour combiner plusieurs tests :}
+    \begin{itemize}
+        \item \texttt{-a} : ET logique (and)
+        \item \texttt{-o} : OU logique (or)
+        \item \texttt{!} : Négation (not)
+    \end{itemize}
+
+    \vfill
+    \textbf{Astuce :} Utilisez les doubles crochets \texttt{[[ ... ]]} pour des tests avancés et éviter les erreurs avec les opérateurs.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Syntaxe des doubles crochets \texttt{[[ ... ]]} dans Bash}
+
+    \textbf{Les doubles crochets \texttt{[[ ... ]]} offrent plusieurs avantages par rapport aux simples crochets \texttt{[ ... ]} dans les tests conditionnels.}
+
+    \vfill
+    \textbf{Avantages des doubles crochets :}
+    \begin{itemize}
+        \item \textbf{Pas besoin d'échapper les opérateurs logiques} : Les opérateurs \texttt{&&} et \texttt{||} peuvent être utilisés directement sans échappement.
+        \item \textbf{Gestion des expressions régulières} : Possibilité d'utiliser l'opérateur \texttt{=\textasciitilde} pour tester les correspondances avec des expressions régulières.
+        \item \textbf{Tests multiples plus lisibles} : Les doubles crochets permettent d'éviter certaines ambiguïtés avec les simples crochets et facilitent la combinaison de plusieurs tests.
+    \end{itemize}
+
+    \vfill
+    \textbf{Syntaxe :}
+    \begin{itemize}
+        \item \texttt{[[ condition1 \&\& condition2 ]]} : Vrai si \texttt{condition1} et \texttt{condition2} sont vraies.
+        \item \texttt{[[ condition1 || condition2 ]]} : Vrai si \texttt{condition1} ou \texttt{condition2} est vraie.
+        \item \texttt{[[ chaine =\textasciitilde regex ]]} : Vrai si \texttt{chaine} correspond à l'expression régulière \texttt{regex}.
+    \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Récupération de données en mode interactif}
+
+    \textbf{Mode interactif} : L'utilisateur est invité à saisir des informations pendant l'exécution du script.
+
+    \vfill
+    \begin{exampleblock}{Exemple simple :}
+        \lstinputlisting[language=bash]{code/exemple_saisie.bash}
+    \end{exampleblock}
+    \textbf{Explications :}
+    \begin{itemize}
+        \item \texttt{read -r nom} : Récupère la saisie de l'utilisateurice, et stocke la valeur dans la variable \texttt{nom}.
+        \item \texttt{echo} : Affiche un message de salutation en utilisant la variable \texttt{nom}.
+    \end{itemize}
+
+    \vfill
+    \textbf{Utilisation courante :} Scripts d'installation, configuration initiale de services.
+    \textbf{INCONVENIENT:} Script non exécutable via \texttt{cron} ou \texttt{at}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Récupération de données en mode non interactif}
+
+    \textbf{Mode non interactif} : Les données sont récupérées sans intervention directe de l'utilisateur, souvent via des variables d'environnement ou des arguments en ligne de commande.
+
+    \textbf{Passer des arguments à un script :}
+    \begin{exampleblock}{}
+    \lstinputlisting[language=bash]{code/exemple_argument.bash}
+    \begin{shell}
+        \texttt{./script.sh arg1 arg2} \\
+        \texttt{L'argument zero est : script.sh} \\
+        \texttt{Le premier argument est : arg1} \\
+        \texttt{Le deuxième argument est : arg2} \\
+    \end{shell}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Importance des guillemets dans Bash}
+
+    \textbf{Pourquoi utiliser des guillemets autour des variables ?}
+    
+    \vfill
+    \textbf{1. Prévenir les erreurs avec les espaces :}
+    \begin{itemize}
+        \item Sans guillemets, si une variable contient des espaces, Bash peut mal interpréter son contenu comme plusieurs arguments ou commandes.
+    \end{itemize}
+    
+    \vfill
+    \textbf{2. Gérer les variables vides ou non définies :}
+    \begin{itemize}
+        \item Sans guillemets, une variable vide ou non définie peut entraîner des erreurs de syntaxe ou des comportements inattendus dans les tests conditionnels ou les commandes.
+    \end{itemize}
+    
+    \vfill
+    \textbf{Bonne pratique : Toujours entourer les variables avec \texttt{"\$variable"} pour éviter ces problèmes.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exemples d'erreurs sans guillemets}
+
+\begin{exampleblock}{Variable contenant des espaces}
+    \texttt{dossier="Mon dossier important"} \\
+    \texttt{cd \$dossier  \# Erreur ! Interprété comme plusieurs arguments} \\
+    \vfill
+    \pause
+    \textbf{Solution :} \\
+    \texttt{cd "\$dossier"  \# Le répertoire est correctement interprété} \\
+\end{exampleblock}
+\pause
+\begin{exampleblock}{Variable vide non protégée}
+    \texttt{nom=} \\
+    \texttt{if [ \$nom = "Etudiant" ]; then  \# Erreur de syntaxe !} \\
+    \texttt{\ \ \ echo "Bonjour, \$nom"} \\
+    \texttt{fi} \\
+    \vfill
+    \pause
+    \textbf{Solution :} \\
+    \texttt{if [ "\$nom" = "Etudiant" ]; then  \# Fonctionne même si la variable est vide} \\
+    \texttt{\ \ \ echo "Bonjour, \$nom"} \\
+    \texttt{fi} \\
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Importance des accolades dans Bash}
+
+    \textbf{Pourquoi utiliser des accolades \texttt{\$\{variable\}} ?}
+    
+    \vfill
+    \textbf{1. Clarifier les limites des variables :}
+    \begin{itemize}
+        \item Les accolades permettent de délimiter précisément le nom de la variable, surtout lorsque la variable est concaténée avec d'autres chaînes ou caractères.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Faciliter les manipulations de variables :}
+    \begin{itemize}
+        \item Les accolades sont utiles pour ajouter des suffixes, préfixes ou faire des substitutions sur les variables.
+    \end{itemize}
+
+    \vfill
+    \textbf{Bonne pratique : Utilisez \texttt{\$\{variable\}} pour éviter toute ambiguïté lors de la manipulation des variables.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exemples d'erreurs sans accolades}
+
+    \begin{exampleblock}{Ambiguïté dans la concaténation}
+    \texttt{fichier="rapport"} \\
+    \texttt{ext="txt"} \\
+    \texttt{echo "\$fichierext"  \# Erreur ! Bash cherche une variable nommée "fichierext"} \\
+    \vfill
+    \pause
+    \textbf{Solution :} \\
+    \texttt{echo "\$\{fichier\}\$\{ext\}"  \# La concaténation est correcte : "rapporttxt"} \\
+    \end{exampleblock}
+    \pause   
+    \begin{exampleblock}{Ajout d'un suffixe à une variable}    
+    \texttt{chemin="/usr/local/bin"} \\
+    \texttt{echo "\$chemin\_backup"  \# Erreur ! Bash cherche une variable nommée "chemin\_backup"} \\
+    \vfill
+    \pause
+    \textbf{Solution :} \\
+    \texttt{echo "\$\{chemin\}\_backup"  \# Correct : "/usr/local/bin\_backup"} \\
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Introduction à ShellCheck}
+
+    \textbf{ShellCheck} est un outil de vérification statique pour les scripts shell qui aide à identifier les erreurs courantes et à améliorer la qualité du code.
+
+    \vfill
+    \textbf{Fonctionnalités principales :}
+    \begin{itemize}
+        \item Détection d'erreurs de syntaxe courantes dans les scripts Bash.
+        \item Suggère des bonnes pratiques pour écrire des scripts plus robustes et portables.
+        \item Identifie les problèmes liés aux variables non protégées (guillemets manquants).
+        \item Signale les erreurs logiques courantes comme les boucles infinies ou les conditions mal formées.
+    \end{itemize}
+
+    \vfill
+    \textbf{Pourquoi utiliser ShellCheck ?}
+    \begin{itemize}
+        \item Facilite la maintenance des scripts Bash, surtout pour les projets collaboratifs.
+        \item Améliore la lisibilité et la robustesse des scripts.
+        \item Prévenir les erreurs coûteuses dans des environnements de production.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Utilisation de ShellCheck}
+
+    \textbf{Comment utiliser ShellCheck ?}
+
+    \begin{itemize}
+        \item Installez ShellCheck via le gestionnaire de paquets de votre distribution (ex. : \texttt{apt install shellcheck}).
+        \item Utilisez la commande \texttt{shellcheck} pour analyser vos scripts :
+            \begin{itemize}
+                \item \texttt{shellcheck script.sh}
+            \end{itemize}
+        \item ShellCheck fournit un rapport détaillé des erreurs, avertissements, et suggestions.
+    \end{itemize}
+
+    \vfill
+    \textbf{Exemple de rapport :}
+    \begin{itemize}
+        \item Erreur : Variable utilisée sans guillemets.
+        \item Avertissement : Utilisation inefficace de certaines commandes.
+        \item Suggestion : Utiliser \texttt{[[ ... ]]} à la place de \texttt{[ ... ]} pour améliorer la compatibilité.
+    \end{itemize}
+
+    \vfill
+    \textbf{Astuce :} ShellCheck peut être intégré dans les éditeurs de texte comme Vim pour une analyse en temps réel.
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Bonnes pratiques pour déboguer des scripts Bash}
+
+    \textbf{Déboguer des scripts Bash efficacement :}
+
+    \vfill
+    \textbf{1. Utiliser le mode de débogage intégré (\texttt{-x}) :}
+    \begin{itemize}
+        \item Lancer un script en mode débogage pour afficher chaque commande exécutée :
+            \begin{itemize}
+                \item \texttt{bash -x script.sh}
+            \end{itemize}
+        \item Permet de suivre l'exécution ligne par ligne.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Ajouter des points de journalisation (\texttt{echo}) :}
+    \begin{itemize}
+        \item Insérer des commandes \texttt{echo} dans le script pour afficher la progression ou les valeurs des variables à des points critiques.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Utiliser les options de Bash pour la gestion des erreurs :}
+    \begin{itemize}
+        \item \texttt{set -e} : Stoppe le script en cas d'erreur.
+        \item \texttt{set -u} : Détecte l'utilisation de variables non définies.
+        \item \texttt{set -o pipefail} : Retourne un code d'erreur si l'une des commandes dans un pipeline échoue.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Digression : qu'est-ce qu'un test unitaire ?}
+
+    \textbf{Définition :}
+    
+    Un test unitaire est une méthode de vérification automatisée qui permet de tester une petite partie de code, appelée "unité", de manière isolée pour s'assurer qu'elle fonctionne correctement.
+    
+    \vfill
+    \textbf{Caractéristiques des tests unitaires :}
+    \begin{itemize}
+        \item Portée limitée : Ils testent une seule fonction ou une partie de code spécifique, sans dépendre du reste du programme.
+        \item Rapides à exécuter : Ils doivent être rapides pour être exécutés fréquemment, souvent dans des pipelines d'intégration continue.
+        \item Automatisés : Une fois définis, les tests unitaires peuvent être exécutés automatiquement après chaque modification de code.
+        \item Isolés : Ils ne dépendent pas d'éléments externes (comme une base de données ou un serveur), ce qui permet de tester le code de manière indépendante.
+    \end{itemize}
+    
+    \vfill
+    \textbf{Objectif principal :}
+    
+    Garantir que chaque unité de code fonctionne comme prévu, en facilitant la détection rapide des bugs lorsqu'un changement est introduit dans le code.
+    
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Frameworks de tests unitaires pour Bash}
+
+    \textbf{Pourquoi tester les scripts Bash ?}
+    
+    \vfill
+    Les scripts Bash peuvent être complexes et critiques pour les systèmes. Les frameworks de tests unitaires permettent de valider leur bon fonctionnement avant de les exécuter en production.
+
+    \vfill
+    \textbf{Principaux frameworks de tests unitaires :}
+    \begin{itemize}
+        \item \textbf{Bats (Bash Automated Testing System)} :
+        \begin{itemize}
+            \item Écrit en Bash, facile à intégrer dans des workflows de CI/CD.
+            \item Syntaxe simple pour écrire des tests unitaires pour des scripts Bash.
+            \item Exécution automatique des tests avec des assertions sur les résultats des commandes.
+        \end{itemize}
+
+        \item \textbf{shunit2} :
+        \begin{itemize}
+            \item Inspiré de JUnit, il propose une structure de test similaire pour les scripts shell.
+            \item Compatible avec Bash et d'autres interpréteurs shell.
+        \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exemple de tests avec Bats}
+
+    \textbf{Exemple simple d'un test avec Bats :}
+    \lstinputlisting[language=bash]{code/exemple_test_unit.bats}
+    \vfill
+    \textbf{Description :}
+    \begin{itemize}
+        \item \texttt{run ls} : Exécute la commande \texttt{ls}.
+        \item \texttt{[ "\$status" -eq 0 ]} : Vérifie que la commande a réussi (code de retour 0).
+    \end{itemize}
+    \begin{shell}{}
+    \prompt bats test.bats \\
+    test.bats \\
+    ✓ Test de la commande ls \\
+    1 test, 0 failures \\
+    \end{shell}
+\end{frame}
+
+\begin{frame}
+    \begin{block}{Objectif}
+        Créer un script Bash qui affiche tous les fichiers d'un répertoire demandé à l'utilisateurice.
+    \end{block}
+    \begin{exampleblock}{Exercice :}
+    \begin{enumerate}
+        \item Créer un fichier \texttt{liste\_fichiers.bash}.
+        \item Utiliser une boucle \texttt{for} pour lister les fichiers d’un répertoire en affichant pour chaque fichier un message personnalisé.
+        \item Rendre le script exécutable et le tester.
+    \end{enumerate}
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}
+\lstinputlisting[language=bash]{code/liste_fichiers.bash}
+\end{frame}
+
+\begin{frame}
+    \begin{block}{Objectif}
+        Créer un script Bash pour automatiser une tâche simple, comme copier un ensemble de fichiers d'un répertoire à un autre.
+    \end{block}
+    \begin{exampleblock}{Exercice :}
+    \begin{enumerate}
+        \item Créer un fichier \texttt{copie\_fichiers.bash}.
+        \item Demander à l'utilisateur le répertoire source et destination.
+        \item Copier les fichiers de la source vers la destination avec la commande \texttt{cp}.
+        \item Afficher un message une fois la copie terminée.
+    \end{enumerate}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+\lstinputlisting[language=bash]{code/copie_fichiers_1.bash}
+\end{frame}
+
+\begin{frame}
+\lstinputlisting[language=bash]{code/copie_fichiers_2.bash}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Organisation d'un script Bash avec une fonction \texttt{main()}}
+
+    \textbf{Pourquoi structurer un script avec une fonction \texttt{main()} ?}
+
+    \vfill
+    \textbf{1. Lisibilité améliorée :}
+    \begin{itemize}
+        \item La fonction \texttt{main()} agit comme point d'entrée du script, facilitant la compréhension du flux d'exécution.
+    \end{itemize}
+    
+    \vfill
+    \textbf{2. Modulaire et réutilisable :}
+    \begin{itemize}
+        \item Permet de définir des fonctions séparées pour chaque tâche et de les appeler dans \texttt{main()}, ce qui améliore la modularité.
+    \end{itemize}
+    
+    \vfill
+    \textbf{3. Gestion simplifiée des paramètres et options :}
+    \begin{itemize}
+        \item La gestion des arguments ou des options peut être centralisée dans la fonction \texttt{main()}.
+    \end{itemize}
+
+    \vfill
+    \textbf{Bonne pratique :} Structurer vos scripts Bash avec une fonction \texttt{main()} pour améliorer leur maintenabilité.
+\end{frame}
+
+\begin{frame}
+    \begin{exampleblock}{Exemple de script structuré avec une fonction \texttt{main()} :}
+    \lstinputlisting[language=bash]{code/exemple_main_function.bash}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \begin{exampleblock}{Explications :}
+    \begin{itemize}
+        \item \texttt{afficher\_bienvenue()} et \texttt{calculer\_somme()} sont des fonctions séparées.
+        \item \texttt{main()} appelle ces fonctions, structurant ainsi le script.
+    \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Inclusion de fichiers dans les scripts Bash}
+
+    \textbf{Pourquoi inclure des fichiers dans un script Bash ?}
+
+    \vfill
+    \textbf{1. Réutilisabilité du code :}
+    \begin{itemize}
+        \item Les fichiers de fonctions ou de configurations peuvent être partagés entre plusieurs scripts. \textbf{=> DRY}
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Simplifier la maintenance :}
+    \begin{itemize}
+        \item Centraliser certaines parties du code (comme les configurations) dans des fichiers séparés permet de les mettre à jour plus facilement.
+    \end{itemize}
+    
+    \vfill
+    \textbf{Méthodes pour inclure un fichier :}
+    \begin{itemize}
+        \item \texttt{source /chemin/vers/fichier} : Charge et exécute le contenu d'un autre script dans le script actuel.
+        \item \texttt{./chemin/vers/fichier} : Même fonctionnement que \texttt{source}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bonnes pratiques pour organiser des scripts Bash}
+
+    \textbf{1. Diviser le code en fonctions :}
+    \begin{itemize}
+        \item Chaque tâche spécifique doit être encapsulée dans une fonction.
+        \item Cela permet une meilleure réutilisabilité et maintenabilité du code.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Utiliser une fonction \texttt{main()} comme point d'entrée :}
+    \begin{itemize}
+        \item Cela améliore la lisibilité et permet de structurer le script en suivant un flux logique.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Inclure des fichiers pour centraliser les fonctions ou la configuration :}
+    \begin{itemize}
+        \item L'inclusion de fichiers simplifie la gestion des grandes bases de code et permet la réutilisation entre plusieurs scripts.
+    \end{itemize}
+
+    \vfill
+    \textbf{4. Utiliser les variables globales et locales de manière appropriée :}
+    \begin{itemize}
+        \item Utilisez \texttt{local} dans les fonctions pour éviter les conflits avec les variables globales.
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Récapitulatif}
+    \begin{itemize}
+        \item Bash est l'un des outils les plus puissants pour automatiser des tâches sous Linux.
+        \item La combinaison des commandes de base, des variables, des conditions et des boucles permet d'automatiser des processus complexes.
+        \item La création de scripts Bash permet de rendre ces automatisations facilement réutilisables.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Ressources supplémentaires}
+    \begin{itemize}
+        \item https://linuxcommand.org/lc3\_learning\_the\_shell.php : Guide pour apprendre le shell Linux.
+        \item https://github.com/phyver/GameShell : Un jeu pour apprendre le shell.
+        \item https://explainshell.com/ : Un outil en ligne pour comprendre les commandes Bash.
+    \end{itemize}
+\end{frame}
+
+\subsection{Sed}
+
+\begin{frame}
+    \frametitle{Introduction à \texttt{sed}}
+
+    \begin{block}{Qu'est ce que \texttt{sed} ?}
+    \texttt{sed} est un éditeur de flux \textbf{non interactif} utilisé pour traiter et modifier du texte directement à partir de la ligne de commande.
+    \end{block}
+    
+    \vfill
+    \textbf{Principales fonctionnalités :}
+    \begin{itemize}
+        \item Recherche, remplacement, insertion ou suppression de lignes de texte.
+        \item Utile pour traiter des fichiers ou flux de texte sans éditeur.
+        \item Fonctionne avec des expressions régulières pour des transformations puissantes.
+    \end{itemize}
+
+    \vfill
+    \textbf{Syntaxe de base :}
+    \texttt{sed 'commande' fichier.txt}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Substitution de texte avec \texttt{sed}}
+
+    \begin{block}{Commande de substitution \texttt{s}}
+    La commande \texttt{s} remplace un texte par un autre depuis un fichier ou un flux de texte.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial :}
+    Bonjour Allan Turing. \\
+    Allan Turing aime coder en Bash.
+    \end{exampleblock}
+    \begin{exampleblock}{Commande \texttt{sed} :}
+    \texttt{sed 's/Allan Turing/Ada Lovelace/g' fichier.txt} 
+    \end{exampleblock}
+    \begin{exampleblock}{Flux de sortie (pas de modification du fichier lui même) :}
+    Bonjour Ada Lovelace. \\
+    Ada Lovelace aime coder en Bash. 
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Suppression de lignes avec \texttt{sed}}
+
+    \begin{block}{Commande \texttt{d}}
+    La commande \texttt{d} permet de supprimer des lignes spécifiques d'un fichier ou d'un flux de texte.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial :}
+    Ligne 1 : Première ligne. \\
+    Ligne 2 : Cette ligne sera supprimée. \\
+    Ligne 3 : Troisième ligne. 
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Commande \texttt{sed} :}
+    \texttt{sed '2d' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie (pas de modification du fichier lui même) :}
+    Ligne 1 : Première ligne. \\
+    Ligne 3 : Troisième ligne.
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Insertion de texte avec \texttt{sed}}
+
+    \begin{block}{Commande \texttt{i}}
+    La commande \texttt{i} permet d'insérer du texte avant une ligne donnée d'un fichier ou d'un flux de texte.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial}
+    Ligne 1 : Première ligne. \\
+    Ligne 2 : Deuxième ligne.
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Commande \texttt{sed} :}
+    \texttt{sed '2i\ Nouveau texte ajouté avant la ligne 2' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie (pas de modification du fichier lui même) :}
+    Ligne 1 : Première ligne. \\
+    Nouveau texte ajouté avant la ligne 2 \\
+    Ligne 2 : Deuxième ligne.
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Édition in-place avec \texttt{sed}}
+
+    \begin{block}{Option \texttt{-i} : édition in-place}
+    L'option \texttt{-i} permet de modifier directement le fichier source sans rediriger la sortie vers un autre fichier.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{Commande}
+    \texttt{sed -i 's/ancien/nouveau/g' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{alertblock}{Attention}
+    Il est recommandé de tester la commande sans \texttt{-i} d'abord pour éviter les erreurs.
+    \end{alertblock}
+    
+    \begin{alertblock}{Choix du séparateur}
+    On voit souvent le séparateur '\texttt{/}' dans les commandes \texttt{sed}, mais pour le traitement de chaîne comportant des '\texttt{/}' (ex: /etc/ssh/sshdsed -n '2,10 p' data/sed/fruits.txt\_config), cela peut vite devenir illisible. Voici un exemple avec '\texttt{.}' pour séparateur:
+    \texttt{sed -i 's.ancien.nouveau.g' fichier.txt}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Expressions régulières avec \texttt{sed}}
+
+    \begin{block}{Expressions régulières dans \texttt{sed}}
+    \texttt{sed} supporte les expressions régulières pour des recherches et des remplacements plus complexes.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{Texte initial :}
+    Identifiant : 123  \\
+    Identifiant : 456  \\
+    Identifiant : 789
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Commande \texttt{sed} :}
+    \texttt{sed -E 's/[0-9]\{3\}/\#\#\#/g' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Identifiant : \#\#\# \\
+    Identifiant : \#\#\# \\
+    Identifiant : \#\#\#
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Groupes de captures dans \texttt{sed}}
+
+    \begin{block}{Qu'est-ce qu'un groupe de capture ?}
+    Un groupe de capture dans \texttt{sed} permet d'isoler une partie d'une expression régulière (ER) pour la réutiliser ou la référencer dans le texte modifié.
+    \end{block}
+
+    \vfill
+    \textbf{Syntaxe des groupes de capture :}
+    \begin{itemize}
+        \item Utilisez les parenthèses avec échappement \texttt{\textbackslash( ER \textbackslash)} pour délimiter un groupe de capture dans une expression régulière.
+        \item Référencez un groupe capturé dans la partie remplacement avec \texttt{\textbackslash1}, \texttt{\textbackslash2}, etc.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Syntaxe de capture et remplacement}
+    \texttt{sed 's/A remplacer \textbackslash(ER à conservé\textbackslash)/Capture ici: \textbackslash1  est bien conservé/g'}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{}
+
+    \begin{exampleblock}{autrices.txt initial :}
+    Nom : Tuaillon Victoire \\
+    Nom : Despentes Virginie \\
+    Nom : Bagieu Pénélope \\
+    # [...] Encore 1 000 000 de lignes comme celles ci
+    \end{exampleblock}
+    \vfill
+    \begin{block}{Objectifs :}
+        On souhaite ajouter un champ \texttt{Prénom} et le mettre avant le champ \texttt{Nom}
+    \end{block}
+    \vfill
+    \begin{exampleblock}{Commande \texttt{sed} :}
+    \texttt{sed 's/Nom : \textbackslash(.*\textbackslash) \textbackslash(.*\textbackslash)/Prénom : \textbackslash2, Nom : \textbackslash1/g' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Prénom : Victoire, Nom : Tuaillon \\
+    Prénom : Virginie, Nom : Despentes \\
+    Prénom : Pénélope, Nom : Bagieu \\
+    # [...] Ok pour les 1 000 000 de lignes restantes 
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Conclusion : Les capacités de \texttt{sed}}
+
+    \begin{block}{Un outil puissant et flexible}
+    \texttt{sed} est un éditeur de flux extrêmement puissant qui va bien au-delà de la simple substitution de texte. Bien que nous ayons couvert plusieurs fonctionnalités, il existe encore de nombreuses capacités que nous n'avons pas abordées en détail, parmis lesquels:
+
+    \begin{itemize}
+        \item Édition de texte sur des plages de lignes spécifiques.
+        \item Manipulation avancée des espaces blancs et des lignes vides.
+        \item Utilisation des multi-lignes pour traiter du texte réparti sur plusieurs lignes.
+        \item Interaction avec des commandes externes.
+    \end{itemize}
+    \end{block}
+\end{frame}
+
+
+\subsection{Awk}
+
+\begin{frame}
+    \frametitle{Introduction à \texttt{awk}}
+
+    \begin{block}{Qu'est-ce que \texttt{awk} ?}
+    \texttt{awk} est un \textbf{langage de programmation} orienté texte utilisé principalement pour le traitement des fichiers texte structurés et l'analyse des données en colonnes.
+    \end{block}
+
+    \vfill
+    \textbf{Principales fonctionnalités de \texttt{awk} :}
+    \begin{itemize}
+        \item Extraction et manipulation de champs dans des fichiers texte.
+        \item Capable de filtrer, rechercher, et formater des données structurées (ex: CSV, logs).
+        \item Prend en charge des opérations conditionnelles, des boucles, et des expressions régulières.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Syntaxe de base}
+    \texttt{awk 'condition {action}' fichier.txt}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Manipulation des champs (fields) avec \texttt{awk}}
+    \begin{block}{}
+    Par défaut, \texttt{awk} divise chaque ligne en champs basés sur un séparateur (espace ou tabulation par défaut).
+    Les champs sont accessibles via \texttt{\$1}, \texttt{\$2}, etc.
+    \end{block}
+    \begin{exampleblock}{fichier.txt initial :}
+    Alice 25 F \\
+    Bob 30 M \\
+    Chris 22 NB
+    \end{exampleblock}
+
+    \textbf{Objectif : Enlever les informations concernant le genre des personnes}
+
+    \begin{exampleblock}{Commande \texttt{awk} :}
+    \texttt{awk '\{ print \$1, \$2 \}' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Alice 25 \\
+    Bob 30 \\
+    Chris 22
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Filtres conditionnels avec \texttt{awk}}
+
+    \begin{block}{}
+    \texttt{awk} permet de définir des actions qui s'exécutent uniquement si une condition est remplie.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial :}
+    Alice 25 F \\
+    Bob 30 M \\
+    Chris 22 NB
+    \end{exampleblock}
+
+    \textbf{Objectif : Obtenir le prénom et l'âge uniquement des personnes de moins de 30 ans}
+
+    \vfill
+    \begin{exampleblock}{Commande \texttt{awk} :}
+    \texttt{awk '\$2 < "30" \{ print \$1, \$2 \}' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Alice 25 \\
+    Chris 22
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Calculs avec \texttt{awk}}
+
+    \begin{block}{Effectuer des calculs avec \texttt{awk}}
+    \texttt{awk} permet de réaliser des opérations arithmétiques sur les champs d'une ligne.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial :}
+    Produit1 10 2 \\
+    Produit2 15 4 \\
+    Produit3 20 1
+    \end{exampleblock}
+
+    \textbf{Objectif : Obtenir le résultat de la multiplication de la col. 2 par la col. 3}
+    
+    \vfill
+    \begin{exampleblock}{Commande \texttt{awk} :}
+    \texttt{awk '\{ print \$1, \$2 * \$3 \}' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Produit1 20 \\
+    Produit2 60 \\
+    Produit3 20
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Regrouper et sommer des valeurs avec \texttt{awk}}
+
+    \begin{block}{Sommer des valeurs dans \texttt{awk}}
+    \texttt{awk} permet de sommer les valeurs d'une colonne au fur et à mesure du traitement.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial :}
+    Produit1 10 \\
+    Produit2 15 \\
+    Produit3 20
+    \end{exampleblock}
+
+    \textbf{Objectif : Obtenir uniquement la somme des nombres de la colonne 2}
+    
+    \vfill
+    \begin{exampleblock}{Commande \texttt{awk} :}
+    \texttt{awk '\{ somme += \$2 \} END \{ print "Total : ", somme \}' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    Total : 45
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Expressions régulières avec \texttt{awk}}
+
+    \begin{block}{Utilisation des regex dans \texttt{awk}}
+    \texttt{awk} supporte les expressions régulières pour rechercher et filtrer les lignes selon des motifs complexes.
+    \end{block}
+
+    \vfill
+    \begin{exampleblock}{fichier.txt initial ;}
+    alice@example.com Alice\\
+    bob@example.org Bob\\
+    chris@example.fr Chris
+    \end{exampleblock}
+
+    \textbf{Objectif : Obtenir uniquement les lignes contenant des adresses en @example.fr}
+    
+    \vfill
+    \begin{exampleblock}{Commande \texttt{awk} :}
+    \texttt{awk '\$0 \textasciitilde  /@example.fr/ \{ print \$0 \}' fichier.txt}
+    \end{exampleblock}
+
+    \vfill
+    \begin{exampleblock}{Flux de sortie :}
+    chris@example.fr Chris
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Conclusion : Les possibilités avancées de \texttt{awk}}
+
+    \begin{block}{Capacités non abordées de \texttt{awk}}
+    Bien que nous ayons vu les fonctionnalités de base d'\texttt{awk}, cet outil offre encore bien plus de possibilités avancées pour le traitement de texte :
+    \end{block}
+
+    \vfill
+    \begin{itemize}
+        \item Manipulation avancée des champs : Possibilité de changer le séparateur de champs (\texttt{FS}) ou de sortie (\texttt{OFS}) pour travailler avec des formats personnalisés (CSV, TSV, etc.).
+        \item Boucles et structures de contrôle complexes : Utilisation de boucles \texttt{for}, \texttt{while}, et des conditions imbriquées pour des traitements plus élaborés.
+        \item Fonctions définies par l'utilisateur : \texttt{awk} permet de définir ses propres fonctions pour réutiliser du code dans un script.
+        \item Travailler avec plusieurs fichiers : \texttt{awk} peut lire et traiter plusieurs fichiers à la fois.
+        \item Création de scripts \texttt{awk} autonomes : Écrire des programmes \texttt{awk} dans des fichiers de script séparés et les exécuter directement via un interpréteur \texttt{awk}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Exercices sed et awk}
+    \begin{exampleblock}{}
+        \begin{itemize}
+            \item Télécharger l'archive zip de https://github.com/softsam/sed-awk-tutoriel
+            \item Suivez le tutoriel et faites les exercices
+            \item Pour l'exercice sed sur la capture de groupe pour le fichier employees.csv, trouvez un moyen d'arriver au même résultat avec une autre ER.
+        \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+\section{Accès distants}
+
+\subsection{SSH : accès distants sécurisés}
+
+\begin{frame}
+    \frametitle{Introduction à \texttt{SSH}}
+
+    \begin{block}{Qu'est-ce que \texttt{SSH} ?}
+    \texttt{SSH} (Secure Shell) est un protocole réseau qui permet de se connecter de manière sécurisée à une machine distante via une interface en ligne de commande.
+    \end{block}
+
+    \vfill
+    \textbf{Principales fonctionnalités de \texttt{SSH} :}
+    \begin{itemize}
+        \item Connexion sécurisée à un serveur distant via une session chiffrée.
+        \item Exécution de commandes à distance, transfert de fichiers, et tunneling sécurisé.
+        \item Utilisé pour l'administration système, les transferts de fichiers, et l'accès sécurisé à distance.
+    \end{itemize}
+
+    \vfill
+    \begin{exampleblock}{Commande de base}
+    \texttt{ssh login@serveur.mon.domaine.fr} 
+    \begin{alertblock}{}
+    \texttt{\# Attente d'un mot de passe = potentiel problème de sécurité ! A voir en fonction de l'usage du serveur.}    
+    \end{alertblock}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Les limitations de la connexion par mot de passe}
+
+    \begin{block}{Vulnérabilité des mots de passe}
+    Les connexions par mot de passe sont vulnérables à plusieurs types d'attaques, notamment les attaques par force brute, le phishing et le vol de mot de passe.
+    \end{block}
+
+    \vfill
+    \textbf{Principaux risques des connexions par mot de passe :}
+    \begin{itemize}
+        \item \textbf{Attaques par force brute} : Un attaquant peut essayer un grand nombre de combinaisons de mots de passe pour deviner les identifiants.
+        \item \textbf{Vol de mot de passe} : Les mots de passe peuvent être interceptés lors de l'utilisation de réseaux non sécurisés(http, ldap, ...) ou volés via des logiciels malveillants (keylogger, ...).
+        \item \textbf{Réutilisation des mots de passe} : Certain·e·s utilisateurices ont tendance à réutiliser les mêmes mots de passe sur plusieurs systèmes, ce qui augmente le risque de compromission de l'ensemble de ces systèmes.
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conclusion}
+    Les mots de passe sont souvent le maillon faible de la sécurité des connexions à distance. Quelles sont les alternatives ?
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Le fonctionnement des clés SSH}
+
+    \begin{block}{Clés SSH : Qu'est-ce que c'est ?}
+    Les clés SSH sont des paires cryptographiques (clé publique et clé privée) qui offrent une méthode d'authentification plus sécurisée qu'un mot de passe. Voir article Cryptographie asymétrique sur wikipedia. 
+    \end{block}
+
+    \vfill
+    \textbf{Principe de fonctionnement :}
+    \begin{itemize}
+        \item \textbf{Clé privée} : Stockée sur votre machine locale, elle ne doit jamais être partagée.
+        \item \textbf{Clé publique} : Copiée sur le serveur distant, elle est utilisée pour vérifier l'authenticité de la clé privée lors de la connexion.
+    \end{itemize}
+
+    \vfill
+    \textbf{Authentification par clé SSH :}
+    \begin{itemize}
+        \item Lors de la connexion, le serveur envoie un défi cryptographique que seule la clé privée peut résoudre.
+        \item Si la clé privée est correcte, l'utilisateur est authentifié, sans avoir à envoyer un mot de passe sur le réseau.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Pourquoi la connexion par clé SSH est plus sécurisée}
+
+    \begin{block}{Sécurité renforcée}
+    Contrairement aux mots de passe, la connexion par clé SSH repose sur un mécanisme cryptographique qui est plus difficile à contourner.
+    \end{block}
+
+    \vfill
+    \textbf{Principaux avantages des clés SSH :}
+    \begin{itemize}
+        \item \textbf{Résistance aux attaques par force brute} : Les clés SSH sont beaucoup plus longues que les mots de passe, rendant les attaques par force brute impraticables.
+        \item \textbf{Clé privée non transférée sur le réseau} : Contrairement aux mots de passe, la clé privée ne transite jamais sur le réseau, réduisant le risque d'interception.
+        \item \textbf{Chiffrement de la clé privée} : La clé privée peut être protégée par une passphrase, ajoutant une couche de sécurité supplémentaire en cas de vol de la clé qui se trouve ainsi chiffré. Peu pratique dans le cadre de l'administration système, on préférera chiffrer l'entièreté du stockage du serveur ou laptop, cela permet de gérer des connexions ssh via des scripts sans avoir à donner de passphrase tout en ayant la clé privée chiffrée en cas de vol du stockage.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bonnes pratiques pour utiliser les clés SSH}
+
+    \textbf{1. Chiffrement de la clé privée via une passphrase ou via chiffrement du stockage:}
+    \begin{itemize}
+        \item Si la clé privée est volée, elle sera chiffrée et donc inutilisable.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Utiliser des clés d'une taille suffisante (2048 bits ou plus) :}
+    \begin{itemize}
+        \item Les clés de 4096 bits sont fortement recommandées pour une sécurité maximale.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Gérer plusieurs paires de clés pour différents environnements :}
+    \begin{itemize}
+        \item Utiliser des clés différentes pour chaque serveur ou groupe de serveurs afin de limiter les risques en cas de compromission. Ne fais pas consensus dans la communauté des administrateurs systèmes/réseaux...
+    \end{itemize}
+
+    \vfill
+    \textbf{4. Désactiver l'authentification par mot de passe :}
+    \begin{itemize}
+        \item Une fois les clés SSH configurées, désactiver complètement l'authentification par mot de passe pour éviter les attaques par force brute. A voir en fonction de l'usage du serveur, ce n'est pas toujours possible ... Mais toujours encourager les utilisateurices à utiliser une connexion par clé ssh.
+    \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Connexion par clé SSH}
+
+    \textbf{Étapes pour configurer une connexion par clé SSH :}
+    \begin{enumerate}
+        \item Génération de la paire de clés :
+        \begin{exampleblock}{Commande}
+        \texttt{ssh-keygen -t rsa -b 4096}
+        \end{exampleblock}
+        \item Copier la clé publique sur le serveur mon.domaine.fr :
+        \begin{exampleblock}{Commande}
+        \texttt{ssh-copy-id login@mon.domaine.fr}
+        \end{exampleblock}
+        \item Connexion au serveur (utilise la clé privée automatiquement) :
+        \begin{exampleblock}{Commande}
+    
+        \texttt{ssh login@mon.domaine.fr}
+        \end{exampleblock}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bonnes pratiques de connexion sécurisée via \texttt{SSH}}
+
+    \textbf{1. Utiliser des clés SSH au lieu de mots de passe}
+    \vfill
+    \textbf{2. Désactiver l'authentification par mot de passe :}
+    \begin{itemize}
+        \item Une fois les clés SSH en place, désactiver l'authentification par mot de passe dans le fichier de configuration du serveur SSH (\texttt{/etc/ssh/sshd\_config}).
+        \begin{exampleblock}{Commande sed permettant de modifier le fichier de configuration}
+        \texttt{sed "s:\textbackslash(PasswordAuthentication\textbackslash) \textbackslash(.*\textbackslash):\textbackslash1 no:" /etc/ssh/sshd\_config \\ \# Question SED : Que manque t-il à la commande ?}
+        \end{exampleblock}
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Changer le port SSH par défaut (22) réduit les risques d'attaques :}
+    \begin{itemize}
+        \begin{exampleblock}{Commande sed permettant de modifier le fichier de configuration}
+        \texttt{sed "s\#\textbackslash(Port\textbackslash) \textbackslash(.*\textbackslash)\#\textbackslash1 2222\#" /etc/ssh/sshd\_config \\ \# Question SED : Que manque t-il à la commande ?  \\ \# Question SED : Quelle différence notable y a t-il avec la première commande ci dessus ?}
+        \end{exampleblock}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Sécurisation avancée de \texttt{SSH}}
+
+    \textbf{1. Utiliser un pare-feu et limiter (si possible) les adresses IP autorisées :}
+    \begin{itemize}
+        \item Restreindre l'accès SSH à une liste d'adresses IP de confiance avec un pare-feu (\texttt{iptables}, \texttt{nftables}).
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Activer l'authentification à deux facteurs (2FA) :}
+    \begin{itemize}
+        \item Renforcez la sécurité en ajoutant un deuxième facteur d'authentification, par exemple avec \texttt{Google Authenticator}.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Utiliser Fail2Ban pour prévenir les attaques par force brute :}
+    \begin{itemize}
+        \item \texttt{Fail2Ban} surveille les tentatives de connexion SSH et bannit les adresses IP après plusieurs échecs de connexion.
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Utilisation du fichier de configuration SSH local}
+
+    \begin{block}{Fichier \texttt{\textasciitilde/.ssh/config}}
+    Ce fichier permet de simplifier et automatiser les connexions SSH en définissant des configurations personnalisées pour chaque serveur.
+    \end{block}
+
+    \vfill
+    \textbf{Exemple de configuration :}
+    \begin{exampleblock}{Contenu du fichier \texttt{\textasciitilde/.ssh/config}}
+    \texttt{Host serveur1 \\
+\ \ HostName serveur1.mon.domaine.fr \\
+\ \ User login1 \\
+\ \ Port 2222}
+    \end{exampleblock}
+
+    \vfill
+    \begin{itemize}
+        \item Facilite la connexion en tapant simplement \texttt{ssh serveur1}
+        \item Permet d'utiliser des paramètres spécifiques pour chaque serveur (utilisateur, clé privée, port).
+        \item Pour un cas simple comme celui là, avez vous une autre idée de "raccourci" ?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Transfert de fichiers avec \texttt{scp} et \texttt{rsync}}
+
+    \textbf{1. Transférer des fichiers avec \texttt{scp} :}
+    \begin{itemize}
+        \item \texttt{scp} (Secure Copy) permet de copier des fichiers de manière sécurisée entre une machine locale et un serveur distant.
+        \begin{exampleblock}{Commande}
+        \texttt{scp fichier.txt login@mon.domaine.fr:/chemin/destination}
+        \end{exampleblock}
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Synchroniser des fichiers avec \texttt{rsync} :}
+    \begin{itemize}
+        \item \texttt{rsync} permet de synchroniser des fichiers ou des répertoires de manière sécurisée, en ne transférant que les différences.
+        \begin{exampleblock}{Commande}
+        \texttt{rsync -avz /chemin/source login@mon.domaine.fr:/chemin/destination}
+        \end{exampleblock}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Digression : introduction à \texttt{tmux}}
+
+    \begin{block}{Pourquoi utiliser \texttt{tmux} ?}
+    Pour un administrateur systèmes et réseaux, \texttt{tmux} est un outil essentiel car il permet de conserver les sessions de travail même en cas de perte de connexion, et de travailler efficacement avec plusieurs terminaux.
+    \end{block}
+
+    \vfill
+    \textbf{Principaux avantages :}
+    \begin{itemize}
+        \item \textbf{Sessions persistantes :} Si la connexion SSH se coupe, vos commandes et programmes continuent de s'exécuter en arrière-plan.
+        \item \textbf{Multiplexage des terminaux :} Ouvrez plusieurs terminaux dans une seule session SSH sans avoir à multiplier les connexions.
+        \item \textbf{Organisation facile :} Divisez votre terminal en panneaux ou fenêtres pour exécuter et surveiller plusieurs tâches simultanément.
+        \item \textbf{Travail collaboratif :} Partagez une session \texttt{tmux} avec d'autres administrateurs pour collaborer en temps réel.
+    \end{itemize}
+\end{frame}
+
+\subsection{Wireguard : accès distants via VPN}
+
+\begin{frame}
+    \frametitle{Introduction à \texttt{WireGuard}}
+
+    \begin{block}{Qu'est-ce que \texttt{WireGuard} ?}
+    \texttt{WireGuard} est un protocole VPN moderne, rapide et léger, conçu pour être simple à configurer, sécurisé, et performant par rapport aux autres solutions VPN traditionnelles (OpenVPN, IPSec, ...). C'est un VPN de référence \textbf{pour les administrateurs systèmes et réseaux}.
+    \end{block}
+
+    \vfill
+    \textbf{Principales caractéristiques de WireGuard :}
+    \begin{itemize}
+        \item \textbf{Sécurité :} Utilise des algorithmes cryptographiques modernes pour assurer une sécurité maximale.
+        \item \textbf{Performance :} Réduit la latence et offre des performances plus rapides que les VPN classiques.
+        \item \textbf{Simplicité :} Configuration plus simple et légère que d'autres VPN comme OpenVPN ou IPSec.
+        \item \textbf{Cross-Platform :} Disponible sur plusieurs plateformes (Linux, Windows, macOS, Android, iOS).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Fonctionnement de \texttt{WireGuard}}
+
+    \begin{block}{Principe de base}
+    \texttt{WireGuard} fonctionne en créant des interfaces réseau virtuelles qui encapsulent les paquets IP dans un tunnel sécurisé entre deux pairs (clients et serveurs).
+    \end{block}
+
+    \vfill
+    \textbf{Clés publiques et privées :}
+    \begin{itemize}
+        \item Chaque pair dans WireGuard utilise une clé publique et une clé privée pour s'authentifier.
+        \item Les pairs établissent un tunnel sécurisé en échangeant leurs clés publiques.
+    \end{itemize}
+
+    \vfill
+    \textbf{Encapsulation de paquets :}
+    \begin{itemize}
+        \item Les paquets IP sont encapsulés dans des paquets UDP, qui sont ensuite chiffrés et transmis à l'autre pair.
+        \item Légèreté du protocole : moins de surcharge de calcul et de réseau comparé à d'autres VPN.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Avantages de \texttt{WireGuard} par rapport aux autres VPN}
+
+    \begin{itemize}
+        \item \textbf{Simplicité de configuration :} Contrairement à OpenVPN ou IPSec, WireGuard est conçu pour être facile à configurer et à utiliser avec des fichiers de configuration minimalistes.
+        \item \textbf{Performances supérieures :} WireGuard offre une vitesse de connexion et des temps de latence réduits grâce à une conception légère et des algorithmes de cryptographie modernes.
+        \item \textbf{Moins de surcharge :} Moins de code et de dépendances, réduisant les risques de failles de sécurité.
+        \item \textbf{Sécurité de pointe :} WireGuard utilise des algorithmes de chiffrement moderne et est axaminé (audité) par des cryptographe.
+        \item \textbf{Facilité d'audit :} Environ 4 000 lignes de code, contre plusieurs centaines de milliers pour d'autres solutions, ce qui facilite les audits de sécurité.
+        \item \textbf{Wireguard est intégré au noyau Linux}
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conclusion}
+    WireGuard est idéal pour ceux qui recherchent une solution VPN à la fois simple, rapide et hautement sécurisée.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Inconvénients et limitations de \texttt{WireGuard}}
+
+    \textbf{1. Nécessité d'être root pour la configuration :}
+    \begin{itemize}
+        \item La configuration et la gestion des interfaces \texttt{WireGuard} nécessitent des privilèges root, ce qui peut poser problème dans des environnements multi-utilisateurs.
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Pas de gestion dynamique des adresses IP (DHCP) :}
+    \begin{itemize}
+        \item \texttt{WireGuard} ne supporte pas de manière native le DHCP pour attribuer dynamiquement des adresses IP, obligeant à configurer les adresses IP statiquement pour chaque pair.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Moins de fonctionnalités avancées :}
+    \begin{itemize}
+        \item \texttt{WireGuard} est conçu pour être minimaliste et performant, ce qui signifie qu'il manque certaines fonctionnalités présentes dans d'autres VPN comme OpenVPN ou IPSec (par exemple, la gestion des certificats ou l'intégration avec des systèmes de gestion d'identité).
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conclusion}
+    Bien que performant et sécurisé, \texttt{WireGuard} peut présenter des contraintes, notamment en ce qui concerne la gestion des adresses IP et les privilèges nécessaires pour la configuration.
+    \end{alertblock}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Installation et configuration de \texttt{WireGuard}}
+    On ne le fera pas car il faudrait que chaque étudiant·e ait une machine en tant que root avec une adresse ip publique dédiée (ipv4 impossible, donc ce serait ipv6) mais ce n'est pas possible actuellement.
+    Toutefois, prenez le temps de regarder comment se déroule une installation en allant sur \href{https://www.wireguard.com/quickstart/}{l'onglet quickstart du site officiel de wireguard}.
+\end{frame}
+
+\begin{frame}
+    \frametitle{Bonnes pratiques de sécurité avec \texttt{WireGuard}}
+
+    \textbf{1. Utiliser des clés privées protégées par un chiffrement:}
+    \begin{itemize}
+        \item Assurez-vous que les clés privées sont stockées dans un répertoire sécurisé (droits) et chiffré (via un stockage chiffré ou via une passphrase).
+    \end{itemize}
+
+    \vfill
+    \textbf{2. Limiter les adresses IP autorisées :}
+    \begin{itemize}
+        \item Utilisez des règles strictes pour le champ \texttt{AllowedIPs} afin de limiter les adresses IP et plages d'adresses autorisées à passer par le tunnel.
+    \end{itemize}
+
+    \vfill
+    \textbf{3. Activer le pare-feu pour limiter les accès :}
+    \begin{itemize}
+        \item Utilisez un pare-feu (par exemple \texttt{ufw} ou \texttt{iptables}) pour restreindre les accès aux ports utilisés par WireGuard (par défaut 51820).
+    \end{itemize}
+
+    \vfill
+    \begin{alertblock}{Conseil}
+    Toujours vérifier la configuration du serveur WireGuard et ses permissions d'accès pour éviter les risques de sécurité.
+    \end{alertblock}
+\end{frame}
+
+
+\end{document}
+
+% La suite dans la partie 2
+%\section{Git : versionner et collaborer}
+
+% \section{YAML et JSON : langages pour structurer des données}
+
+%// \section{Ansible : automatiser les tâches d'administration}
+
