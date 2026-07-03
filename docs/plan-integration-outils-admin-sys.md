@@ -15,6 +15,10 @@ Les sources sont déposées dans `sources/outils_admin_sys/`,
 | `markdown` (dépôt) | Markdown | Présentation du langage Markdown | CC BY-NC-SA 4.0 |
 | `ansible` (TP) | Markdown balisé | TP Ansible 9 h, corrections intégrées | (aucune déclarée) |
 | `sed-awk-tutoriel` (fork) | Markdown + data | Dojo sed/awk, auteur d'origine Ben Einaudi | **aucune — non intégrable** |
+| `subtilites_bash` (lot 2) | Scripts bash | Portée dynamique de `local`, sous-shells, export/nohup, mémo quoting | (aucune déclarée) |
+| `virtualisation` (lot 2) | Markdown | Début de cours KVM/QEMU/libvirt (inspiration xavki) | (aucune déclarée) |
+| Cours Qt (lot 2) | — | **Archive non reçue** — à re-téléverser | — |
+| Santini, IntroSysteme_Cours_1.pdf | — | Inspiration structure du cours découverte — **inaccessible depuis l'environnement (403)**, à téléverser | (droits tiers : inspiration seulement, zéro reprise) |
 
 ## 2. Architecture retenue
 
@@ -25,9 +29,10 @@ autres outils et pèse 9 h à lui seul.
 ⬥ **Bash scindé en deux modules** (segmentation — Sweller) ;
 ⬥ **module « Ansible : concepts » ajouté** devant le TP ;
 ⬥ **`order` renumérotés** pour que l'index reflète le parcours
-pédagogique : Outils (10+) → Ansible (20+) → Docker (30+ ; édition
-mécanique du frontmatter des pages Docker FR/EN existantes ; place
-laissée pour un futur cours KVM).
+pédagogique complet (lot 2 inclus, cf. § 10) :
+Découverte (1+) → Outils (10+) → Ansible (20+) → Virtualisation KVM
+(25+) → Docker (30+ ; édition mécanique du frontmatter des pages
+Docker FR/EN existantes) → Qt (40+, en attente de l'archive).
 
 ### Série `outils-admin` — « Outils de l'administration système » (9 modules)
 
@@ -327,3 +332,130 @@ conservés aux points structurants.
 7. Traductions EN au fil de l'eau (chaque module part avec son EN,
    règle projet) ; `npm run build` sans warning et
    `test-solutions.sh --up` verts avant chaque étape conclue.
+
+Le lot 2 (§ 10) s'enchaîne après le jalon Ansible.
+
+## 10. Lot 2 — extensions validées (juillet 2026)
+
+Quatre ajouts demandés par l'auteur après validation du plan initial ;
+décisions ⬥ cadrées comme au § 2.
+
+### 10.1 Série `decouverte` — « Découvrir l'ordinateur et le système »
+
+⬥ Mini-série de 3-4 modules courts **en tête de parcours** (`order`
+1-4), niveau volontairement plus accessible que le reste du site :
+
+| # | Titre de travail | Contenu |
+|---|---|---|
+| 01 | De quoi est fait un ordinateur | CPU, mémoire, stockage, périphériques — figures `<Duo>` |
+| 02 | Que fait un système d'exploitation | rôle de l'OS, processus, fichiers, droits, utilisateurices |
+| 03 | Premiers pas dans le shell | terminal émulé du site en usage intensif |
+| 04 | (optionnel) Du code source au programme | à cadrer selon le PDF |
+
+- **Inspiration** : structure du cours d'introduction de Santini
+  (Paris 13) — *inspiration de plan uniquement, aucune reprise de
+  contenu* (droits tiers). PDF inaccessible depuis l'environnement :
+  à téléverser pour cadrage fidèle, sinon cadrage sur le canon du
+  genre (hardware → OS → shell).
+- **Thématisation inclusive / désinvisibilisation** (demande auteur,
+  dans l'esprit des exemples sed/awk existants — Ada Lovelace,
+  autrices…) : les exemples, jeux de données et figures mettent en
+  avant les contributions historiquement invisibilisées (Lovelace,
+  Hopper, Hamilton, Johnson, Perlman, Conway…), sans en faire un
+  cours d'histoire : le fil reste technique.
+- **Provenance** : rédaction majoritairement IA sur cadrage auteur →
+  `by: ai, reviewedBy: human` (relecture obligatoire avant
+  publication), déclarée à la série.
+
+### 10.2 Série `kvm` — « Virtualisation avec KVM »
+
+⬥ Rédaction complète sur la trame de `sources/virtualisation/notes.md`
+(+ inspiration playlist xavki, en lien). C'est le cours annoncé par
+l'introduction du cours Outils. `order` 25-28 :
+
+| # | Titre de travail | Contenu |
+|---|---|---|
+| 01 | La pile de virtualisation Linux | virsh → libvirt → QEMU → KVM, émulation vs accélération ; **renvoi** au module conteneurs-vs-VM (hyperviseurs déjà traités — pas de doublon) |
+| 02 | TP : une première VM en CLI | virt-install, virsh, ISO + somme de contrôle, réseau `default` NAT |
+| 03 | TP : définir et administrer | dumpxml, autostart, snapshots, seconde VM depuis XML |
+| 04 | Réseau et stockage libvirt | à cadrer (bridges, pools) — peut rester « en construction » |
+
+- Corrigés testables : la CLI KVM exige la virtualisation imbriquée —
+  hors de portée de la CI GitHub. Le harnais couvrira ce qui est
+  couvrable (`--lint` : shellcheck des scripts, validation XML) ; le
+  reste est documenté comme non-CI (comme le projet molecule).
+- **Provenance** : `by: mixed` (trame auteur, développement IA),
+  relecture auteur au jalon.
+- Erreurs des notes corrigées à la conversion (cf. § 7 A, n° 21-22).
+
+### 10.3 Miscelánea — « les subtilités de bash »
+
+⬥ Deux **articles de blog** (pas des modules de cours), avec renvois
+croisés depuis les modules Bash de la série Outils :
+
+1. « `local` n'est pas ce que vous croyez : la portée **dynamique**
+   de Bash » — les scripts de `sources/subtilites_bash/` deviennent
+   des démos exécutables (fichiers réels sous `solutions/`, rejoués
+   par le harnais : la sortie montrée est la sortie réelle) :
+   visibilité des locales dans les fonctions appelées, `local -r`,
+   sous-shell vs nouveau processus (`$$` vs `BASHPID`), `export -f`
+   + `nohup` et la perte de l'attribut readonly.
+2. « Guillemets, expansions et sous-shells » — le mémo quoting
+   **réécrit avec des exemples originaux** : la table source vient de
+   StackOverflow (CC BY-SA 4.0, **incompatible** avec le BY-NC-SA du
+   site — la clause SA interdit d'ajouter NC). Les règles sont des
+   faits, l'expression sera neuve.
+- Correction de fond à intégrer (cf. § 7 A n° 23) : dans un
+  sous-shell, les variables ne sont pas « exportées implicitement » —
+  elles sont héritées par le *fork* ; `export` ne concerne que
+  l'environnement passé aux **nouveaux processus** (`exec`). C'est
+  exactement ce que les scripts démontrent ; seule la terminologie
+  des commentaires est à ajuster.
+- **Provenance article** : `by: human, reviewedBy: ai` (fond auteur,
+  mise en récit IA), déclarée par article (mécanisme existant pour
+  les contenus hors série).
+
+### 10.4 Cours Qt — en attente
+
+L'archive n'est pas parvenue (seul le zip bash a été reçu). À
+re-téléverser. Questions à trancher à réception : actualité du
+contenu (Qt 5 → Qt 6), thématique (`divers` ou nouveau topic « dev » —
+premier contenu hors admin sys/réseau du site), et place (série
+autonome, `order` 40+). Rien n'est engagé d'ici là.
+
+### 10.5 Ordre de réalisation du lot 2
+
+1. Articles Miscelánea bash (courts, sources déjà complètes) ;
+2. Série découverte (dès réception du PDF Santini — sinon cadrage
+   autonome soumis à validation) ;
+3. Série KVM ;
+4. Qt à réception de l'archive.
+
+## 11. Compléments à la liste critique (§ 7) — sources du lot 2
+
+### A. Erreurs franches (suite)
+
+21. **Virtualisation — « KVM est basé sur un fork du projet QEMU »** :
+    c'est l'inverse. KVM est un module du noyau (Qumranet, 2007) ;
+    c'est le *userspace* `qemu-kvm` qui était un fork de QEMU,
+    refusionné dans QEMU upstream (≥ 1.3). La phrase « il faudrait
+    plutôt parler de QEMU/KVM » reste, elle, correcte.
+22. **Virtualisation — commandes** : `virsh undefined
+    --remove-all-storage` → `virsh undefine` ; « virtual-manager »
+    (2×) → `virt-manager` ; « libvirt permet d'autres types de
+    virtualisations » : OpenVz → OpenVZ, et VMware s'écrit ainsi.
+23. **Subtilités bash — terminologie sous-shell** : « les variables
+    ont été EXPORTÉES IMPLICITEMENT » → héritage par fork (copie),
+    l'`export` n'intervient que vers un nouveau processus. Le
+    comportement décrit (readonly conservé en sous-shell, perdu via
+    `export` + nouveau bash) est, lui, exact.
+
+### B. À nuancer (suite)
+
+24. **Virtualisation — type 1 / type 2** : garder la présentation de
+    KVM en « cas particulier » de type 1, déjà arbitrée dans le
+    module conteneurs-vs-VM — cohérence inter-cours.
+25. **Virtualisation — chemin du réseau default** : « doit
+    certainement se trouver dans /usr/share/libvirt/networks/ » — à
+    vérifier et affirmer (c'est bien le gabarit ; la définition
+    active vit dans `/etc/libvirt/qemu/networks/`).
