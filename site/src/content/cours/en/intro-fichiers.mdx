@@ -1,0 +1,161 @@
+---
+title: "Files, permissions and archives"
+description: "Decoding ls -l, setting permissions with chmod, finding files with wildcards and find, archiving and compressing with tar and gzip."
+order: 4
+serie: intro-linux
+topics: [linux]
+duration: 20
+badge: "Discovery"
+tags: [permissions, chmod, find, wildcards, tar, gzip]
+terminal: true
+terminalTitle: "bash — files and permissions"
+terminalComment: "# files, permissions, archives — click a command from the course to run it here"
+status: [construction]
+---
+
+## Introduction
+
+The [previous module](../intro-shell/) gave you the basic moves. This last discovery module answers three everyday questions: **who is allowed to do what** with a file, **how to find** a file among thousands, and **how to carry** a whole folder in a single compact file.
+
+## Decoding a ls -l line
+
+Back to the detailed output from the previous module:
+
+<Cmd cmd="ls -l pionnieres.txt">
+  <TermLine>-rw-r--r-- 1 ada ada 349 Jul  3 10:15 pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">type, permissions, owner, group, size, date, name.</TermLine>
+</Cmd>
+
+The first block, `-rw-r--r--`, reads in four pieces:
+
+```console
+-        rw-      r--      r--
+type     ada      group    others
+         (u)ser   (g)roup  (o)thers
+```
+
+- the **type**: `-` for a regular file, `d` for a directory, `l` for a link;
+- then three **rwx** triplets — *read*, *write*, *execute* — for three audiences: the **owner** (`u`), the **group** (`g`), **everyone else** (`o`). A dash = right absent.
+
+Here: `ada` can read and modify her file (`rw-`), her group and the others can only read it (`r--`). This is exactly the mechanism sketched in the [system module](../intro-systeme/): the kernel checks these rights on every access.
+
+<Note title="And on a directory?">
+  The same letters shift meaning slightly: `r` = list the contents, `w` = create or delete files inside, `x` = **traverse** (enter it with `cd`). A directory without `x` is a locked door, even if `r` lets you read the list through the window.
+</Note>
+
+## Changing permissions: chmod
+
+Let's write a first script (the content hardly matters here — the Bash module will take over):
+
+<Cmd cmd="echo 'echo Hello from my first script' > salut.sh">
+  <TermLine type="ok" tag="note">creates the file salut.sh — the > redirection will be explained in detail in the Bash module.</TermLine>
+</Cmd>
+
+<Cmd cmd="./salut.sh">
+  <TermLine>bash: ./salut.sh: Permission denied</TermLine>
+  <TermLine type="warn" tag="why?">the file was just created without the execute permission.</TermLine>
+</Cmd>
+
+`chmod` (*change mode*) adds (`+`) or removes (`-`) permissions, for a given audience (`u`, `g`, `o`, or `a` for all):
+
+<Cmd cmd="chmod u+x salut.sh">
+  <TermLine type="ok" tag="note">adds (+) the execute permission (x) for the owner (u).</TermLine>
+</Cmd>
+
+<Cmd cmd="./salut.sh">
+  <TermLine>Hello from my first script</TermLine>
+</Cmd>
+
+<Note type="info" title="Octal notation">
+  You will also meet `chmod 754 file`: each digit encodes one triplet in binary — r=4, w=2, x=1, added together. `7` = rwx (4+2+1), `5` = r-x (4+1), `4` = r--. That is the binary from the [first module](../intro-ordinateur/) applied to permissions! `754` = `rwxr-xr--`.
+</Note>
+
+<Note type="warning" title="The owner and root">
+  Only a file's owner (and `root`) can change its permissions — and only `root` can change its owner (`chown`). This is what protects system files: they belong to `root`, and an ordinary account cannot modify them.
+</Note>
+
+## Finding things: wildcards and find
+
+The shell can designate **several files at once** thanks to the `*` wildcard (any sequence of characters):
+
+<Cmd cmd="ls *.txt">
+  <TermLine>pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">the shell replaces *.txt with the list of matching names BEFORE running ls.</TermLine>
+</Cmd>
+
+To search a whole tree (subdirectories included), the dedicated tool is `find`:
+
+<Cmd cmd="find . -name '*.txt'">
+  <TermLine>./pionnieres.txt</TermLine>
+  <TermLine>./documents/notes.txt</TermLine>
+  <TermLine type="ok" tag="note">find START_HERE -name PATTERN: here, from the current directory (.). The quotes around the pattern keep the shell from expanding it too early.</TermLine>
+</Cmd>
+
+## Carrying things: tar and gzip
+
+To hand over or back up a whole folder, we bundle it into an **archive** (a single file), and **compress** it along the way:
+
+<Cmd cmd="tar -czf pionnieres.tar.gz documents/">
+  <TermLine type="ok" tag="note">c = create, z = compress (gzip), f = into the file named next. The original files are preserved.</TermLine>
+</Cmd>
+
+<Cmd cmd="tar -xzf pionnieres.tar.gz">
+  <TermLine type="ok" tag="note">x = extract: unpacks the archive into the current directory.</TermLine>
+</Cmd>
+
+<Note title="Why 'tar'?">
+  *Tape archive*: the command dates back to backups on **magnetic tapes**. The double extension `.tar.gz` says exactly what was done: archived (`tar`), then compressed (`gz`). You will also meet `.tgz` (a synonym) and other compressors (`.tar.xz`, `.tar.zst`).
+</Note>
+
+## Exercises
+
+<Exercise id="intro-fichiers-decoder" level={1}>
+  Decode this line: `drwxr-x--- 2 hopper compilateurs 4096 Jul 3 11:02 a0` — type? each audience's rights? Who can enter `a0`?
+
+  <Fragment slot="solution">
+    It is a **directory** (`d`), owned by `hopper` (group `compilateurs`):
+
+    - `hopper`: `rwx` — everything, including entering;
+    - the `compilateurs` group: `r-x` — list and enter, not modify;
+    - others: `---` — nothing, not even entering.
+
+    Can enter (`x`): `hopper` and the members of the `compilateurs` group — and `root`, always.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-fichiers-chmod" level={2}>
+  You just wrote `sauvegarde.sh`. Give the command to make it executable by you alone, then the one that would grant that same right to everyone. Which one should you prefer, and why?
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ chmod u+x sauvegarde.sh
+    ada@debian:~$ chmod a+x sauvegarde.sh
+    ```
+
+    Prefer `u+x`: the principle of **least privilege** — grant a right only to whoever needs it. Giving `x` to everyone only makes sense if other accounts really must run this script.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-fichiers-archive" level={2}>
+  In one command: create a compressed archive `mes-notes.tar.gz` containing the `documents` directory. In another: check its contents **without extracting it** (hint: `man tar`, look for "list").
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ tar -czf mes-notes.tar.gz documents/
+    ada@debian:~$ tar -tzf mes-notes.tar.gz
+    documents/
+    documents/notes.txt
+    ```
+
+    `t` = *list* (table): shows the archive's contents without writing anything to disk. The `man tar` reflex is exactly what is expected of a system administrator.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- `ls -l`: type + three **rwx** triplets for **u**/**g**/**o**; on a directory, `x` = traverse.
+- `chmod` changes permissions (`u+x`, octal notation `754`); only the owner (or `root`) may.
+- Finding: `*` wildcards (expanded by the shell) and `find path -name pattern`.
+- Carrying: `tar -czf` (create), `-xzf` (extract), `-tzf` (list).
+
+End of the discovery path: you can read the machine, talk to the system and protect your files. The **System administration tools** series (Vim, Bash, sed & awk, SSH…) takes over from here.

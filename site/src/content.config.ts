@@ -98,4 +98,15 @@ const miscelanea = defineCollection({
   ),
 });
 
-export const collections = { cours, miscelanea };
+/* Fiches COMPLÈTES du glossaire — FACULTATIVES : les entrées (termes,
+   personnages, brefs bilingues) vivent dans src/data/glossaire.mjs (source
+   unique du maillage) ; une fiche MDX du même slug étoffe la page
+   /glossaire/<slug>/, qui retombe sinon sur le bref. */
+const glossaire = defineCollection({
+  loader: glob({ pattern: "**/*.mdx", base: "./src/content/glossaire" }),
+  schema: z.object({
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { cours, miscelanea, glossaire };

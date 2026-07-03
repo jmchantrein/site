@@ -1,0 +1,50 @@
+---
+import { getCollection, render } from "astro:content";
+import Reading from "../../layouts/Reading.astro";
+import { mdxComponents } from "../../components/mdx";
+import { GLOSSAIRE } from "../../data/glossaire.mjs";
+
+/* FICHE DU GLOSSAIRE — la page complète d'une entrée. Le contenu long est
+   FACULTATIF (collection glossaire) : sans fiche MDX, la page affiche le
+   bref — chaque entrée a donc une page dès sa déclaration dans la source
+   unique (src/data/glossaire.mjs). */
+export async function getStaticPaths() {
+  return GLOSSAIRE.map((e) => ({ params: { slug: e.slug }, props: { entry: e } }));
+}
+
+const { entry } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const fiches = await getCollection("glossaire", ({ id, data }) => id === entry.slug && !data.draft);
+const fiche = fiches[0];
+const Content = fiche ? (await render(fiche)).Content : null;
+// Module canonique (« enseigné dans ») — le lien inter-modules systématique.
+const cours = entry.cours
+  ? (await getCollection("cours", ({ id }) => id === entry.cours))[0]
+  : undefined;
+const badges = [
+  entry.type === "personnage" ? "Personnage" : "Terme",
+  ...(entry.angl ? ["Anglicisme"] : []),
+];
+const corresp =
+  entry.en.toLowerCase() !== entry.fr.toLowerCase() ? `En anglais : ${entry.en}.` : "";
+---
+<Reading
+  title={entry.fr}
+  description={entry.brefFr}
+  crumb={{ href: `${base}/glossaire/`, label: "glossaire" }}
+  badges={badges}
+  lead={`${entry.brefFr}${corresp ? ` ${corresp}` : ""}`}
+  locale="fr"
+  altUrl={`${base}/en/glossaire/${entry.slug}/`}
+>
+  {Content ? <Content components={mdxComponents} /> : null}
+  {cours && (
+    <p class="gloss-fiche__cours">
+      Notion enseignée dans le module <a href={`${base}/cours/${cours.id}/`}>{cours.data.title}</a>.
+    </p>
+  )}
+</Reading>
+
+<style>
+  .gloss-fiche__cours { margin-top: var(--space-5); font-size: var(--text-sm); }
+</style>

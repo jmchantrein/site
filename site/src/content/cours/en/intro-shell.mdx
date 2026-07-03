@@ -1,0 +1,209 @@
+---
+title: "First steps in the shell"
+description: "The prompt, commands, the file tree: finding your way, looking around and acting from the keyboard — the bedrock of the whole sysadmin path."
+order: 3
+serie: intro-linux
+topics: [linux]
+duration: 20
+badge: "Discovery"
+tags: [shell, terminal, commands, file tree, man]
+terminal: true
+terminalTitle: "bash — first steps"
+terminalComment: "# first steps — click a command from the course to run it here"
+status: [construction]
+---
+
+## Introduction
+
+So far we have looked at the machine ([the hardware](../intro-ordinateur/)) and its conductor ([the system](../intro-systeme/)). Time to talk to it. The tool for that is the **shell**: a program that reads your commands from the keyboard, has them executed, and shows you the result.
+
+<Note title="Why text, in 2026?">
+  Because most **servers** have neither screen nor mouse; because a command can be written down, copied, replayed and **automated** (a click cannot); and because ten commands fit in a script you can rerun identically a year from now. The whole path — Docker, Ansible, KVM — rests on this keyboard fluency.
+</Note>
+
+## The prompt and the shape of a command
+
+When the shell awaits your orders, it displays a **prompt**, for example:
+
+```console
+ada@debian:~$
+```
+
+It says: I am user `ada`, on machine `debian`, in my home directory (`~`), ready (`$`). A command almost always has the same shape:
+
+```console
+command [options] [arguments]
+```
+
+- the **command**: the program to run (`ls`, `cat`…);
+- the **options** start with `-` and alter its behaviour (`-l`);
+- the **arguments**: what it works on (a file, a directory).
+
+## Finding your way: pwd, ls, cd
+
+Three commands are enough to navigate the tree seen in the previous module.
+
+**Where am I?**
+
+<Cmd cmd="pwd">
+  <TermLine>/home/ada</TermLine>
+  <TermLine type="ok" tag="note">pwd = print working directory: the current working directory.</TermLine>
+</Cmd>
+
+**What is here?**
+
+<Cmd cmd="ls">
+  <TermLine>documents  musique  pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">ls = list: two directories and one file.</TermLine>
+</Cmd>
+
+<Cmd cmd="ls -l">
+  <TermLine>total 12</TermLine>
+  <TermLine>drwxr-xr-x 2 ada ada 4096 Jul  3 10:12 documents</TermLine>
+  <TermLine>drwxr-xr-x 2 ada ada 4096 Jul  3 10:12 musique</TermLine>
+  <TermLine>-rw-r--r-- 1 ada ada  349 Jul  3 10:15 pionnieres.txt</TermLine>
+  <TermLine type="warn" tag="note">-l = long: permissions, owner, size, date. The leading d marks a directory. These columns are decoded in the next module.</TermLine>
+</Cmd>
+
+<Cmd cmd="ls -a">
+  <TermLine>.  ..  .bashrc  documents  musique  pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">-a = all: names starting with a dot are hidden files (most often configuration); ls keeps quiet about them by default.</TermLine>
+</Cmd>
+
+<Note title="Names that work for you">
+  - Linux distinguishes **upper and lower case**: `Essai.txt` and `essai.txt` are two different files that can coexist.
+  - The **extension** (`.txt`, `.sh`, `.jpg`) is an **informative convention**, not a technical requirement: it informs humans (and a few programs) about the content.
+  - Choose **informative, space-free names** (prefer `test_boucle_for.sh` over `New.sh` or `essai 2.sh`): a few seconds when writing, minutes saved at every search.
+</Note>
+
+**Going elsewhere:**
+
+<Cmd cmd="cd documents">
+  <TermLine type="ok" tag="note">cd = change directory. The prompt becomes ada@debian:~/documents$.</TermLine>
+</Cmd>
+
+<Cmd cmd="cd ..">
+  <TermLine type="ok" tag="note">.. is the parent directory; . is the current directory; cd with no argument brings you back to ~ (the home directory).</TermLine>
+</Cmd>
+
+<Note type="warning" title="Absolute path, relative path">
+  A path starting with `/` is **absolute** (it starts from the root): `/home/ada/documents`. Otherwise it is **relative** to the current directory: `documents`, `../musique`. Both designate the same objects; the shell interprets a relative path by gluing it onto the current directory.
+</Note>
+
+## Looking around: cat, head, wc
+
+Let's set up a playground. The file `pionnieres.txt` lists a few women pioneers of computing — it will serve again in later modules:
+
+<Cmd cmd="cat pionnieres.txt">
+  <TermLine>1843 Ada Lovelace : premier programme publié</TermLine>
+  <TermLine>1947 Kathleen Booth : premier langage d'assemblage</TermLine>
+  <TermLine>1952 Grace Hopper : premier compilateur (A-0)</TermLine>
+  <TermLine>1962 Katherine Johnson : calculs de trajectoire de Friendship 7</TermLine>
+  <TermLine>1969 Margaret Hamilton : logiciel embarqué d'Apollo 11</TermLine>
+  <TermLine>1978 Lynn Conway : révolution VLSI des microprocesseurs</TermLine>
+  <TermLine>1985 Radia Perlman : protocole spanning tree</TermLine>
+  <TermLine type="ok" tag="note">cat = concatenate: prints the content of one or more files.</TermLine>
+</Cmd>
+
+<Cmd cmd="head -n 3 pionnieres.txt">
+  <TermLine>1843 Ada Lovelace : premier programme publié</TermLine>
+  <TermLine>1947 Kathleen Booth : premier langage d'assemblage</TermLine>
+  <TermLine>1952 Grace Hopper : premier compilateur (A-0)</TermLine>
+  <TermLine type="ok" tag="note">head shows the beginning (here 3 lines); tail, the end. Handy on large files.</TermLine>
+</Cmd>
+
+<Cmd cmd="wc -l pionnieres.txt">
+  <TermLine>7 pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">wc = word count; -l counts lines.</TermLine>
+</Cmd>
+
+For a long file, `less pionnieres.txt` lets you browse page by page (arrow keys to move, `q` to quit).
+
+## Acting: mkdir, cp, mv, rm
+
+<Cmd cmd="mkdir archives">
+  <TermLine type="ok" tag="note">mkdir = make directory: creates a directory.</TermLine>
+</Cmd>
+
+<Cmd cmd="cp pionnieres.txt archives/pionnieres-copie.txt">
+  <TermLine type="ok" tag="note">cp = copy: copies source to destination.</TermLine>
+</Cmd>
+
+<Cmd cmd="mv archives/pionnieres-copie.txt archives/pionnieres-1985.txt">
+  <TermLine type="ok" tag="note">mv = move: moves… and therefore renames.</TermLine>
+</Cmd>
+
+<Cmd cmd="rm archives/pionnieres-1985.txt">
+  <TermLine type="warn" tag="careful">rm = remove: there is NO trash bin in the shell — deletion is final. Think before pressing Enter, especially with the -r (recursive) option.</TermLine>
+</Cmd>
+
+## Getting help: man and --help
+
+Nobody remembers every option: the professional reflex is to consult the **manual**, installed with the system.
+
+<Cmd cmd="man ls">
+  <TermLine>LS(1)                    User Commands                   LS(1)</TermLine>
+  <TermLine>NAME</TermLine>
+  <TermLine>       ls - list directory contents</TermLine>
+  <TermLine>SYNOPSIS</TermLine>
+  <TermLine>       ls [OPTION]... [FILE]...</TermLine>
+  <TermLine type="ok" tag="note">navigate like less: arrows, / to search, q to quit. Most commands also accept --help for a quick summary.</TermLine>
+</Cmd>
+
+<Note title="Where to practise?">
+  In **this site's terminal** (right-hand panel: the course commands are clickable; the dock's ⋮ menu also offers a real Linux in the browser), on any GNU/Linux machine, or from macOS (Terminal) and Windows (WSL). The rest of the path assumes these reflexes are acquired.
+</Note>
+
+## Exercises
+
+<Exercise id="intro-shell-navigation" level={1}>
+  From your home directory: create a directory `pionnieres`, enter it, check where you are, then go back up one level. Give the four commands.
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ mkdir pionnieres
+    ada@debian:~$ cd pionnieres
+    ada@debian:~/pionnieres$ pwd
+    /home/ada/pionnieres
+    ada@debian:~/pionnieres$ cd ..
+    ```
+
+    `cd` alone (no argument) would also have brought you back to `~` — equivalent here, since `pionnieres` sits directly under the home directory.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-shell-chemins" level={2}>
+  You are in `/home/ada/documents`. Give a **relative** path, then an **absolute** path, to the file `pionnieres.txt` located in `/home/ada`. What does `../musique/../pionnieres.txt` designate?
+
+  <Fragment slot="solution">
+    Relative: `../pionnieres.txt` (up one level, then the file). Absolute: `/home/ada/pionnieres.txt`.
+
+    `../musique/../pionnieres.txt`: up into `/home/ada`, down into `musique`, back **up** into `/home/ada`, then `pionnieres.txt` — so it is the **same file**, via a pointless but perfectly valid detour.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-shell-compter" level={2}>
+  Without printing the whole file, how would you know how many lines `pionnieres.txt` has? And how would you print only its first two lines? Check in the terminal.
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ wc -l pionnieres.txt
+    7 pionnieres.txt
+    ada@debian:~$ head -n 2 pionnieres.txt
+    1843 Ada Lovelace : premier programme publié
+    1947 Kathleen Booth : premier langage d'assemblage
+    ```
+
+    Two small, specialized, composable tools — that is the Unix philosophy, which the Bash module will deepen with *pipes*.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- The **shell** reads commands of the form `command [options] [arguments]`.
+- Finding your way: `pwd`, `ls` (`-l` for details), `cd` (`..` = parent, `~` = home); **absolute** (`/…`) or **relative** paths.
+- Looking around: `cat`, `head`/`tail`, `less`, `wc -l`.
+- Acting: `mkdir`, `cp`, `mv`, `rm` — **no trash bin**.
+- Getting help: `man command`, `command --help`.
+
+You have the bedrock. The [next module](../intro-fichiers/) decodes permissions, and teaches you to search and archive; the rest of the path (Vim, Bash, sed & awk…) builds directly on it.

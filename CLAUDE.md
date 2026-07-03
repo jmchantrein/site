@@ -41,6 +41,14 @@ Mayer), WCAG AA (corps AAA).
   Toute nouvelle persistance locale doit être couverte par l'export global
   du panneau Paramètres (ou fournir son propre export/import, comme les
   annotations).
+- **Glossaire systématique** : les termes techniques, anglicismes
+  (correspondance FR ↔ EN) et personnages des sciences vivent dans la
+  source unique `site/src/data/glossaire.mjs` ; l'auto-liaison au build
+  (première occurrence par page, popup au survol, fiche `/glossaire/`)
+  maille les cours sans intervention. **Tout nouveau contenu qui introduit
+  une notion ajoute son entrée au glossaire dans le même lot** (bref FR +
+  EN) ; les faux positifs se traitent avec `<G off>`, les reformulations
+  avec `<G t="slug">`.
 
 ## Structure
 

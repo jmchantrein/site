@@ -767,3 +767,49 @@ h2:hover .h-anchor, h3:hover .h-anchor, .h-anchor:focus-visible { opacity: 1; }
   box-shadow: var(--shadow-2); font-size: var(--text-sm);
 }
 @media print { .storage-warn { display: none; } }
+
+/* -----------------------------------------------------------------------------
+   GLOSSAIRE — termes auto-liés (rehype-glossaire) et popup de survol
+   (gloss.js). Le lien reste discret (soulignement pointillé, couleur du
+   texte) : signalement sans distraction ; la popup suit les tokens.
+   Impression : décor et URL neutralisés (le maillage est un outil d'écran).
+   --------------------------------------------------------------------------- */
+a.gloss {
+  color: inherit;
+  text-decoration: underline dotted var(--color-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+a.gloss:hover, a.gloss:focus-visible {
+  color: var(--color-accent-text);
+  text-decoration-style: solid;
+}
+.gloss-pop {
+  position: absolute;
+  z-index: var(--z-drawer);
+  max-width: min(88vw, 26rem);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.gloss-pop__head { margin: 0 0 var(--space-1); color: var(--color-text-strong); }
+.gloss-pop__x { color: var(--color-text-muted, inherit); font-style: italic; }
+.gloss-pop__tag {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  vertical-align: middle;
+}
+.gloss-pop__bref { margin: 0 0 var(--space-2); }
+.gloss-pop__more { font-size: var(--text-xs); }
+@media print {
+  a.gloss { text-decoration: none; }
+  a.gloss::after { content: none !important; }
+  .gloss-pop { display: none; }
+}

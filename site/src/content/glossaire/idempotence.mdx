@@ -1,0 +1,8 @@
+---
+---
+
+Une opération est **idempotente** lorsque la rejouer ne change plus rien après la première exécution : $f(f(x)) = f(x)$. La valeur absolue en mathématiques, « mettre ce fichier dans cet état » en administration système.
+
+C'est le contrat central des outils d'**infrastructure as code** comme Ansible : un playbook décrit un **état voulu** (« le paquet nginx est installé », « cette ligne figure dans ce fichier »), pas une suite d'actions (« exécute apt install »). Rejouer le playbook sur un système déjà conforme ne doit rien changer — la synthèse d'exécution affiche `changed=0`.
+
+L'idempotence se perd facilement : un `echo >> fichier` ajoute une ligne à chaque passage ; un module `shell` réexécute sa commande sans se demander si c'est nécessaire. C'est pourquoi les modules spécialisés (`lineinfile`, `apt`, `template`…) doivent toujours être préférés à `shell`/`command` — et pourquoi le TP Ansible de ce site vérifie l'idempotence de ses corrigés en CI : le second passage doit être un passage à vide.

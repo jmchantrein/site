@@ -63,9 +63,27 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
 - `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
+- `<Duo>` prose + `<Fragment slot="media">` — figure **en regard** du texte qu'elle illustre (contiguïté spatiale de Mayer) ; réservé aux figures verticales/compactes (ArchiStack, LayerStack…), repli en pile quand la colonne est étroite (container query) et à l'impression ;
 - `<CodeFile path="…" lang="…">` — affiche un fichier de corrigé réel (`src/solutions/…`) tel quel : source unique, testée par le harnais (cf. « Corrigés testables ») ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
-- `<IpSim />`, `<BootBench />` — îlots interactifs existants.
+- `<IpSim />`, `<BootBench />` — îlots interactifs existants ;
+- `<ArchiStack kind="vm|conteneur" />`, `<LayerStack>`, `<BuildStack>`, `<MachineMap kind="anatomie|memoires" />` — figures statiques thémables (accessibles, bilingues), pensées pour `<Duo>` ;
+- `<G t="slug">…</G>` / `<G off>…</G>` — surcharge du glossaire : forcer un lien vers une fiche, ou inhiber l'auto-liaison (faux positif).
+
+## Glossaire (maillage systématique)
+
+Les termes techniques, anglicismes et personnages des sciences vivent dans
+**une source unique**, `src/data/glossaire.mjs` (brefs bilingues, alias,
+correspondance FR ↔ EN, module canonique). Au build, `src/lib/rehype-glossaire.mjs`
+**auto-lie la première occurrence** de chaque terme dans la prose des cours
+et articles (jamais dans les titres, le code, les liens, ni `Cmd`/`TermLine`/
+`CodeFile`/`Escape`) — le maillage inter-modules est systématique par
+construction. Au survol ou au focus, `src/scripts/gloss.js` affiche la
+définition brève (WCAG 1.4.13 : révocable, survolable, persistante ;
+tactile : premier appui = popup) ; le clic mène à la fiche `/glossaire/<slug>/`.
+Une fiche longue facultative se dépose dans `src/content/glossaire/<slug>.mdx`
+(+ `en/`) ; sans elle, la page affiche le bref. **Ajouter une notion à un
+cours = ajouter son entrée au glossaire** dans le même lot.
 
 **Traduction anglaise (règle projet)** : chaque contenu FR a son pendant EN
 dans le sous-dossier `en/` de sa collection (`src/content/cours/en/…`),

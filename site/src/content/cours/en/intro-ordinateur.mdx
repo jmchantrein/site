@@ -1,0 +1,121 @@
+---
+title: "What is a computer made of?"
+description: "Processor, memory, storage: the anatomy of a machine that can only do one thing — compute very fast on 0s and 1s."
+order: 1
+serie: intro-linux
+topics: [linux]
+duration: 12
+badge: "Discovery"
+tags: [hardware, CPU, RAM, storage, binary]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+This module assumes **no prior knowledge**. Before learning to talk to a machine (which is what the rest of the path is about), you need to know what it is made of and what it can do — which is very little, but at a dizzying speed.
+
+## A computing machine, nothing more
+
+A computer — server, laptop, phone, home router — is a machine:
+
+- built mainly from **electronic components**;
+- **programmable**: we can make it run programs, that is, sequences of instructions prepared in advance;
+- that can only do one thing: **computations on 0s and 1s** (binary) — but billions of them per second.
+
+Everything a computer handles — text, images, sound, video, web pages — is **represented by numbers**, themselves written in binary. A character is a number, a pixel is a group of numbers, a sound is a long list of numbers.
+
+<Note title="Why binary?">
+  Because it is the most robust representation for electronics: it is easy to tell "current flows" (1) from "current does not flow" (0), even with imperfect components. Each 0 or 1 is called a **bit**; a group of 8 bits is called a **byte** — hence KB, MB, GB, TB: kilo-, mega-, giga-, terabytes.
+</Note>
+
+<Note type="info" title="The idea is older than the machine">
+  The idea that a machine could run a program predates electronics by a century: in 1843, **Ada Lovelace** published what is considered the first program (computing Bernoulli numbers, for Charles Babbage's Analytical Engine — which was never built). She was also the first to write that such a machine could handle more than numbers: symbols, music… That is exactly what your computer does today.
+</Note>
+
+## The anatomy of the machine
+
+<Duo>
+  Let's open the case. You will always find the same organs:
+
+  - the **processor** (CPU, *Central Processing Unit*): it executes the instructions, billions per second (graphics cards carry a specialized cousin chip for massively parallel computation, the **GPU**);
+  - the **main memory** (RAM): the working memory, fast but **volatile** — its content vanishes when power is cut;
+  - the **storage** (SSD or hard drive): mass memory, slow but **persistent** — this is where your files live;
+  - a small **read-only** memory (ROM): it holds the *firmware*, the very first program executed at power-on, the one that bootstraps everything else;
+  - the **motherboard**: the large printed circuit that connects all the components together, through **buses** — the machine's internal roadways;
+  - the **peripherals**: keyboard, mouse, display, network card… everything that lets the machine exchange with the outside world.
+
+  <Fragment slot="media"><MachineMap kind="anatomie" /></Fragment>
+</Duo>
+
+<Note type="info" title="Of chips and people">
+  Modern processors, etched at a few nanometres, owe a great deal to the **VLSI** (*Very Large Scale Integration*) design revolution of the 1970s-80s, co-initiated by **Lynn Conway** — a computer scientist whose contributions were doubly erased: fired by IBM in 1968 when she announced her gender transition, she was only credited for her foundational work decades later.
+</Note>
+
+## The memory hierarchy
+
+<Duo>
+  Why several memories? Because nobody knows how to build a memory that is at once **huge, fast and cheap**. So we stack compromises:
+
+  - at the very top, the processor's **registers**: a few bytes, reachable in one cycle;
+  - then the **caches**, which keep recently used data at hand;
+  - then **main memory**, the workbench;
+  - at the bottom, **storage**, the archive cabinet.
+
+  The lower you go, the **bigger and slower** it gets. A large part of the system's job (and of well-written programs) is moving data between these floors at the right time.
+
+  <Fragment slot="media"><MachineMap kind="memoires" /></Fragment>
+</Duo>
+
+<Note type="warning" title="Volatile or persistent: the classic trap">
+  RAM and storage are both measured in gigabytes, hence a frequent confusion. Remember: **RAM = workbench** (cleared at power-off), **storage = cabinet** (kept). "My computer has 16 GB of RAM and a 1 TB SSD" describes two very different things.
+</Note>
+
+## Program and data in the same place
+
+A founding idea, formalized in 1945 (the so-called "von Neumann" architecture), still shapes almost every computer: **the program is stored in memory, just like the data**. A program is nothing but a sequence of numbers that the processor reads and interprets as instructions.
+
+Very concrete consequences:
+
+- a program can be **loaded, copied, replaced** like any file;
+- a program can **produce** another one (that is what compilers do);
+- the program/data boundary is a **convention** — we will meet it again often in computer security.
+
+<Note type="info" title="'Computer' used to be a job">
+  Until the 1940s, a *computer* was a **person** who computed — an overwhelmingly female profession. The six programmers of the first large American electronic calculator (ENIAC, 1945), including **Jean Bartik** and **Betty Holberton**, invented much of the programming trade; **Kathleen Booth** created the first assembly language (1947); NASA's trajectory computations relied on human calculators such as **Katherine Johnson**. When the machine took the name, history long forgot the women who carried the trade.
+</Note>
+
+## Exercises
+
+<Exercise id="intro-ordi-hierarchie" level={1}>
+  Sort from fastest to slowest, then from smallest to largest: main memory, registers, SSD storage, cache.
+
+  Then state which ones survive a power cut.
+
+  <Fragment slot="solution">
+    Fastest to slowest: **registers → cache → main memory → SSD**.
+
+    Smallest to largest: the same order — that is the whole point of the compromise: what is fast is small, what is big is slow.
+
+    Only **storage** (SSD, disk) survives a power cut: registers, caches and RAM are volatile.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-ordi-binaire" level={1}>
+  A text file contains the sentence "Ada Lovelace" (12 characters, space included). Assuming 1 character = 1 byte, how many bits does it use? And how many times would this sentence fit, as an order of magnitude, in 1 GB?
+
+  <Fragment slot="solution">
+    12 characters × 8 bits = **96 bits** (12 bytes).
+
+    1 GB ≈ 10⁹ bytes: the sentence would fit about **80 million times** (10⁹ ÷ 12 ≈ 8.3 × 10⁷). Orders of magnitude are the daily tool of computer scientists: no need to be more precise here.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- A computer only **computes on binary**, but very fast; everything else (text, image, sound) is a matter of representation.
+- The organs: **CPU** (computes), **RAM** (workbench, volatile), **storage** (archives, persistent), **motherboard** (connects), **peripherals** (exchange).
+- Memories form a **hierarchy**: small-and-fast at the top, big-and-slow at the bottom.
+- **Program = data in memory**: a founding convention, with immense consequences.
+
+In the next module: who keeps all this in order? The **operating system**.

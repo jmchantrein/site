@@ -1,0 +1,49 @@
+---
+import Reading from "../../layouts/Reading.astro";
+import { GLOSSAIRE } from "../../data/glossaire.mjs";
+
+/* INDEX DU GLOSSAIRE — termes techniques, anglicismes et personnages des
+   sciences, générés depuis la source unique (src/data/glossaire.mjs).
+   Dans les cours, ces entrées sont auto-liées : survol = définition brève,
+   clic = la fiche. */
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const coll = new Intl.Collator("fr");
+const termes = GLOSSAIRE.filter((e) => e.type === "terme").sort((a, b) => coll.compare(a.fr, b.fr));
+const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b) =>
+  coll.compare(a.fr.split(" ").at(-1) ?? a.fr, b.fr.split(" ").at(-1) ?? b.fr),
+);
+---
+<Reading
+  title="Glossaire"
+  description="Termes techniques, anglicismes et personnages des sciences : les définitions brèves qui maillent tous les cours du site."
+  crumb={{ href: `${base}/`, label: "accueil" }}
+  lead="Chaque entrée maille les cours : au fil de la lecture, la première occurrence d'un terme est soulignée — survol pour la définition brève, clic pour la fiche. Les anglicismes portent leur correspondance français ↔ anglais."
+  locale="fr"
+  altUrl={`${base}/en/glossaire/`}
+>
+  <h2 id="termes">Termes techniques</h2>
+  <ul class="gloss-index">
+    {termes.map((e) => (
+      <li>
+        <a href={`${base}/glossaire/${e.slug}/`}>{e.fr}</a>
+        {e.angl && <em> (en&nbsp;: {e.en})</em>}
+        {!e.angl && e.en.toLowerCase() !== e.fr.toLowerCase() && <em> · en&nbsp;: {e.en}</em>}
+        — {e.brefFr}
+      </li>
+    ))}
+  </ul>
+
+  <h2 id="personnages">Personnages des sciences</h2>
+  <ul class="gloss-index">
+    {personnages.map((e) => (
+      <li>
+        <a href={`${base}/glossaire/${e.slug}/`}>{e.fr}</a> — {e.brefFr}
+      </li>
+    ))}
+  </ul>
+</Reading>
+
+<style>
+  .gloss-index { display: grid; gap: var(--space-2); padding-left: 1.2em; }
+  .gloss-index em { color: var(--color-text-muted, inherit); }
+</style>

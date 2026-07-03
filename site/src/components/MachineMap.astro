@@ -1,0 +1,129 @@
+---
+/**
+ * ANATOMIE DE LA MACHINE — figures statiques du cours découverte.
+ * Deux variantes : l'anatomie (processeur, mémoire, stockage et
+ * périphériques autour de la carte mère) et la hiérarchie des mémoires
+ * (du registre minuscule et véloce au stockage immense et lent).
+ * Compactes et verticales : conçues pour être lisibles dans <Duo>.
+ *
+ * Usage MDX :
+ *   <MachineMap kind="anatomie" />
+ *   <MachineMap kind="memoires" />
+ */
+interface Props {
+  kind: "anatomie" | "memoires";
+}
+import { pageLocale } from "../lib/locale";
+
+const { kind } = Astro.props;
+const isAnat = kind === "anatomie";
+/* Alternative textuelle de la figure, dans la langue de la page. */
+const label = {
+  fr: isAnat
+    ? "Anatomie d'un ordinateur : la carte mère relie le processeur, la mémoire vive et le stockage ; les périphériques (clavier, écran, réseau) s'y branchent."
+    : "Hiérarchie des mémoires : registres, caches, mémoire vive puis stockage — plus on descend, plus c'est grand et lent ; la mémoire vive et au-dessus s'effacent à l'extinction.",
+  en: isAnat
+    ? "Computer anatomy: the motherboard connects the processor, main memory and storage; peripherals (keyboard, display, network) plug into it."
+    : "Memory hierarchy: registers, caches, main memory, then storage — the lower you go, the bigger and slower it gets; main memory and above are erased at power-off.",
+}[pageLocale(Astro.url)];
+
+/* Niveaux de la pyramide des mémoires (du plus rapide au plus vaste). */
+const levels = [
+  { fr: "Registres", en: "Registers", note: { fr: "~1 ns · quelques octets", en: "~1 ns · a few bytes" }, w: 40 },
+  { fr: "Caches", en: "Caches", note: { fr: "~10 ns · quelques Mo", en: "~10 ns · a few MB" }, w: 60 },
+  { fr: "Mémoire vive (RAM)", en: "Main memory (RAM)", note: { fr: "~100 ns · quelques Go", en: "~100 ns · a few GB" }, w: 80 },
+  { fr: "Stockage (SSD, disque)", en: "Storage (SSD, disk)", note: { fr: "~100 µs · quelques To", en: "~100 µs · a few TB" }, w: 100 },
+];
+---
+{isAnat ? (
+  <figure class="machmap" role="img" aria-label={label}>
+    <div class="machmap__board">
+      <span class="machmap__board-name"><span data-lang="fr">Carte mère</span><span data-lang="en">Motherboard</span></span>
+      <div class="machmap__chips">
+        <span class="machmap__box machmap__box--cpu"><span data-lang="fr">Processeur (CPU)</span><span data-lang="en">Processor (CPU)</span></span>
+        <span class="machmap__box machmap__box--ram"><span data-lang="fr">Mémoire vive (RAM)</span><span data-lang="en">Main memory (RAM)</span></span>
+        <span class="machmap__box machmap__box--sto"><span data-lang="fr">Stockage (SSD, disque)</span><span data-lang="en">Storage (SSD, disk)</span></span>
+      </div>
+    </div>
+    <div class="machmap__periphs">
+      <span class="machmap__box"><span data-lang="fr">Clavier, souris</span><span data-lang="en">Keyboard, mouse</span></span>
+      <span class="machmap__box"><span data-lang="fr">Écran</span><span data-lang="en">Display</span></span>
+      <span class="machmap__box"><span data-lang="fr">Réseau</span><span data-lang="en">Network</span></span>
+    </div>
+    <figcaption class="machmap__caption">
+      <span data-lang="fr">Les périphériques se branchent sur la carte mère.</span>
+      <span data-lang="en">Peripherals plug into the motherboard.</span>
+    </figcaption>
+  </figure>
+) : (
+  <figure class="machmap" role="img" aria-label={label}>
+    <div class="machmap__pyramid">
+      {levels.map((l) => (
+        <div class="machmap__level" style={`width: ${l.w}%`}>
+          <span class="machmap__level-name"><span data-lang="fr">{l.fr}</span><span data-lang="en">{l.en}</span></span>
+          <span class="machmap__level-note"><span data-lang="fr">{l.note.fr}</span><span data-lang="en">{l.note.en}</span></span>
+        </div>
+      ))}
+    </div>
+    <figcaption class="machmap__caption">
+      <span data-lang="fr">↓ plus grand, plus lent, moins cher — seule la dernière ligne survit à l'extinction.</span>
+      <span data-lang="en">↓ bigger, slower, cheaper — only the last row survives power-off.</span>
+    </figcaption>
+  </figure>
+)}
+
+<style>
+  .machmap {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    max-width: 34rem;
+    font-size: var(--text-sm);
+  }
+  .machmap__board {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-weak);
+  }
+  .machmap__board-name {
+    font-weight: 700;
+    color: var(--color-text-strong);
+  }
+  .machmap__chips { display: grid; gap: var(--space-1); }
+  .machmap__box {
+    display: block;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    background: var(--color-surface);
+  }
+  .machmap__box--cpu { background: var(--color-warning-weak); font-weight: 600; }
+  .machmap__box--ram { background: var(--color-info-weak); }
+  .machmap__box--sto { background: var(--color-surface-sunken); }
+  .machmap__periphs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+  }
+  .machmap__pyramid { display: grid; gap: var(--space-1); justify-items: start; }
+  .machmap__level {
+    display: grid;
+    gap: 0;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-info-weak);
+    min-width: 11rem;
+  }
+  .machmap__level:last-child { background: var(--color-surface-sunken); }
+  .machmap__level-name { font-weight: 600; color: var(--color-text-strong); }
+  .machmap__level-note { font-size: var(--text-xs, 0.8em); }
+  .machmap__caption {
+    font-size: var(--text-xs, 0.8em);
+    color: var(--color-text-muted, inherit);
+  }
+</style>

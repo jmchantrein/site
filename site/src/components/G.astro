@@ -1,0 +1,28 @@
+---
+/**
+ * G — surcharge MANUELLE du glossaire (l'auto-liaison au build fait le
+ * travail systématique ; ce composant traite les cas particuliers).
+ *
+ *   <G t="conteneur">ce mot</G>  → force le lien vers la fiche « conteneur »
+ *                                  (utile pour une reformulation que la
+ *                                  reconnaissance ne peut pas deviner) ;
+ *   <G off>registre</G>          → inhibe l'auto-liaison sur ce passage
+ *                                  (faux positif, homonymie).
+ */
+import { GLOSSAIRE_BY_SLUG } from "../data/glossaire.mjs";
+import { pageLocale } from "../lib/locale";
+
+interface Props {
+  /** Slug de l'entrée du glossaire à forcer. */
+  t?: string;
+  /** Inhibe l'auto-liaison sur le contenu. */
+  off?: boolean;
+}
+const { t, off = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const locale = pageLocale(Astro.url);
+const entry = t ? (GLOSSAIRE_BY_SLUG as Record<string, unknown>)[t] : undefined;
+if (t && !entry) throw new Error(`<G t="${t}"> : entrée inconnue du glossaire (src/data/glossaire.mjs).`);
+const href = t ? `${base}${locale === "en" ? "/en" : ""}/glossaire/${t}/` : undefined;
+---
+{off || !t ? <slot /> : <a href={href} class="gloss" data-gloss={t}><slot /></a>}

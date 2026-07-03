@@ -1,0 +1,8 @@
+---
+---
+
+An operation is **idempotent** when replaying it changes nothing after the first execution: $f(f(x)) = f(x)$. Absolute value in mathematics, "put this file in this state" in system administration.
+
+It is the central contract of **infrastructure as code** tools such as Ansible: a playbook describes a **desired state** ("the nginx package is installed", "this line is present in this file"), not a sequence of actions ("run apt install"). Replaying the playbook on an already-compliant system must change nothing — the run summary shows `changed=0`.
+
+Idempotence is easily lost: an `echo >> file` appends a line on every pass; a `shell` module re-runs its command without asking whether it is needed. This is why specialized modules (`lineinfile`, `apt`, `template`…) should always be preferred over `shell`/`command` — and why this site's Ansible lab checks its solutions' idempotence in CI: the second run must be a no-op.
