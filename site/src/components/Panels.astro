@@ -143,6 +143,13 @@ const T = {
       <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
     </label>
 
+    <label class="a11y-toggle">
+      <input type="checkbox" data-gloss-pref />
+      <span class="a11y-toggle__sw" aria-hidden="true"></span>
+      <span class="a11y-toggle__text"><b><span data-lang="fr">Glossaire dans un panneau latéral</span><span data-lang="en">Glossary in a side panel</span></b><small><span data-lang="fr">Un clic sur un terme ouvre sa fiche à droite du cours quand la place le permet — sinon sur sa page</span><span data-lang="en">Clicking a term opens its entry beside the course when space allows — otherwise on its page</span></small></span>
+      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
+    </label>
+
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value" data-a11y-widthval>72 rem</span></span>
       <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label={T.width} />

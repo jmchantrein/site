@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 import Reading from "../../../layouts/Reading.astro";
 import { mdxComponents } from "../../../components/mdx";
 import { GLOSSAIRE } from "../../../data/glossaire.mjs";
+import { wikiUrl, wikiImg } from "../../../data/glossaire-wiki.mjs";
 
 /* GLOSSARY ENTRY PAGE (EN) — long-form content is OPTIONAL (glossaire
    collection, en/ subfolder); without it the page falls back to the brief. */
@@ -23,6 +24,10 @@ const badges = [
   ...(entry.angl ? ["Borrowed term"] : []),
 ];
 const corresp = entry.en.toLowerCase() !== entry.fr.toLowerCase() ? `French: ${entry.fr}.` : "";
+const wiki = wikiUrl(entry.slug, "en");
+/* Portrait served FROM Wikimedia Commons — a deliberate exception to the
+   "no external resources" rule (author's decision); silent onerror fallback. */
+const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
 ---
 <Reading
   title={entry.en}
@@ -33,14 +38,26 @@ const corresp = entry.en.toLowerCase() !== entry.fr.toLowerCase() ? `French: ${e
   locale="en"
   altUrl={`${base}/glossaire/${entry.slug}/`}
 >
-  {Content ? <Content components={mdxComponents} /> : null}
-  {cours && (
-    <p class="gloss-fiche__cours">
-      Concept taught in the module <a href={`${base}/en/cours/${entry.cours}/`}>{cours.data.title}</a>.
-    </p>
+  {img && (
+    <figure class="gloss-portrait">
+      <img src={img} alt={`Portrait: ${entry.en}`} loading="lazy" referrerpolicy="no-referrer" width="200" onerror="this.closest('figure').hidden = true" />
+      <figcaption>Image: Wikimedia Commons</figcaption>
+    </figure>
   )}
+  {Content ? <Content components={mdxComponents} /> : null}
+  <p class="gloss-fiche__liens">
+    {cours && (
+      <span>Concept taught in the module <a href={`${base}/en/cours/${entry.cours}/`}>{cours.data.title}</a>.{" "}</span>
+    )}
+    {wiki && <a href={wiki} rel="external noopener">Read on Wikipedia ↗</a>}
+  </p>
 </Reading>
 
 <style>
-  .gloss-fiche__cours { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .gloss-fiche__liens { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .gloss-portrait { float: right; margin: 0 0 var(--space-3) var(--space-4); max-width: 12rem; }
+  .gloss-portrait img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+  .gloss-portrait figcaption { font-size: var(--text-xs); color: var(--color-text-muted, inherit); }
+  @media (max-width: 40rem) { .gloss-portrait { float: none; margin: 0 0 var(--space-3); } }
+  @media print { .gloss-portrait { display: none; } }
 </style>

@@ -17,14 +17,19 @@
  *  - aliasFr/En: formes supplémentaires reconnues (sigles, synonymes ;
  *                les pluriels simples en -s sont dérivés automatiquement) ;
  *  - cours     : id du module (collection cours, FR) où la notion est
- *                enseignée — le lien inter-modules systématique.
+ *                enseignée — le lien inter-modules systématique ;
+ *  - only      : GATING D'HOMONYMIE — l'auto-liaison de l'entrée est
+ *                restreinte aux séries listées (« image » ne pointe vers
+ *                l'image Docker que dans la série docker, jamais dans le
+ *                cours d'introduction). Ailleurs, <G t="slug"> reste
+ *                utilisable à la main.
  *
  * Une fiche complète facultative peut vivre dans
  * src/content/glossaire/<slug>.mdx (+ en/<slug>.mdx) ; sinon la page
  * de fiche affiche le bref.
  */
 
-/** @typedef {{slug:string,type:"terme"|"personnage",fr:string,en:string,angl?:boolean,brefFr:string,brefEn:string,aliasFr?:string[],aliasEn?:string[],cours?:string}} GlossEntry */
+/** @typedef {{slug:string,type:"terme"|"personnage",fr:string,en:string,angl?:boolean,brefFr:string,brefEn:string,aliasFr?:string[],aliasEn?:string[],cours?:string,only?:string[]}} GlossEntry */
 
 /** @type {GlossEntry[]} */
 export const GLOSSAIRE = [
@@ -69,11 +74,11 @@ export const GLOSSAIRE = [
     brefFr: "Voie de communication interne reliant les composants (largeur en bits, fréquence) : le débit des échanges en dépend.",
     brefEn: "Internal communication pathway linking components (width in bits, frequency): data throughput depends on it.",
     cours: "intro-ordinateur" },
-  { slug: "registre-cpu", type: "terme", fr: "registre", en: "register",
+  { slug: "registre-cpu", only: ["intro-linux", "kvm"], type: "terme", fr: "registre", en: "register",
     brefFr: "Minuscule mémoire interne du processeur, accessible en un cycle — le sommet de la hiérarchie des mémoires.",
     brefEn: "A tiny memory inside the processor, reachable in one cycle — the top of the memory hierarchy.",
     cours: "intro-ordinateur" },
-  { slug: "cache", type: "terme", fr: "cache", en: "cache",
+  { slug: "cache", only: ["intro-linux", "kvm"], type: "terme", fr: "cache", en: "cache",
     brefFr: "Petite mémoire rapide qui garde sous la main les données récemment utilisées, pour éviter d'attendre une mémoire plus lente.",
     brefEn: "A small, fast memory keeping recently used data at hand, to avoid waiting on slower memory.",
     cours: "intro-ordinateur" },
@@ -275,15 +280,15 @@ export const GLOSSAIRE = [
     brefFr: "Isoler des applications par les mécanismes du noyau plutôt qu'en émulant des machines — « virtualisation légère » est un abus de langage.",
     brefEn: "Isolating applications through kernel mechanisms rather than emulating machines — “lightweight virtualization” is a misnomer.",
     cours: "conteneurs-vs-vm" },
-  { slug: "image-conteneur", type: "terme", fr: "image", en: "image",
+  { slug: "image-conteneur", only: ["docker"], type: "terme", fr: "image", en: "image",
     brefFr: "Le modèle en lecture seule (une pile de couches) dont on instancie des conteneurs. Image ≠ couche ≠ conteneur.",
     brefEn: "The read-only template (a stack of layers) containers are instantiated from. Image ≠ layer ≠ container.",
     cours: "docker-bases" },
-  { slug: "couche", type: "terme", fr: "couche", en: "layer", angl: true,
+  { slug: "couche", only: ["docker"], type: "terme", fr: "couche", en: "layer", angl: true,
     brefFr: "Un ensemble de différences de système de fichiers ; empilées, les couches forment une image, et plusieurs images peuvent les partager.",
     brefEn: "A set of file-system differences; stacked, layers form an image, and several images can share them.",
     cours: "docker-bases" },
-  { slug: "registry", type: "terme", fr: "registre d'images", en: "registry", angl: true,
+  { slug: "registry", only: ["docker"], type: "terme", fr: "registre d'images", en: "registry", angl: true,
     brefFr: "Le service qui héberge et distribue les images de conteneurs (Docker Hub, GitLab registry…). En français : registre d'images.",
     brefEn: "The service hosting and distributing container images (Docker Hub, GitLab registry…). French: registre d'images.",
     cours: "docker-images" },
@@ -291,7 +296,7 @@ export const GLOSSAIRE = [
     brefFr: "Le fichier-recette qui décrit la construction d'une image, instruction par instruction — chaque instruction crée une couche.",
     brefEn: "The recipe file describing an image build, instruction by instruction — each instruction creates a layer.",
     cours: "docker-images" },
-  { slug: "volume-docker", type: "terme", fr: "volume", en: "volume",
+  { slug: "volume-docker", only: ["docker"], type: "terme", fr: "volume", en: "volume",
     brefFr: "Espace de stockage persistant attaché à un conteneur : les données survivent au conteneur, par nature volatil.",
     brefEn: "Persistent storage attached to a container: the data outlives the container, which is volatile by nature.",
     cours: "tp-docker-wordpress" },
@@ -432,16 +437,16 @@ export const GLOSSAIRE = [
   { slug: "git", type: "terme", fr: "Git", en: "Git",
     brefFr: "Le système de gestion de versions distribué : historique complet chez chacun, branches, fusions — le standard de fait.",
     brefEn: "The distributed version control system: full history on every clone, branches, merges — the de facto standard." },
-  { slug: "commit", type: "terme", fr: "commit", en: "commit", angl: true,
+  { slug: "commit", only: ["outils-admin"], type: "terme", fr: "commit", en: "commit", angl: true,
     brefFr: "Un instantané enregistré du projet, identifié par un hash, avec son message : l'unité de l'historique Git.",
     brefEn: "A recorded snapshot of the project, identified by a hash, with its message: the unit of Git history." },
-  { slug: "branche", type: "terme", fr: "branche", en: "branch",
+  { slug: "branche", only: ["outils-admin"], type: "terme", fr: "branche", en: "branch",
     brefFr: "Une ligne de développement parallèle dans Git : on y travaille sans toucher à la branche principale, puis on fusionne.",
     brefEn: "A parallel line of development in Git: work happens there without touching the main branch, then gets merged." },
-  { slug: "depot", type: "terme", fr: "dépôt", en: "repository", aliasFr: ["repo"], aliasEn: ["repo"],
+  { slug: "depot", only: ["outils-admin"], type: "terme", fr: "dépôt", en: "repository", aliasFr: ["repo"], aliasEn: ["repo"],
     brefFr: "Le projet versionné complet : fichiers + tout l'historique. Local chez chacun, synchronisé avec des dépôts distants (GitHub, GitLab…).",
     brefEn: "The complete versioned project: files + full history. Local on every machine, synchronized with remote repositories (GitHub, GitLab…)." },
-  { slug: "merge", type: "terme", fr: "fusion", en: "merge", angl: true,
+  { slug: "merge", only: ["outils-admin"], type: "terme", fr: "fusion", en: "merge", angl: true,
     brefFr: "Réunir les changements de deux branches ; en cas de modifications concurrentes du même passage, Git demande d'arbitrer le conflit.",
     brefEn: "Bringing two branches' changes together; when the same passage was edited concurrently, Git asks you to arbitrate the conflict." },
   { slug: "pull-request", type: "terme", fr: "pull request", en: "pull request", angl: true, aliasFr: ["demande de fusion", "merge request"], aliasEn: ["merge request", "PR"],

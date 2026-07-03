@@ -15,6 +15,10 @@ Mayer), WCAG AA (corps AAA).
   composant `<Escape>` (trappe d'évasion), prévu pour le contenu libre.
 - **Tout statique et local** : aucun CDN, aucune ressource externe au runtime
   (polices via @fontsource, icônes lucide-static inlinées, KaTeX au build).
+  **Exception assumée** (décision auteur, juillet 2026) : les **portraits
+  du glossaire** sont affichés depuis Wikimedia Commons (pas d'images à
+  héberger ni de licences à gérer dans le dépôt), avec repli silencieux
+  `onerror` — c'est la seule ressource externe autorisée.
 - **KISS / DRY** : préférer la simplicité ; un composant se définit une fois
   (`site/src/components/` + `site/src/styles/components.css`), les pages ne
   font qu'instancier.

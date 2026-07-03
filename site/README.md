@@ -85,6 +85,20 @@ Une fiche longue facultative se dépose dans `src/content/glossaire/<slug>.mdx`
 (+ `en/`) ; sans elle, la page affiche le bref. **Ajouter une notion à un
 cours = ajouter son entrée au glossaire** dans le même lot.
 
+Compléments :
+
+- **Wikipédia** : `src/data/glossaire-wiki.mjs` porte les titres d'articles
+  FR/EN (lien sur la fiche et dans la popup) et, pour les personnages, le
+  portrait **affiché depuis Wikimedia Commons** (exception assumée à la
+  règle « aucune ressource externe » — repli silencieux si l'image manque).
+- **Homonymie** : une entrée peut porter `only: [séries]` — « image » ne
+  pointe vers l'image Docker que dans la série docker, jamais dans le cours
+  d'introduction ; ailleurs, `<G t="slug">` reste utilisable à la main.
+- **Rail latéral** : au clic, la fiche s'ouvre à droite du cours quand la
+  place le permet (fenêtre ≥ 75 rem) — préférence lecteur dans le panneau
+  Paramètres (`site-astro-gloss-open-v1`, couverte par l'export global),
+  repli : navigation vers la page.
+
 **Traduction anglaise (règle projet)** : chaque contenu FR a son pendant EN
 dans le sous-dossier `en/` de sa collection (`src/content/cours/en/…`),
 servi sous `/en/…` — l'en-tête propose la bascule quand la traduction
