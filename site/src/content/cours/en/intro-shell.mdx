@@ -62,8 +62,19 @@ Three commands are enough to navigate the tree seen in the previous module.
   <TermLine>drwxr-xr-x 2 ada ada 4096 Jul  3 10:12 documents</TermLine>
   <TermLine>drwxr-xr-x 2 ada ada 4096 Jul  3 10:12 musique</TermLine>
   <TermLine>-rw-r--r-- 1 ada ada  349 Jul  3 10:15 pionnieres.txt</TermLine>
-  <TermLine type="warn" tag="note">-l = long: permissions, owner, size, date. The leading d marks a directory.</TermLine>
+  <TermLine type="warn" tag="note">-l = long: permissions, owner, size, date. The leading d marks a directory. These columns are decoded in the next module.</TermLine>
 </Cmd>
+
+<Cmd cmd="ls -a">
+  <TermLine>.  ..  .bashrc  documents  musique  pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">-a = all: names starting with a dot are hidden files (most often configuration); ls keeps quiet about them by default.</TermLine>
+</Cmd>
+
+<Note title="Names that work for you">
+  - Linux distinguishes **upper and lower case**: `Essai.txt` and `essai.txt` are two different files that can coexist.
+  - The **extension** (`.txt`, `.sh`, `.jpg`) is an **informative convention**, not a technical requirement: it informs humans (and a few programs) about the content.
+  - Choose **informative, space-free names** (prefer `test_boucle_for.sh` over `New.sh` or `essai 2.sh`): a few seconds when writing, minutes saved at every search.
+</Note>
 
 **Going elsewhere:**
 
@@ -195,4 +206,4 @@ Nobody remembers every option: the professional reflex is to consult the **manua
 - Acting: `mkdir`, `cp`, `mv`, `rm` — **no trash bin**.
 - Getting help: `man command`, `command --help`.
 
-You have the bedrock: the rest of the path (Vim, Bash, sed & awk…) builds directly on it.
+You have the bedrock. The [next module](../intro-fichiers/) decodes permissions, and teaches you to search and archive; the rest of the path (Vim, Bash, sed & awk…) builds directly on it.

@@ -349,15 +349,23 @@ attente de relecture auteur) :
 
 | # | Module | Contenu |
 |---|---|---|
-| 01 | `intro-ordinateur` — De quoi est fait un ordinateur ? | binaire, anatomie (CPU/RAM/stockage — `<MachineMap>` en `<Duo>`), hiérarchie des mémoires, von Neumann |
+| 01 | `intro-ordinateur` — De quoi est fait un ordinateur ? | binaire, anatomie (CPU/GPU, RAM/ROM, stockage, bus — `<MachineMap>` en `<Duo>`), hiérarchie des mémoires, von Neumann |
 | 02 | `intro-systeme` — Que fait un système d'exploitation ? | noyau, multitâche, programme vs processus, arborescence, multi-utilisateurs, GNU/Linux et logiciel libre |
-| 03 | `intro-shell` — Premiers pas dans le shell | terminal: true — invite, pwd/ls/cd, chemins, cat/head/wc/less, mkdir/cp/mv/rm, man |
+| 03 | `intro-shell` — Premiers pas dans le shell | terminal: true — invite, pwd/ls (-l/-a, fichiers cachés, casse), chemins, cat/head/wc/less, mkdir/cp/mv/rm, man |
+| 04 | `intro-fichiers` — Fichiers, droits et archives | terminal: true — décoder ls -l (rwx/ugo), chmod (+ octal), jokers et find, tar/gzip |
 
-- **Inspiration** : le déroulé s'appuie sur le canon du genre
-  (matériel → OS → shell) ; le PDF de Santini est inaccessible depuis
-  l'environnement (host non autorisé par le proxy), et l'auteur a
-  autorisé un déroulé propre (« n'hésite pas à modifier le déroulé »).
-  *Aucune reprise de contenu tiers.* Ajustable si le PDF est téléversé.
+- **Inspiration — confrontation faite avec les 5 PDF de Santini**
+  (téléversés par l'auteur ; *non déposés dans `sources/` — droits
+  tiers, inspiration de déroulé uniquement*). Couverture : son cours 1
+  (matériel → OS → Linux → fichiers) valide les modules 1-3 (ajouts
+  faits : GPU, ROM/firmware, bus, fichiers cachés, casse, noms
+  informatifs) ; ses cours 2-3 (chemins, droits, archives) ont motivé
+  le **module 4** ; ses cours 4-5 (jokers/find/liens, redirections,
+  tubes, programmation bash, partitions/FHS, compilation, PATH) sont
+  du ressort de la série Outils (Bash ×2) — jokers et find déjà
+  amorcés au module 4. Écarts assumés : pas de comparatif
+  Windows/Linux daté, pas de GUI/logithèque (hors périmètre du site),
+  liens symboliques reportés au module Bash.
 - **Thématisation inclusive / désinvisibilisation** (demande auteur,
   dans l'esprit des exemples sed/awk existants) : Lovelace (premier
   programme), Booth (assembleur), Hopper (compilateur, « bug »),
@@ -426,13 +434,13 @@ Linguist), widgets et évènements personnalisés, images/QPainter, et un
 chapitre « De Qt4 à Qt5 ». Reste à trancher **avant conversion**
 (`order` 40+) :
 
-1. **Actualité** : le cours est d'ère Qt4→Qt5 ; Qt 6 est l'actuel.
-   Options : (a) moderniser vers Qt 6 (CMake remplace qmake comme
-   build officiel, includes/modules, le chapitre de portage devient
-   « de Qt5 à Qt6 ») — travail notable, provenance mixte ; (b) publier
-   en l'état avec un avertissement de version clair (badge/Note).
+1. **Actualité — ⬥ tranché (juillet 2026)** : modernisation vers
+   **Qt 6**, avec des **encarts** `<Note>` aux endroits des gros
+   changements (qmake→CMake comme build officiel, réorganisation des
+   modules/includes, syntaxe des connexions…) ; le chapitre de portage
+   devient « de Qt5 à Qt6 ». Provenance mixte déclarée.
 2. **Thématique** : `divers`, ou création d'un topic « dev » (premier
-   contenu développement du site).
+   contenu développement du site) — **encore à trancher**.
 3. Les captures d'écran (`Figures/`) devront être refaites ou
    remplacées par des figures thémables — les bitmaps d'époque
    cadrent mal avec le design (cf. ArchiStack qui a remplacé les PNG

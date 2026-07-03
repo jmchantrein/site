@@ -62,8 +62,19 @@ Trois commandes suffisent pour naviguer dans l'arborescence vue au module préc�
   <TermLine>drwxr-xr-x 2 ada ada 4096 juil.  3 10:12 documents</TermLine>
   <TermLine>drwxr-xr-x 2 ada ada 4096 juil.  3 10:12 musique</TermLine>
   <TermLine>-rw-r--r-- 1 ada ada  349 juil.  3 10:15 pionnieres.txt</TermLine>
-  <TermLine type="warn" tag="à noter">-l = long : droits, propriétaire, taille, date. Le d initial signale un répertoire.</TermLine>
+  <TermLine type="warn" tag="à noter">-l = long : droits, propriétaire, taille, date. Le d initial signale un répertoire. Ces colonnes sont décodées dans le module suivant.</TermLine>
 </Cmd>
+
+<Cmd cmd="ls -a">
+  <TermLine>.  ..  .bashrc  documents  musique  pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">-a = all : les noms commençant par un point sont des fichiers cachés (configuration, le plus souvent) ; ls les tait par défaut.</TermLine>
+</Cmd>
+
+<Note title="Des noms qui travaillent pour vous">
+  - Linux distingue **majuscules et minuscules** : `Essai.txt` et `essai.txt` sont deux fichiers différents, qui peuvent coexister.
+  - L'**extension** (`.txt`, `.sh`, `.jpg`) est une **convention informative**, pas une obligation technique : elle renseigne les humains (et quelques programmes) sur le contenu.
+  - Choisissez des noms **informatifs et sans espaces** (préférez `test_boucle_for.sh` à `New.sh` ou `essai 2.sh`) : quelques secondes à l'écriture, des minutes gagnées à chaque recherche.
+</Note>
 
 **Aller ailleurs :**
 
@@ -195,4 +206,4 @@ Personne ne retient toutes les options : le réflexe professionnel est de consul
 - Agir : `mkdir`, `cp`, `mv`, `rm` — **sans corbeille**.
 - S'aider : `man commande`, `commande --help`.
 
-Vous avez le socle : la suite du parcours (Vim, Bash, sed & awk…) construit directement dessus.
+Vous avez le socle. Le [module suivant](../intro-fichiers/) décode les droits, apprend à chercher et à archiver ; la suite du parcours (Vim, Bash, sed & awk…) construit directement dessus.

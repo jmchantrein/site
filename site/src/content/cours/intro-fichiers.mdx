@@ -1,0 +1,161 @@
+---
+title: "Fichiers, droits et archives"
+description: "Décoder ls -l, régler les droits avec chmod, retrouver un fichier avec les jokers et find, archiver et compresser avec tar et gzip."
+order: 4
+serie: intro-linux
+topics: [linux]
+duration: 20
+badge: "Découverte"
+tags: [droits, chmod, find, jokers, tar, gzip]
+terminal: true
+terminalTitle: "bash — fichiers et droits"
+terminalComment: "# fichiers, droits, archives — cliquez une commande du cours pour l'exécuter ici"
+status: [construction]
+---
+
+## Introduction
+
+Le [module précédent](../intro-shell/) a donné les gestes de base. Ce dernier module de découverte répond à trois questions du quotidien : **qui a le droit de faire quoi** sur un fichier, **comment retrouver** un fichier parmi des milliers, et **comment emporter** tout un dossier dans un seul fichier compact.
+
+## Décoder une ligne de ls -l
+
+Reprenons la sortie détaillée du module précédent :
+
+<Cmd cmd="ls -l pionnieres.txt">
+  <TermLine>-rw-r--r-- 1 ada ada 349 juil.  3 10:15 pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">type, droits, propriétaire, groupe, taille, date, nom.</TermLine>
+</Cmd>
+
+Le premier bloc, `-rw-r--r--`, se lit en quatre morceaux :
+
+```console
+-        rw-      r--      r--
+type     ada      groupe   les autres
+         (u)ser   (g)roup  (o)thers
+```
+
+- le **type** : `-` pour un fichier ordinaire, `d` pour un répertoire, `l` pour un lien ;
+- puis trois triplets **rwx** — *read* (lire), *write* (écrire), *execute* (exécuter) — pour trois publics : la **propriétaire** (`u`), le **groupe** (`g`), **tout le monde** (`o`). Un tiret = droit absent.
+
+Ici : `ada` peut lire et modifier son fichier (`rw-`), son groupe et les autres peuvent seulement le lire (`r--`). C'est exactement le mécanisme évoqué au [module système](../intro-systeme/) : le noyau vérifie ces droits à chaque accès.
+
+<Note title="Et sur un répertoire ?">
+  Les mêmes lettres changent légèrement de sens : `r` = lister le contenu, `w` = créer ou supprimer des fichiers dedans, `x` = **traverser** (y entrer avec `cd`). Un répertoire sans `x` est une porte fermée, même si `r` laisse lire la liste à travers la vitre.
+</Note>
+
+## Changer les droits : chmod
+
+Écrivons un premier script (le contenu importe peu ici — le module Bash s'en chargera) :
+
+<Cmd cmd="echo 'echo Bonjour depuis mon premier script' > salut.sh">
+  <TermLine type="ok" tag="note">crée le fichier salut.sh — la redirection > sera expliquée en détail dans le module Bash.</TermLine>
+</Cmd>
+
+<Cmd cmd="./salut.sh">
+  <TermLine>bash: ./salut.sh: Permission non accordée</TermLine>
+  <TermLine type="warn" tag="pourquoi ?">le fichier vient d'être créé sans le droit d'exécution.</TermLine>
+</Cmd>
+
+`chmod` (*change mode*) ajoute (`+`) ou retire (`-`) des droits, pour un public donné (`u`, `g`, `o`, ou `a` pour tous) :
+
+<Cmd cmd="chmod u+x salut.sh">
+  <TermLine type="ok" tag="note">ajoute (+) le droit d'exécution (x) pour la propriétaire (u).</TermLine>
+</Cmd>
+
+<Cmd cmd="./salut.sh">
+  <TermLine>Bonjour depuis mon premier script</TermLine>
+</Cmd>
+
+<Note type="info" title="La notation octale">
+  Vous croiserez aussi `chmod 754 fichier` : chaque chiffre code un triplet en binaire — r=4, w=2, x=1, qu'on additionne. `7` = rwx (4+2+1), `5` = r-x (4+1), `4` = r--. C'est le binaire du [premier module](../intro-ordinateur/) appliqué aux droits ! `754` = `rwxr-xr--`.
+</Note>
+
+<Note type="warning" title="Le propriétaire et root">
+  Seuls la ou le propriétaire d'un fichier (et `root`) peuvent en changer les droits — et seul `root` peut en changer le propriétaire (`chown`). C'est ce qui protège les fichiers du système : ils appartiennent à `root`, et un compte ordinaire ne peut pas les modifier.
+</Note>
+
+## Retrouver : jokers et find
+
+Le shell sait désigner **plusieurs fichiers d'un coup** grâce au joker `*` (n'importe quelle suite de caractères) :
+
+<Cmd cmd="ls *.txt">
+  <TermLine>pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">le shell remplace *.txt par la liste des noms correspondants AVANT de lancer ls.</TermLine>
+</Cmd>
+
+Pour chercher dans toute une arborescence (sous-répertoires compris), l'outil dédié est `find` :
+
+<Cmd cmd="find . -name '*.txt'">
+  <TermLine>./pionnieres.txt</TermLine>
+  <TermLine>./documents/notes.txt</TermLine>
+  <TermLine type="ok" tag="note">find PART_DE_LÀ -name MOTIF : ici, depuis le répertoire courant (.). Les guillemets autour du motif empêchent le shell de le développer trop tôt.</TermLine>
+</Cmd>
+
+## Emporter : tar et gzip
+
+Pour transmettre ou sauvegarder tout un dossier, on le regroupe en une **archive** (un seul fichier), que l'on **compresse** au passage :
+
+<Cmd cmd="tar -czf pionnieres.tar.gz documents/">
+  <TermLine type="ok" tag="note">c = create, z = compresser (gzip), f = dans le fichier nommé ensuite. Les fichiers d'origine sont préservés.</TermLine>
+</Cmd>
+
+<Cmd cmd="tar -xzf pionnieres.tar.gz">
+  <TermLine type="ok" tag="note">x = extract : déballe l'archive dans le répertoire courant.</TermLine>
+</Cmd>
+
+<Note title="Pourquoi « tar » ?">
+  *Tape archive* : la commande date des sauvegardes sur **bandes magnétiques**. L'extension double `.tar.gz` dit exactement ce qui a été fait : archivé (`tar`), puis compressé (`gz`). On rencontre aussi `.tgz` (synonyme) et d'autres compresseurs (`.tar.xz`, `.tar.zst`).
+</Note>
+
+## Exercices
+
+<Exercise id="intro-fichiers-decoder" level={1}>
+  Décodez cette ligne : `drwxr-x--- 2 hopper compilateurs 4096 juil. 3 11:02 a0` — type ? droits de chacun ? Qui peut entrer dans `a0` ?
+
+  <Fragment slot="solution">
+    C'est un **répertoire** (`d`), propriété de `hopper` (groupe `compilateurs`) :
+
+    - `hopper` : `rwx` — tout faire, y compris entrer ;
+    - le groupe `compilateurs` : `r-x` — lister et entrer, pas modifier ;
+    - les autres : `---` — rien, pas même entrer.
+
+    Peuvent y entrer (`x`) : `hopper` et les membres du groupe `compilateurs` — et `root`, toujours.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-fichiers-chmod" level={2}>
+  Vous venez d'écrire `sauvegarde.sh`. Donnez la commande pour le rendre exécutable par vous seule, puis celle qui donnerait ce même droit à tout le monde. Laquelle préférer, et pourquoi ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ chmod u+x sauvegarde.sh
+    ada@debian:~$ chmod a+x sauvegarde.sh
+    ```
+
+    Préférez `u+x` : le principe du **moindre privilège** — n'accorder un droit qu'à qui en a besoin. Donner `x` à tout le monde n'a de sens que si d'autres comptes doivent réellement lancer ce script.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-fichiers-archive" level={2}>
+  En une commande : créez une archive compressée `mes-notes.tar.gz` contenant le répertoire `documents`. En une autre : vérifiez son contenu **sans l'extraire** (indice : `man tar`, cherchez « list »).
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ tar -czf mes-notes.tar.gz documents/
+    ada@debian:~$ tar -tzf mes-notes.tar.gz
+    documents/
+    documents/notes.txt
+    ```
+
+    `t` = *list* (table) : affiche le contenu de l'archive sans rien écrire sur le disque. Le réflexe `man tar` est exactement celui attendu d'une administratrice ou d'un administrateur système.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- `ls -l` : type + trois triplets **rwx** pour **u**/**g**/**o** ; sur un répertoire, `x` = traverser.
+- `chmod` change les droits (`u+x`, notation octale `754`) ; seul le propriétaire (ou `root`) le peut.
+- Retrouver : jokers `*` (développés par le shell) et `find chemin -name motif`.
+- Emporter : `tar -czf` (créer), `-xzf` (extraire), `-tzf` (lister).
+
+Fin du parcours découverte : vous savez lire la machine, parler au système et protéger vos fichiers. La série **Outils de l'administration système** (Vim, Bash, sed & awk, SSH…) prend la suite.
