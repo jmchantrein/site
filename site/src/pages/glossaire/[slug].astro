@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 import Reading from "../../layouts/Reading.astro";
 import { mdxComponents } from "../../components/mdx";
 import { GLOSSAIRE } from "../../data/glossaire.mjs";
+import { wikiUrl, wikiImg } from "../../data/glossaire-wiki.mjs";
 
 /* FICHE DU GLOSSAIRE — la page complète d'une entrée. Le contenu long est
    FACULTATIF (collection glossaire) : sans fiche MDX, la page affiche le
@@ -27,6 +28,10 @@ const badges = [
 ];
 const corresp =
   entry.en.toLowerCase() !== entry.fr.toLowerCase() ? `En anglais : ${entry.en}.` : "";
+const wiki = wikiUrl(entry.slug, "fr");
+/* Portrait AFFICHÉ DEPUIS Wikimedia Commons — exception assumée à la règle
+   « aucune ressource externe » (décision auteur) ; repli silencieux onerror. */
+const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
 ---
 <Reading
   title={entry.fr}
@@ -37,14 +42,26 @@ const corresp =
   locale="fr"
   altUrl={`${base}/en/glossaire/${entry.slug}/`}
 >
-  {Content ? <Content components={mdxComponents} /> : null}
-  {cours && (
-    <p class="gloss-fiche__cours">
-      Notion enseignée dans le module <a href={`${base}/cours/${cours.id}/`}>{cours.data.title}</a>.
-    </p>
+  {img && (
+    <figure class="gloss-portrait">
+      <img src={img} alt={`Portrait : ${entry.fr}`} loading="lazy" referrerpolicy="no-referrer" width="200" onerror="this.closest('figure').hidden = true" />
+      <figcaption>Image : Wikimedia Commons</figcaption>
+    </figure>
   )}
+  {Content ? <Content components={mdxComponents} /> : null}
+  <p class="gloss-fiche__liens">
+    {cours && (
+      <span>Notion enseignée dans le module <a href={`${base}/cours/${cours.id}/`}>{cours.data.title}</a>.{" "}</span>
+    )}
+    {wiki && <a href={wiki} rel="external noopener">Lire sur Wikipédia ↗</a>}
+  </p>
 </Reading>
 
 <style>
-  .gloss-fiche__cours { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .gloss-fiche__liens { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .gloss-portrait { float: right; margin: 0 0 var(--space-3) var(--space-4); max-width: 12rem; }
+  .gloss-portrait img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+  .gloss-portrait figcaption { font-size: var(--text-xs); color: var(--color-text-muted, inherit); }
+  @media (max-width: 40rem) { .gloss-portrait { float: none; margin: 0 0 var(--space-3); } }
+  @media print { .gloss-portrait { display: none; } }
 </style>

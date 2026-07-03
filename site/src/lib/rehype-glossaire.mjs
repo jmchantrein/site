@@ -15,6 +15,9 @@
  *   - pages FR : formes françaises + formes anglaises des anglicismes
  *     (`angl: true`) ; pages EN : formes anglaises ;
  *   - pluriels simples en -s reconnus automatiquement ;
+ *   - GATING D'HOMONYMIE : une entrée portant `only: [séries]` n'est
+ *     auto-liée que dans les modules de ces séries (frontmatter `serie`) —
+ *     « image » ne pointe vers l'image Docker que dans la série docker ;
  *   - la collection glossaire elle-même n'est pas auto-liée (une fiche
  *     peut lier à la main, en Markdown).
  */
@@ -59,9 +62,10 @@ function matcherFor(locale) {
     bySimple.set(key, slug);
     if (!/[sxz]$/i.test(key)) bySimple.set(`${key}s`, slug);
   }
+  const onlyBySlug = new Map(GLOSSAIRE.filter((e) => e.only).map((e) => [e.slug, e.only]));
   // Frontières : pas de lettre/chiffre/trait d'union accolé (accents inclus).
   const re = new RegExp(`(?<![\\p{L}\\p{N}-])(?:${parts.join("|")})(?![\\p{L}\\p{N}-])`, "giu");
-  matchers[locale] = { re, bySimple };
+  matchers[locale] = { re, bySimple, onlyBySlug };
   return matchers[locale];
 }
 
@@ -89,9 +93,11 @@ export default function rehypeGlossaire(options = {}) {
     // Seulement les contenus des collections cours et miscelánea.
     if (!/[\\/]content[\\/](cours|miscelanea)[\\/]/.test(path)) return;
     const locale = /[\\/](cours|miscelanea)[\\/]en[\\/]/.test(path) ? "en" : "fr";
-    const { re, bySimple } = matcherFor(locale);
+    const { re, bySimple, onlyBySlug } = matcherFor(locale);
     const prefix = locale === "en" ? `${base}/en/glossaire/` : `${base}/glossaire/`;
     const used = new Set(); // première occurrence par page
+    // Gating d'homonymie : la série du module courant (frontmatter Astro).
+    const serie = file?.data?.astro?.frontmatter?.serie;
 
     function linkify(value) {
       const out = [];
@@ -101,6 +107,8 @@ export default function rehypeGlossaire(options = {}) {
       while ((m = re.exec(value)) !== null) {
         const slug = bySimple.get(m[0].toLowerCase().replace(/[\s ]+/g, " "));
         if (!slug || used.has(slug)) continue;
+        const only = onlyBySlug.get(slug);
+        if (only && !only.includes(serie)) continue;
         used.add(slug);
         if (m.index > last) out.push({ type: "text", value: value.slice(last, m.index) });
         out.push({

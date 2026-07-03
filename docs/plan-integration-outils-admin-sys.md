@@ -465,11 +465,23 @@ bref) ; endpoint `glossaire.json` ; entrées dans la recherche Ctrl+K ;
 4 fiches longues de démonstration (Lovelace, Hopper, Conway,
 idempotence). Clic par défaut : fiche dédiée.
 
-**Phase 2 — à faire** : rail latéral droit (fiche sans quitter le
-cours, quand la largeur le permet) + préférence lecteur dans le panneau
-Paramètres (persistée, couverte par l'export global — règle projet) ;
-fiches longues au fil des conversions ; entrées nouvelles à chaque
-module (règle ajoutée à CLAUDE.md).
+**Phase 2 — réalisée (retours auteur, juillet 2026)** :
+- **Wikipédia** : liens FR/EN sur les fiches et dans la popup
+  (`glossaire-wiki.mjs`, ~100 correspondances) ; **portraits** des
+  personnages affichés depuis Wikimedia Commons — exception assumée à
+  la règle « aucune ressource externe » (consignée dans CLAUDE.md),
+  repli silencieux si l'image manque ;
+- **rail latéral droit** : au clic, la fiche s'ouvre à droite du cours
+  (fenêtre ≥ 75 rem) sans quitter la lecture ; **préférence lecteur**
+  dans le panneau Paramètres (clé `site-astro-gloss-open-v1`, couverte
+  par l'export global), repli navigation ;
+- **gating d'homonymie** (`only: [séries]`) : « image », « couche »,
+  « cache », « registre », « commit », « fusion »… ne s'auto-lient que
+  dans les séries où le sens est le bon — corrige le faux positif
+  « image » relevé par l'auteur dans le cours d'introduction.
+
+**Reste** : fiches longues au fil des conversions ; entrées nouvelles à
+chaque module (règle CLAUDE.md).
 
 ### 10.6 Ordre de réalisation du lot 2
 

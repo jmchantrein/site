@@ -813,3 +813,43 @@ a.gloss:hover, a.gloss:focus-visible {
   a.gloss::after { content: none !important; }
   .gloss-pop { display: none; }
 }
+
+/* Popup glossaire : portrait Commons (personnages) + liens. */
+.gloss-pop__img {
+  float: right;
+  width: 3.5rem; height: 3.5rem;
+  object-fit: cover;
+  margin: 0 0 var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.gloss-pop__links { margin: 0; font-size: var(--text-xs); }
+
+/* RAIL GLOSSAIRE — la fiche à droite du cours, sans quitter la lecture
+   (préférence lecteur : panneau Paramètres ; repli : navigation). */
+.gloss-rail {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: var(--z-drawer);
+  width: min(26rem, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-2);
+}
+.gloss-rail__head {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.gloss-rail__title { color: var(--color-text-strong); }
+.gloss-rail__page { margin-left: auto; font-size: var(--text-sm); }
+.gloss-rail__close {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: none; color: inherit; cursor: pointer;
+  padding: 0 var(--space-2); line-height: 1.6;
+}
+.gloss-rail__close:hover { background: var(--color-surface-sunken); }
+.gloss-rail__body { overflow-y: auto; padding: var(--space-4); font-size: var(--text-sm); }
+.gloss-rail__body .article { max-width: none; }
+@media print { .gloss-rail { display: none; } }
