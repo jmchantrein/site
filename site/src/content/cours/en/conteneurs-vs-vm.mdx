@@ -1,7 +1,7 @@
 ---
 title: "Container or virtual machine?"
 description: "Physical machine, hypervisors, virtualization and containerization: what sets them apart, and different technologies for different goals."
-order: 1
+order: 30
 serie: docker
 topics: [linux]
 duration: 15
@@ -29,16 +29,18 @@ An **operating system** (abbreviated OS) is a program whose purpose is:
 
 ## Then came virtualization... of machines
 
-The virtual machine (abbreviated VM):
+<Duo>
+  The virtual machine (abbreviated VM):
 
-- a virtual machine is a machine **emulated** by software;
-- the emulation software simulates the presence of hardware resources such as memory, processor(s), hard drive(s): it is able to simulate a complete computer;
-- the software in charge of managing VMs is called a **hypervisor** (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, for its part, is a **management platform** built on KVM and LXC);
-- there are 2 types of hypervisors:
-  - **type 1** (*bare metal*, native): the hypervisor runs **directly on the hardware**, best performance (VMware ESXi, Xen, Hyper-V ; KVM, built into the Linux kernel, is a special case);
-  - **type 2** (*hosted*): hypervisor installed **on top of a host OS** (VirtualBox, VMware Workstation ; QEMU used on its own is closer to user-space emulation).
+  - a virtual machine is a machine **emulated** by software;
+  - the emulation software simulates the presence of hardware resources such as memory, processor(s), hard drive(s): it is able to simulate a complete computer;
+  - the software in charge of managing VMs is called a **hypervisor** (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, for its part, is a **management platform** built on KVM and LXC);
+  - there are 2 types of hypervisors:
+    - **type 1** (*bare metal*, native): the hypervisor runs **directly on the hardware**, best performance (VMware ESXi, Xen, Hyper-V ; KVM, built into the Linux kernel, is a special case);
+    - **type 2** (*hosted*): hypervisor installed **on top of a host OS** (VirtualBox, VMware Workstation ; QEMU used on its own is closer to user-space emulation).
 
-<ArchiStack kind="vm" />
+  <Fragment slot="media"><ArchiStack kind="vm" /></Fragment>
+</Duo>
 
 <Note type="success" title="Advantages of the VM model">
   - VM portability.
@@ -61,15 +63,17 @@ The virtual machine (abbreviated VM):
   Containerization is often referred to as *lightweight virtualization*. The term is well suited when contrasting containerization with virtualization (then called "heavyweight virtualization"). But in general, the term is poorly chosen: when we use containerization techniques, **there is no virtualization**. For this reason, we will no longer use the term virtualization when talking about containerization in the rest of this course.
 </Note>
 
-Containerization:
+<Duo>
+  Containerization:
 
-- a container provides an **isolated execution environment** for one or more applications;
-- a container **shares the kernel** of the host's operating system;
-- isolation is performed by kernel features (cgroups, namespaces, capabilities);
-- there are different types of containers (chroot, Docker, Podman, LXC, systemd-nspawn...);
-- the software that runs containers is called a **container runtime** (Docker, Podman, containerd...) and the one that manages them at scale is called an **orchestrator** (Docker Swarm, Kubernetes, LXD/Incus, Proxmox...).
+  - a container provides an **isolated execution environment** for one or more applications;
+  - a container **shares the kernel** of the host's operating system;
+  - isolation is performed by kernel features (cgroups, namespaces, capabilities);
+  - there are different types of containers (chroot, Docker, Podman, LXC, systemd-nspawn...);
+  - the software that runs containers is called a **container runtime** (Docker, Podman, containerd...) and the one that manages them at scale is called an **orchestrator** (Docker Swarm, Kubernetes, LXD/Incus, Proxmox...).
 
-<ArchiStack kind="conteneur" />
+  <Fragment slot="media"><ArchiStack kind="conteneur" /></Fragment>
+</Duo>
 
 <Note type="success" title="Advantages of the container model">
   - Container portability (more or less).

@@ -1,7 +1,7 @@
 ---
 title: "Conteneur ou machine virtuelle ?"
 description: "Machine physique, hyperviseurs, virtualisation et conteneurisation : ce qui les distingue, et des technologies différentes pour des objectifs différents."
-order: 1
+order: 30
 serie: docker
 topics: [linux]
 duration: 15
@@ -29,16 +29,18 @@ Un **système d'exploitation** (*Operating System*, abrégé OS) est un programm
 
 ## Ensuite, il y a eu la virtualisation… de machine
 
-La machine virtuelle (*virtual machine*, abrégée VM) :
+<Duo>
+  La machine virtuelle (*virtual machine*, abrégée VM) :
 
-- une machine virtuelle est une machine **émulée** par un logiciel ;
-- le logiciel d'émulation simule la présence de ressources matérielles telles que la mémoire, le(s) processeur(s), le(s) disque(s) dur(s) : il est capable de simuler un ordinateur complet ;
-- on appelle **hyperviseur** le logiciel ayant pour mission de gérer les VM (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, lui, est une **plateforme de gestion** bâtie sur KVM et LXC) ;
-- il y a 2 types d'hyperviseurs :
-  - **type 1** (*bare metal*, natif) : l'hyperviseur s'exécute **directement sur le matériel**, meilleure performance (VMware ESXi, Xen, Hyper-V ; KVM, intégré au noyau Linux, en est un cas particulier) ;
-  - **type 2** (*hosted*) : hyperviseur installé **au-dessus d'un OS hôte** (VirtualBox, VMware Workstation ; QEMU employé seul relève plutôt de l'émulation en espace utilisateur).
+  - une machine virtuelle est une machine **émulée** par un logiciel ;
+  - le logiciel d'émulation simule la présence de ressources matérielles telles que la mémoire, le(s) processeur(s), le(s) disque(s) dur(s) : il est capable de simuler un ordinateur complet ;
+  - on appelle **hyperviseur** le logiciel ayant pour mission de gérer les VM (QEMU/KVM, Hyper-V, VMware, VirtualBox, Xen… ; Proxmox VE, lui, est une **plateforme de gestion** bâtie sur KVM et LXC) ;
+  - il y a 2 types d'hyperviseurs :
+    - **type 1** (*bare metal*, natif) : l'hyperviseur s'exécute **directement sur le matériel**, meilleure performance (VMware ESXi, Xen, Hyper-V ; KVM, intégré au noyau Linux, en est un cas particulier) ;
+    - **type 2** (*hosted*) : hyperviseur installé **au-dessus d'un OS hôte** (VirtualBox, VMware Workstation ; QEMU employé seul relève plutôt de l'émulation en espace utilisateur).
 
-<ArchiStack kind="vm" />
+  <Fragment slot="media"><ArchiStack kind="vm" /></Fragment>
+</Duo>
 
 <Note type="success" title="Avantages du modèle VM">
   - Portabilité des VM.
@@ -61,15 +63,17 @@ La machine virtuelle (*virtual machine*, abrégée VM) :
   On désigne souvent la conteneurisation comme étant de la *virtualisation légère*. Le terme est bien adapté lorsqu'il s'agit de mettre en opposition la conteneurisation face à la virtualisation (appelée alors « virtualisation lourde »). Mais de manière générale, le terme est mal choisi : lorsque nous utilisons des techniques de conteneurisation, **il n'y a pas de virtualisation**. Pour cette raison, nous n'utiliserons plus le terme de virtualisation lorsque nous parlerons de conteneurisation dans la suite de ce cours.
 </Note>
 
-La conteneurisation :
+<Duo>
+  La conteneurisation :
 
-- un conteneur fournit un **environnement d'exécution isolé** pour une ou des applications ;
-- un conteneur **partage le noyau** du système d'exploitation de l'hôte ;
-- l'isolation est effectuée par des fonctionnalités du noyau (cgroups, namespaces, capabilities) ;
-- il existe différents types de conteneurs (chroot, Docker, Podman, LXC, systemd-nspawn…) ;
-- on appelle **moteur de conteneurs** (*container runtime*) le logiciel qui exécute les conteneurs (Docker, Podman, containerd…) et **orchestrateur** celui qui les gère à l'échelle (Docker Swarm, Kubernetes, LXD/Incus, Proxmox…).
+  - un conteneur fournit un **environnement d'exécution isolé** pour une ou des applications ;
+  - un conteneur **partage le noyau** du système d'exploitation de l'hôte ;
+  - l'isolation est effectuée par des fonctionnalités du noyau (cgroups, namespaces, capabilities) ;
+  - il existe différents types de conteneurs (chroot, Docker, Podman, LXC, systemd-nspawn…) ;
+  - on appelle **moteur de conteneurs** (*container runtime*) le logiciel qui exécute les conteneurs (Docker, Podman, containerd…) et **orchestrateur** celui qui les gère à l'échelle (Docker Swarm, Kubernetes, LXD/Incus, Proxmox…).
 
-<ArchiStack kind="conteneur" />
+  <Fragment slot="media"><ArchiStack kind="conteneur" /></Fragment>
+</Duo>
 
 <Note type="success" title="Avantages du modèle conteneur">
   - Portabilité des conteneurs (plus ou moins).

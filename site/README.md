@@ -63,6 +63,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
 - `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
+- `<Duo>` prose + `<Fragment slot="media">` — figure **en regard** du texte qu'elle illustre (contiguïté spatiale de Mayer) ; réservé aux figures verticales/compactes (ArchiStack, LayerStack…), repli en pile quand la colonne est étroite (container query) et à l'impression ;
 - `<CodeFile path="…" lang="…">` — affiche un fichier de corrigé réel (`src/solutions/…`) tel quel : source unique, testée par le harnais (cf. « Corrigés testables ») ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants.
