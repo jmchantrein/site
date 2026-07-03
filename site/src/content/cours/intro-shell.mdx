@@ -1,0 +1,198 @@
+---
+title: "Premiers pas dans le shell"
+description: "L'invite, les commandes, l'arborescence : se repérer, regarder et agir au clavier — le socle de tout le parcours d'administration système."
+order: 3
+serie: intro-linux
+topics: [linux]
+duration: 20
+badge: "Découverte"
+tags: [shell, terminal, commandes, arborescence, man]
+terminal: true
+terminalTitle: "bash — premiers pas"
+terminalComment: "# premiers pas — cliquez une commande du cours pour l'exécuter ici"
+status: [construction]
+---
+
+## Introduction
+
+Jusqu'ici nous avons regardé la machine ([le matériel](../intro-ordinateur/)) et son chef d'orchestre ([le système](../intro-systeme/)). Il est temps de lui parler. L'outil pour cela est le **shell** : un programme qui lit vos commandes au clavier, les fait exécuter, et vous affiche le résultat.
+
+<Note title="Pourquoi du texte, en 2026 ?">
+  Parce que la majorité des **serveurs** n'ont ni écran ni souris ; parce qu'une commande s'écrit, se copie, se rejoue et s'**automatise** (un clic, non) ; et parce que dix commandes tiennent dans un script que l'on relance à l'identique dans un an. Tout le parcours — Docker, Ansible, KVM — repose sur cette aisance au clavier.
+</Note>
+
+## L'invite et la forme d'une commande
+
+Quand le shell attend vos ordres, il affiche une **invite** (*prompt*), par exemple :
+
+```console
+ada@debian:~$
+```
+
+Elle dit : je suis l'utilisatrice `ada`, sur la machine `debian`, dans mon répertoire personnel (`~`), prête (`$`). Une commande a presque toujours la même forme :
+
+```console
+commande [options] [arguments]
+```
+
+- la **commande** : le programme à lancer (`ls`, `cat`…) ;
+- les **options** commencent par `-` et modifient son comportement (`-l`) ;
+- les **arguments** : ce sur quoi elle travaille (un fichier, un répertoire).
+
+## Se repérer : pwd, ls, cd
+
+Trois commandes suffisent pour naviguer dans l'arborescence vue au module précédent.
+
+**Où suis-je ?**
+
+<Cmd cmd="pwd">
+  <TermLine>/home/ada</TermLine>
+  <TermLine type="ok" tag="note">pwd = print working directory : le répertoire de travail courant.</TermLine>
+</Cmd>
+
+**Qu'y a-t-il ici ?**
+
+<Cmd cmd="ls">
+  <TermLine>documents  musique  pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">ls = list : deux répertoires et un fichier.</TermLine>
+</Cmd>
+
+<Cmd cmd="ls -l">
+  <TermLine>total 12</TermLine>
+  <TermLine>drwxr-xr-x 2 ada ada 4096 juil.  3 10:12 documents</TermLine>
+  <TermLine>drwxr-xr-x 2 ada ada 4096 juil.  3 10:12 musique</TermLine>
+  <TermLine>-rw-r--r-- 1 ada ada  349 juil.  3 10:15 pionnieres.txt</TermLine>
+  <TermLine type="warn" tag="à noter">-l = long : droits, propriétaire, taille, date. Le d initial signale un répertoire.</TermLine>
+</Cmd>
+
+**Aller ailleurs :**
+
+<Cmd cmd="cd documents">
+  <TermLine type="ok" tag="note">cd = change directory. L'invite devient ada@debian:~/documents$.</TermLine>
+</Cmd>
+
+<Cmd cmd="cd ..">
+  <TermLine type="ok" tag="note">.. désigne le répertoire parent ; . désigne le répertoire courant ; cd sans argument ramène dans ~ (le répertoire personnel).</TermLine>
+</Cmd>
+
+<Note type="warning" title="Chemin absolu, chemin relatif">
+  Un chemin qui commence par `/` est **absolu** (il part de la racine) : `/home/ada/documents`. Sinon il est **relatif** au répertoire courant : `documents`, `../musique`. Les deux désignent les mêmes objets ; le shell interprète le relatif en le collant au répertoire courant.
+</Note>
+
+## Regarder : cat, head, wc
+
+Créons-nous un terrain de jeu. Le fichier `pionnieres.txt` recense quelques pionnières de l'informatique — il resservira dans les modules suivants :
+
+<Cmd cmd="cat pionnieres.txt">
+  <TermLine>1843 Ada Lovelace : premier programme publié</TermLine>
+  <TermLine>1947 Kathleen Booth : premier langage d'assemblage</TermLine>
+  <TermLine>1952 Grace Hopper : premier compilateur (A-0)</TermLine>
+  <TermLine>1962 Katherine Johnson : calculs de trajectoire de Friendship 7</TermLine>
+  <TermLine>1969 Margaret Hamilton : logiciel embarqué d'Apollo 11</TermLine>
+  <TermLine>1978 Lynn Conway : révolution VLSI des microprocesseurs</TermLine>
+  <TermLine>1985 Radia Perlman : protocole spanning tree</TermLine>
+  <TermLine type="ok" tag="note">cat = concatenate : affiche le contenu d'un ou plusieurs fichiers.</TermLine>
+</Cmd>
+
+<Cmd cmd="head -n 3 pionnieres.txt">
+  <TermLine>1843 Ada Lovelace : premier programme publié</TermLine>
+  <TermLine>1947 Kathleen Booth : premier langage d'assemblage</TermLine>
+  <TermLine>1952 Grace Hopper : premier compilateur (A-0)</TermLine>
+  <TermLine type="ok" tag="note">head affiche le début (ici 3 lignes) ; tail, la fin. Pratique sur les gros fichiers.</TermLine>
+</Cmd>
+
+<Cmd cmd="wc -l pionnieres.txt">
+  <TermLine>7 pionnieres.txt</TermLine>
+  <TermLine type="ok" tag="note">wc = word count ; -l compte les lignes.</TermLine>
+</Cmd>
+
+Pour un long fichier, `less pionnieres.txt` permet de le parcourir page à page (flèches pour naviguer, `q` pour quitter).
+
+## Agir : mkdir, cp, mv, rm
+
+<Cmd cmd="mkdir archives">
+  <TermLine type="ok" tag="note">mkdir = make directory : crée un répertoire.</TermLine>
+</Cmd>
+
+<Cmd cmd="cp pionnieres.txt archives/pionnieres-copie.txt">
+  <TermLine type="ok" tag="note">cp = copy : copie source vers destination.</TermLine>
+</Cmd>
+
+<Cmd cmd="mv archives/pionnieres-copie.txt archives/pionnieres-1985.txt">
+  <TermLine type="ok" tag="note">mv = move : déplace… et donc renomme.</TermLine>
+</Cmd>
+
+<Cmd cmd="rm archives/pionnieres-1985.txt">
+  <TermLine type="warn" tag="attention">rm = remove : PAS de corbeille dans le shell — la suppression est définitive. Réfléchir avant d'appuyer sur Entrée, surtout avec l'option -r (récursif).</TermLine>
+</Cmd>
+
+## S'aider : man et --help
+
+Personne ne retient toutes les options : le réflexe professionnel est de consulter le **manuel**, installé avec le système.
+
+<Cmd cmd="man ls">
+  <TermLine>LS(1)                    User Commands                   LS(1)</TermLine>
+  <TermLine>NAME</TermLine>
+  <TermLine>       ls - list directory contents</TermLine>
+  <TermLine>SYNOPSIS</TermLine>
+  <TermLine>       ls [OPTION]... [FILE]...</TermLine>
+  <TermLine type="ok" tag="note">navigation comme less : flèches, / pour chercher, q pour quitter. La plupart des commandes acceptent aussi --help pour un résumé rapide.</TermLine>
+</Cmd>
+
+<Note title="Où pratiquer ?">
+  Dans le **terminal de ce site** (panneau de droite : les commandes du cours y sont cliquables ; le menu ⋮ du dock propose aussi un vrai Linux dans le navigateur), sur n'importe quelle machine GNU/Linux, ou depuis macOS (Terminal) et Windows (WSL). La suite du parcours suppose ces réflexes acquis.
+</Note>
+
+## Exercices
+
+<Exercise id="intro-shell-navigation" level={1}>
+  Depuis votre répertoire personnel : créez un répertoire `pionnieres`, entrez-y, vérifiez où vous êtes, puis remontez d'un niveau. Donnez les quatre commandes.
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ mkdir pionnieres
+    ada@debian:~$ cd pionnieres
+    ada@debian:~/pionnieres$ pwd
+    /home/ada/pionnieres
+    ada@debian:~/pionnieres$ cd ..
+    ```
+
+    `cd` seul (sans argument) aurait aussi ramené dans `~` — ici c'est équivalent, puisque `pionnieres` est directement sous le répertoire personnel.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-shell-chemins" level={2}>
+  Vous êtes dans `/home/ada/documents`. Donnez un chemin **relatif** puis un chemin **absolu** vers le fichier `pionnieres.txt` situé dans `/home/ada`. Que désigne `../musique/../pionnieres.txt` ?
+
+  <Fragment slot="solution">
+    Relatif : `../pionnieres.txt` (on remonte d'un cran, puis le fichier). Absolu : `/home/ada/pionnieres.txt`.
+
+    `../musique/../pionnieres.txt` : on remonte dans `/home/ada`, on descend dans `musique`, on **re**monte dans `/home/ada`, puis `pionnieres.txt` — c'est donc le **même fichier**, par un détour inutile mais parfaitement valide.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-shell-compter" level={2}>
+  Sans afficher tout le fichier, comment sauriez-vous combien de lignes compte `pionnieres.txt` ? Et comment n'en afficher que les deux premières ? Vérifiez dans le terminal.
+
+  <Fragment slot="solution">
+    ```console
+    ada@debian:~$ wc -l pionnieres.txt
+    7 pionnieres.txt
+    ada@debian:~$ head -n 2 pionnieres.txt
+    1843 Ada Lovelace : premier programme publié
+    1947 Kathleen Booth : premier langage d'assemblage
+    ```
+
+    Deux petits outils spécialisés, composables — c'est la philosophie Unix, que le module Bash approfondira avec les *pipes*.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Le **shell** lit des commandes de la forme `commande [options] [arguments]`.
+- Se repérer : `pwd`, `ls` (`-l` pour le détail), `cd` (`..` = parent, `~` = chez soi) ; chemins **absolus** (`/…`) ou **relatifs**.
+- Regarder : `cat`, `head`/`tail`, `less`, `wc -l`.
+- Agir : `mkdir`, `cp`, `mv`, `rm` — **sans corbeille**.
+- S'aider : `man commande`, `commande --help`.
+
+Vous avez le socle : la suite du parcours (Vim, Bash, sed & awk…) construit directement dessus.

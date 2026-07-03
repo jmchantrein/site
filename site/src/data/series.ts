@@ -11,6 +11,20 @@ import type { Provenance } from "./provenance";
     NON par module : chaque module en hérite (cf. displayProvenance). Source
     unique pour le cours entier — plus de provenance répétée page par page. */
 export const SERIES = {
+  "intro-linux": {
+    fr: "Introduction à Linux et à l'ordinateur",
+    en: "Introduction to Linux and the computer",
+    desc: {
+      fr: "Un parcours d'entrée sans prérequis : de quoi est fait un ordinateur, ce que fait un système d'exploitation, et les premiers pas dans le shell.",
+      en: "An entry path with no prerequisites: what a computer is made of, what an operating system does, and your first steps in the shell.",
+    },
+    /** Rédaction IA sur cadrage de l'auteur (déroulé, thématisation
+        désinvisibilisation/inclusivité) ; relecture humaine à la validation. */
+    prov: {
+      fr: { by: "ai", reviewedBy: "human", model: "Claude Fable 5", aiShare: 85 },
+      en: { by: "ai", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 90 },
+    },
+  },
   docker: {
     fr: "Fondements de Docker",
     en: "Docker fundamentals",

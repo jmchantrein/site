@@ -16,6 +16,7 @@ import BuildStack from "./BuildStack.astro";
 import Bypass from "./Bypass.astro";
 import CodeFile from "./CodeFile.astro";
 import Duo from "./Duo.astro";
+import MachineMap from "./MachineMap.astro";
 
 export const mdxComponents = {
   Note,
@@ -33,4 +34,5 @@ export const mdxComponents = {
   Bypass,
   CodeFile,
   Duo,
+  MachineMap,
 };

@@ -1,0 +1,120 @@
+---
+title: "De quoi est fait un ordinateur ?"
+description: "Processeur, mémoire, stockage : l'anatomie d'une machine qui ne sait faire qu'une chose — calculer très vite sur des 0 et des 1."
+order: 1
+serie: intro-linux
+topics: [linux]
+duration: 12
+badge: "Découverte"
+tags: [matériel, CPU, RAM, stockage, binaire]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Ce module ne suppose **aucune connaissance préalable**. Avant d'apprendre à parler à une machine (c'est l'objet de tout le reste du parcours), il faut savoir de quoi elle est faite et ce qu'elle sait faire — c'est-à-dire très peu de choses, mais à une vitesse vertigineuse.
+
+## Une machine à calculer, rien d'autre
+
+Un ordinateur — serveur, PC portable, téléphone, box internet — est une machine :
+
+- fabriquée principalement avec des **composants électroniques** ;
+- **programmable** : on peut lui faire exécuter des programmes, c'est-à-dire des suites d'instructions préparées à l'avance ;
+- qui ne sait faire qu'une seule chose : des **calculs sur des 0 et des 1** (le binaire) — mais elle en fait des milliards par seconde.
+
+Tout ce qu'un ordinateur manipule — textes, images, sons, vidéos, pages web — est **représenté par des nombres**, eux-mêmes écrits en binaire. Un caractère est un nombre, un pixel est un groupe de nombres, un son est une longue liste de nombres.
+
+<Note title="Pourquoi le binaire ?">
+  Parce que c'est la représentation la plus robuste pour l'électronique : il est facile de distinguer « le courant passe » (1) de « le courant ne passe pas » (0), même avec des composants imparfaits. Chaque 0 ou 1 s'appelle un **bit** ; un groupe de 8 bits s'appelle un **octet** (*byte* en anglais — d'où les Ko, Mo, Go, To : kilo, méga, giga, téraoctets).
+</Note>
+
+<Note type="info" title="L'idée est plus vieille que la machine">
+  L'idée qu'une machine puisse exécuter un programme précède l'électronique d'un siècle : en 1843, **Ada Lovelace** publie ce qui est considéré comme le premier programme (le calcul des nombres de Bernoulli, pour la machine analytique de Charles Babbage — qui ne fut jamais construite). Elle est aussi la première à écrire qu'une telle machine pourrait manipuler autre chose que des nombres : des symboles, de la musique… C'est exactement ce que fait votre ordinateur aujourd'hui.
+</Note>
+
+## L'anatomie de la machine
+
+<Duo>
+  Ouvrons le capot. On y trouve toujours les mêmes organes :
+
+  - le **processeur** (CPU, *Central Processing Unit*) : c'est lui qui exécute les instructions, des milliards par seconde ;
+  - la **mémoire vive** (RAM) : la mémoire de travail, rapide mais **volatile** — son contenu disparaît quand le courant est coupé ;
+  - le **stockage** (SSD ou disque dur) : la mémoire de masse, lente mais **persistante** — c'est là que vivent vos fichiers ;
+  - la **carte mère** : le grand circuit imprimé qui relie tous les composants ;
+  - les **périphériques** : clavier, souris, écran, carte réseau… tout ce qui permet à la machine d'échanger avec l'extérieur.
+
+  <Fragment slot="media"><MachineMap kind="anatomie" /></Fragment>
+</Duo>
+
+<Note type="info" title="Des puces et des personnes">
+  Les processeurs modernes, gravés à quelques nanomètres, doivent beaucoup à la révolution de la conception **VLSI** (*Very Large Scale Integration*) des années 1970-80, co-initiée par **Lynn Conway** — informaticienne dont les contributions furent doublement invisibilisées : licenciée par IBM en 1968 lorsqu'elle annonça sa transition de genre, elle ne fut créditée de ses travaux fondateurs que des décennies plus tard.
+</Note>
+
+## La hiérarchie des mémoires
+
+<Duo>
+  Pourquoi plusieurs mémoires ? Parce qu'on ne sait pas fabriquer une mémoire à la fois **immense, rapide et bon marché**. On empile donc des compromis :
+
+  - tout en haut, les **registres** du processeur : quelques octets, accessibles en un cycle ;
+  - puis les **caches**, qui gardent sous la main ce qui vient de servir ;
+  - puis la **mémoire vive**, le plan de travail ;
+  - tout en bas, le **stockage**, l'armoire d'archives.
+
+  Plus on descend, plus c'est **grand et lent**. Le travail du système (et des programmes bien écrits) consiste largement à faire circuler les données entre ces étages au bon moment.
+
+  <Fragment slot="media"><MachineMap kind="memoires" /></Fragment>
+</Duo>
+
+<Note type="warning" title="Volatile ou persistant : le piège classique">
+  La RAM et le stockage se mesurent tous deux en gigaoctets, d'où une confusion fréquente. Retenez : **RAM = plan de travail** (vidé à l'extinction), **stockage = armoire** (conservé). « Mon ordinateur a 16 Go de RAM et 1 To de SSD » décrit deux choses très différentes.
+</Note>
+
+## Le programme et les données au même endroit
+
+Une idée fondatrice, formalisée en 1945 (architecture dite « de von Neumann »), structure encore presque tous les ordinateurs : **le programme est rangé en mémoire, comme les données**. Un programme n'est qu'une suite de nombres que le processeur lit et interprète comme des instructions.
+
+Conséquences très concrètes :
+
+- un programme peut être **chargé, copié, remplacé** comme n'importe quel fichier ;
+- un programme peut en **produire** un autre (c'est ce que font les compilateurs) ;
+- la frontière programme/données est une **convention** — nous la retrouverons souvent en sécurité informatique.
+
+<Note type="info" title="« Computer » était un métier">
+  Jusqu'aux années 1940, un *computer* était une **personne** qui calculait — un métier très majoritairement féminin. Les six programmeuses du premier grand calculateur électronique américain (ENIAC, 1945), dont **Jean Bartik** et **Betty Holberton**, ont inventé une part du métier de programmeur ; **Kathleen Booth** a créé le premier langage d'assemblage (1947) ; les calculs de trajectoire de la NASA reposaient sur des calculatrices humaines comme **Katherine Johnson**. Quand la machine a pris le nom, l'histoire a longtemps oublié celles qui portaient le métier.
+</Note>
+
+## Exercices
+
+<Exercise id="intro-ordi-hierarchie" level={1}>
+  Classez de la plus rapide à la plus lente, puis de la plus petite à la plus grande : mémoire vive, registres, stockage SSD, cache.
+
+  Indiquez ensuite lesquelles survivent à une coupure de courant.
+
+  <Fragment slot="solution">
+    Du plus rapide au plus lent : **registres → cache → mémoire vive → SSD**.
+
+    Du plus petit au plus grand : même ordre — c'est tout l'objet du compromis : ce qui est rapide est petit, ce qui est grand est lent.
+
+    Seul le **stockage** (SSD, disque) survit à la coupure : registres, caches et RAM sont volatils.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-ordi-binaire" level={1}>
+  Un fichier texte contient la phrase « Ada Lovelace » (12 caractères, espace compris). En supposant 1 caractère = 1 octet, combien de bits occupe-t-elle ? Et combien de fois cette phrase tiendrait-elle, en ordre de grandeur, dans 1 Go ?
+
+  <Fragment slot="solution">
+    12 caractères × 8 bits = **96 bits** (12 octets).
+
+    1 Go ≈ 10⁹ octets : la phrase y tiendrait environ **80 millions de fois** (10⁹ ÷ 12 ≈ 8,3 × 10⁷). Les ordres de grandeur sont l'outil quotidien de l'informaticienne et de l'informaticien : inutile d'être plus précis ici.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Un ordinateur ne fait que **calculer sur du binaire**, mais très vite ; tout le reste (texte, image, son) est affaire de représentation.
+- Les organes : **CPU** (calcule), **RAM** (travail, volatile), **stockage** (archives, persistant), **carte mère** (relie), **périphériques** (échangent).
+- Les mémoires forment une **hiérarchie** : petit-et-rapide en haut, grand-et-lent en bas.
+- **Programme = données en mémoire** : une convention fondatrice, aux conséquences immenses.
+
+Dans le module suivant : qui organise tout cela ? Le **système d'exploitation**.

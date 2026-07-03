@@ -340,32 +340,34 @@ Le lot 2 (§ 10) s'enchaîne après le jalon Ansible.
 Quatre ajouts demandés par l'auteur après validation du plan initial ;
 décisions ⬥ cadrées comme au § 2.
 
-### 10.1 Série `decouverte` — « Découvrir l'ordinateur et le système »
+### 10.1 Série `intro-linux` — « Introduction à Linux et à l'ordinateur »
 
-⬥ Mini-série de 3-4 modules courts **en tête de parcours** (`order`
-1-4), niveau volontairement plus accessible que le reste du site :
+⬥ Mini-série de 3 modules courts **en tête de parcours** (`order` 1-3),
+niveau volontairement plus accessible que le reste du site.
+**RÉALISÉE** (juillet 2026, FR + EN, `status: [construction]` en
+attente de relecture auteur) :
 
-| # | Titre de travail | Contenu |
+| # | Module | Contenu |
 |---|---|---|
-| 01 | De quoi est fait un ordinateur | CPU, mémoire, stockage, périphériques — figures `<Duo>` |
-| 02 | Que fait un système d'exploitation | rôle de l'OS, processus, fichiers, droits, utilisateurices |
-| 03 | Premiers pas dans le shell | terminal émulé du site en usage intensif |
-| 04 | (optionnel) Du code source au programme | à cadrer selon le PDF |
+| 01 | `intro-ordinateur` — De quoi est fait un ordinateur ? | binaire, anatomie (CPU/RAM/stockage — `<MachineMap>` en `<Duo>`), hiérarchie des mémoires, von Neumann |
+| 02 | `intro-systeme` — Que fait un système d'exploitation ? | noyau, multitâche, programme vs processus, arborescence, multi-utilisateurs, GNU/Linux et logiciel libre |
+| 03 | `intro-shell` — Premiers pas dans le shell | terminal: true — invite, pwd/ls/cd, chemins, cat/head/wc/less, mkdir/cp/mv/rm, man |
 
-- **Inspiration** : structure du cours d'introduction de Santini
-  (Paris 13) — *inspiration de plan uniquement, aucune reprise de
-  contenu* (droits tiers). PDF inaccessible depuis l'environnement :
-  à téléverser pour cadrage fidèle, sinon cadrage sur le canon du
-  genre (hardware → OS → shell).
+- **Inspiration** : le déroulé s'appuie sur le canon du genre
+  (matériel → OS → shell) ; le PDF de Santini est inaccessible depuis
+  l'environnement (host non autorisé par le proxy), et l'auteur a
+  autorisé un déroulé propre (« n'hésite pas à modifier le déroulé »).
+  *Aucune reprise de contenu tiers.* Ajustable si le PDF est téléversé.
 - **Thématisation inclusive / désinvisibilisation** (demande auteur,
-  dans l'esprit des exemples sed/awk existants — Ada Lovelace,
-  autrices…) : les exemples, jeux de données et figures mettent en
-  avant les contributions historiquement invisibilisées (Lovelace,
-  Hopper, Hamilton, Johnson, Perlman, Conway…), sans en faire un
-  cours d'histoire : le fil reste technique.
-- **Provenance** : rédaction majoritairement IA sur cadrage auteur →
-  `by: ai, reviewedBy: human` (relecture obligatoire avant
-  publication), déclarée à la série.
+  dans l'esprit des exemples sed/awk existants) : Lovelace (premier
+  programme), Booth (assembleur), Hopper (compilateur, « bug »),
+  Bartik/Holberton (ENIAC), Johnson (NASA), Conway (VLSI), Perlman
+  (spanning tree), Feinler (ARPANET) — tissées dans le fil technique
+  (encarts `<Note>`), plus le jeu de données `pionnieres.txt` du
+  module shell, réutilisable par les modules sed/awk à venir.
+- **Provenance** : `by: ai, reviewedBy: human, aiShare: 85` déclarée
+  dans `SERIES` — la relecture auteur est le jalon de validation ;
+  les badges `construction` tombent à ce moment-là.
 
 ### 10.2 Série `kvm` — « Virtualisation avec KVM »
 
@@ -415,13 +417,26 @@ croisés depuis les modules Bash de la série Outils :
   mise en récit IA), déclarée par article (mécanisme existant pour
   les contenus hors série).
 
-### 10.4 Cours Qt — en attente
+### 10.4 Cours Qt — reçu, décisions en attente
 
-L'archive n'est pas parvenue (seul le zip bash a été reçu). À
-re-téléverser. Questions à trancher à réception : actualité du
-contenu (Qt 5 → Qt 6), thématique (`divers` ou nouveau topic « dev » —
-premier contenu hors admin sys/réseau du site), et place (série
-autonome, `order` 40+). Rien n'est engagé d'ici là.
+Archive reçue (juillet 2026), déposée sous `sources/qt/` (Beamer
+1 384 l. + code C++ + figures) : modèle objet QObject, QWidgets,
+QLayouts, signaux/slots, outils (qmake, moc, Designer, Assistant,
+Linguist), widgets et évènements personnalisés, images/QPainter, et un
+chapitre « De Qt4 à Qt5 ». Reste à trancher **avant conversion**
+(`order` 40+) :
+
+1. **Actualité** : le cours est d'ère Qt4→Qt5 ; Qt 6 est l'actuel.
+   Options : (a) moderniser vers Qt 6 (CMake remplace qmake comme
+   build officiel, includes/modules, le chapitre de portage devient
+   « de Qt5 à Qt6 ») — travail notable, provenance mixte ; (b) publier
+   en l'état avec un avertissement de version clair (badge/Note).
+2. **Thématique** : `divers`, ou création d'un topic « dev » (premier
+   contenu développement du site).
+3. Les captures d'écran (`Figures/`) devront être refaites ou
+   remplacées par des figures thémables — les bitmaps d'époque
+   cadrent mal avec le design (cf. ArchiStack qui a remplacé les PNG
+   du cours Docker).
 
 ### 10.5 Ordre de réalisation du lot 2
 

@@ -1,0 +1,115 @@
+---
+title: "Que fait un système d'exploitation ?"
+description: "Noyau, processus, fichiers, utilisateurices : le programme qui arbitre tous les autres — et pourquoi GNU/Linux en est devenu la figure libre."
+order: 2
+serie: intro-linux
+topics: [linux]
+duration: 15
+badge: "Découverte"
+tags: [OS, noyau, processus, fichiers, GNU/Linux, logiciel libre]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Le [module précédent](../intro-ordinateur/) a ouvert le capot : processeur, mémoires, périphériques. Mais qui décide quel programme utilise le processeur, et quand ? Qui range les fichiers ? Qui empêche un programme de lire la mémoire d'un autre ? Réponse : un programme un peu particulier, le **système d'exploitation**.
+
+## Le problème : tout le monde veut la machine
+
+Sur votre machine tournent en permanence des dizaines de programmes : navigateur, lecteur de musique, messagerie, mises à jour… Or il n'y a qu'un petit nombre de cœurs de processeur et une seule mémoire vive. Sans arbitre :
+
+- chaque programme devrait connaître chaque modèle de clavier, d'écran, de disque ;
+- deux programmes pourraient écrire au même endroit de la mémoire ;
+- un programme gourmand pourrait s'approprier la machine entière.
+
+## Le système d'exploitation, arbitre et interprète
+
+Un **système d'exploitation** (*Operating System*, OS — GNU/Linux, Windows, macOS, Android…) est un programme qui a pour but :
+
+- d'assurer la **communication** entre les logiciels et les composants de la machine (RAM, disques, carte réseau…), via des **pilotes** (*drivers*) ;
+- d'**organiser et planifier** l'exécution des autres programmes ;
+- de **partager équitablement** les ressources (temps de processeur, mémoire) ;
+- de **protéger** : chaque programme est isolé des autres, chaque personne a ses droits.
+
+Le cœur de l'OS s'appelle le **noyau** (*kernel*). C'est lui qui touche réellement le matériel ; tous les autres programmes passent par lui en lui adressant des requêtes (les *appels système*).
+
+<Note title="Une analogie">
+  Le matériel est une salle de spectacle ; les programmes sont des troupes qui veulent toutes la scène. Le noyau est la régie : il attribue la scène par tranches de quelques millisecondes, si vite que le public — vous — croit voir toutes les pièces jouées **en même temps**. C'est le **multitâche**.
+</Note>
+
+## Programme et processus
+
+Deux mots proches, une distinction essentielle :
+
+- un **programme** est un fichier : une recette, posée dans un livre ;
+- un **processus** est un programme **en cours d'exécution** : la cuisine en train de se faire, avec ses casseroles (mémoire allouée) et sa cheffe ou son chef (le processeur qui déroule les instructions).
+
+Un même programme peut être lancé plusieurs fois : un programme, plusieurs processus. Le système attribue à chaque processus un numéro unique, le **PID** (*Process IDentifier*) — nous les manipulerons dans le shell.
+
+<Note type="info" title="Le premier « bug » était une phalène">
+  En 1947, l'équipe de **Grace Hopper** trouve un papillon de nuit coincé dans un relais du calculateur Mark II et le scotche dans le journal de bord : « *first actual case of bug being found* ». Hopper marquera bien plus que l'anecdote : elle crée en 1952 l'un des premiers **compilateurs** (A-0) — l'idée, jugée farfelue à l'époque, qu'un programme puisse traduire un langage lisible par les humains en instructions machine. Sans compilateurs, pas de langages de programmation modernes.
+</Note>
+
+## Des fichiers et une arborescence
+
+Le système offre aux programmes (et aux personnes) une abstraction précieuse : le **fichier** — une suite d'octets nommée et persistante, sans qu'on ait à savoir sur quels blocs du SSD elle est rangée.
+
+Les fichiers sont organisés en **répertoires** (dossiers), qui peuvent contenir d'autres répertoires : une **arborescence**. Sous Linux, elle part d'une racine unique, notée `/` :
+
+- `/home/ada` : le répertoire personnel de l'utilisatrice `ada` ;
+- `/home/ada/notes.txt` : un fichier dans ce répertoire — ce texte est un **chemin** (*path*) ;
+- `/etc` : les fichiers de configuration du système ;
+- `/bin`, `/usr` : les programmes installés.
+
+Nous parcourrons cette arborescence au clavier dès le [module suivant](../intro-shell/).
+
+## Plusieurs personnes, une machine
+
+Linux est **multi-utilisateurs** depuis ses origines (héritées d'Unix, conçu pour des machines partagées) : chaque personne a un compte, un répertoire personnel, et des **droits** — lire, écrire, exécuter — sur les fichiers. Un compte spécial, `root`, a tous les droits : c'est l'outil de l'administration système, à manier avec précaution. Les droits feront l'objet d'un traitement complet dans la suite du parcours.
+
+## GNU/Linux et le logiciel libre
+
+D'où vient le système que nous utiliserons ?
+
+- **1969** : naissance d'**Unix** aux Bell Labs — un système simple et élégant dont les idées (tout est fichier, petits outils composables) irriguent encore tout ;
+- **1983** : Richard Stallman lance le projet **GNU** (« GNU's Not Unix ») pour reconstruire un système compatible Unix en **logiciel libre** ;
+- **1991** : Linus Torvalds publie le noyau **Linux**, qui complète les outils GNU — d'où le nom **GNU/Linux** ;
+- aujourd'hui : des **distributions** (Debian, Ubuntu, Fedora, Arch…) assemblent noyau, outils et logithèque. Ce parcours utilise **Debian** comme référence.
+
+Un logiciel **libre** garantit quatre libertés : utiliser, étudier, redistribuer, améliorer. Ce n'est pas un détail moral : c'est ce qui permet à des dizaines de milliers de personnes — et pas seulement des entreprises — de construire ensemble le système qui fait tourner la quasi-totalité des serveurs et des supercalculateurs.
+
+<Note type="info" title="Qui écrit le libre ?">
+  Le logiciel libre se raconte souvent au masculin, mais son histoire ne l'est pas : citons, parmi d'autres, **Elizabeth « Jake » Feinler**, qui dirigea l'annuaire de l'ARPANET (l'ancêtre des noms de domaine), ou **Radia Perlman**, autrice du protocole *spanning tree* sans lequel les réseaux locaux ne tiendraient pas debout. Nous recroiserons ces noms dans les cours réseau.
+</Note>
+
+## Exercices
+
+<Exercise id="intro-sys-prog-processus" level={1}>
+  Vous ouvrez trois fenêtres du même navigateur. Combien y a-t-il de programmes ? De processus (au minimum) ? Justifiez avec l'analogie recette/cuisine.
+
+  <Fragment slot="solution">
+    **Un** programme (un seul fichier exécutable installé) ; **au moins trois** processus — trois exécutions simultanées, chacune avec sa mémoire, son PID, son état (en pratique, les navigateurs modernes en lancent bien plus : un par onglet !).
+
+    Avec l'analogie : une seule recette dans le livre, trois plats en train de cuire dans trois casseroles différentes.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-sys-roles" level={1}>
+  Un programme de dessin veut afficher un trait à l'écran et enregistrer le résultat. Citez deux rôles du système d'exploitation mobilisés, et expliquez pourquoi le programme ne s'adresse pas directement au matériel.
+
+  <Fragment slot="solution">
+    Au moins : la **communication avec le matériel** (l'affichage passe par le pilote de la carte graphique) et la **gestion des fichiers** (l'enregistrement passe par le système de fichiers, sans connaître les blocs physiques du SSD).
+
+    Le programme ne parle pas directement au matériel car il faudrait connaître chaque modèle d'écran et de disque (le pilote abstrait cela), et parce que le noyau doit **protéger** la machine : un accès direct permettrait à n'importe quel programme d'écraser les données des autres.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Le système d'exploitation **arbitre** (processeur, mémoire), **abstrait** (pilotes, fichiers) et **protège** (isolation, droits) ; son cœur est le **noyau**.
+- **Programme** = fichier ; **processus** = programme en cours d'exécution (PID).
+- Les fichiers vivent dans une **arborescence** unique partant de `/`.
+- **GNU/Linux** : outils GNU (1983) + noyau Linux (1991), distribués en **logiciel libre** par des distributions comme Debian.
+
+Dans le module suivant, on pose les mains sur le clavier : **premiers pas dans le shell**.

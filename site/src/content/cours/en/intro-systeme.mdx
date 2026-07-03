@@ -1,0 +1,115 @@
+---
+title: "What does an operating system do?"
+description: "Kernel, processes, files, users: the program that arbitrates all the others — and why GNU/Linux became its free-software figurehead."
+order: 2
+serie: intro-linux
+topics: [linux]
+duration: 15
+badge: "Discovery"
+tags: [OS, kernel, processes, files, GNU/Linux, free software]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+The [previous module](../intro-ordinateur/) opened the case: processor, memories, peripherals. But who decides which program uses the processor, and when? Who keeps the files in order? Who prevents one program from reading another's memory? The answer is a rather special program: the **operating system**.
+
+## The problem: everyone wants the machine
+
+Dozens of programs run on your machine at any time: browser, music player, messaging, updates… Yet there are only a few processor cores and a single main memory. Without a referee:
+
+- every program would need to know every model of keyboard, display, disk;
+- two programs could write to the same place in memory;
+- one greedy program could grab the whole machine.
+
+## The operating system, referee and interpreter
+
+An **operating system** (OS — GNU/Linux, Windows, macOS, Android…) is a program whose purpose is:
+
+- to handle **communication** between software and the machine's components (RAM, disks, network card…), through **drivers**;
+- to **organize and schedule** the execution of the other programs;
+- to **share** resources fairly (processor time, memory);
+- to **protect**: each program is isolated from the others, each person has their own rights.
+
+The core of the OS is called the **kernel**. It is the one that actually touches the hardware; every other program goes through it by sending requests (*system calls*).
+
+<Note title="An analogy">
+  The hardware is a theatre; the programs are troupes that all want the stage. The kernel is the stage manager: it hands out the stage in slices of a few milliseconds, so fast that the audience — you — believes all the plays are performed **at the same time**. That is **multitasking**.
+</Note>
+
+## Program and process
+
+Two close words, one essential distinction:
+
+- a **program** is a file: a recipe, sitting in a book;
+- a **process** is a program **being executed**: the cooking in progress, with its pans (allocated memory) and its chef (the processor working through the instructions).
+
+The same program can be launched several times: one program, several processes. The system gives each process a unique number, the **PID** (*Process IDentifier*) — we will handle them in the shell.
+
+<Note type="info" title="The first 'bug' was a moth">
+  In 1947, **Grace Hopper**'s team found a moth stuck in a relay of the Mark II calculator and taped it into the logbook: "*first actual case of bug being found*". Hopper left a mark far beyond the anecdote: in 1952 she created one of the first **compilers** (A-0) — the idea, considered far-fetched at the time, that a program could translate a human-readable language into machine instructions. Without compilers, no modern programming languages.
+</Note>
+
+## Files and a tree
+
+The system offers programs (and people) a precious abstraction: the **file** — a named, persistent sequence of bytes, with no need to know which SSD blocks it occupies.
+
+Files are organized into **directories** (folders), which can contain other directories: a **tree**. On Linux, it starts from a single root, written `/`:
+
+- `/home/ada`: the personal directory of user `ada`;
+- `/home/ada/notes.txt`: a file in that directory — this text is a **path**;
+- `/etc`: the system's configuration files;
+- `/bin`, `/usr`: the installed programs.
+
+We will walk this tree from the keyboard in the [next module](../intro-shell/).
+
+## Several people, one machine
+
+Linux has been **multi-user** from its origins (inherited from Unix, designed for shared machines): each person has an account, a personal directory, and **rights** — read, write, execute — on files. A special account, `root`, has every right: it is the system administration tool, to be handled with care. Permissions get a full treatment later in the path.
+
+## GNU/Linux and free software
+
+Where does the system we will use come from?
+
+- **1969**: birth of **Unix** at Bell Labs — a simple, elegant system whose ideas (everything is a file, small composable tools) still irrigate everything;
+- **1983**: Richard Stallman launches the **GNU** project ("GNU's Not Unix") to rebuild a Unix-compatible system as **free software**;
+- **1991**: Linus Torvalds publishes the **Linux** kernel, which completes the GNU tools — hence the name **GNU/Linux**;
+- today: **distributions** (Debian, Ubuntu, Fedora, Arch…) assemble kernel, tools and software libraries. This path uses **Debian** as its reference.
+
+**Free** software guarantees four freedoms: use, study, redistribute, improve. This is not a moral footnote: it is what allows tens of thousands of people — not only companies — to build together the system that runs nearly all servers and supercomputers.
+
+<Note type="info" title="Who writes free software?">
+  Free software is often narrated in the masculine, but its history is not: among others, **Elizabeth "Jake" Feinler**, who ran the ARPANET directory (the ancestor of domain names), or **Radia Perlman**, author of the *spanning tree* protocol without which local networks would not stand. We will meet these names again in the networking courses.
+</Note>
+
+## Exercises
+
+<Exercise id="intro-sys-prog-processus" level={1}>
+  You open three windows of the same browser. How many programs is that? How many processes (at least)? Justify with the recipe/cooking analogy.
+
+  <Fragment slot="solution">
+    **One** program (a single installed executable file); **at least three** processes — three simultaneous executions, each with its own memory, PID and state (in practice, modern browsers launch many more: one per tab!).
+
+    With the analogy: a single recipe in the book, three dishes cooking in three different pans.
+  </Fragment>
+</Exercise>
+
+<Exercise id="intro-sys-roles" level={1}>
+  A drawing program wants to display a line on screen and save the result. Name two roles of the operating system involved, and explain why the program does not talk to the hardware directly.
+
+  <Fragment slot="solution">
+    At least: **communication with the hardware** (display goes through the graphics card driver) and **file management** (saving goes through the file system, without knowing the SSD's physical blocks).
+
+    The program does not talk to the hardware directly because it would need to know every model of display and disk (the driver abstracts that away), and because the kernel must **protect** the machine: direct access would let any program overwrite the others' data.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- The operating system **arbitrates** (processor, memory), **abstracts** (drivers, files) and **protects** (isolation, rights); its core is the **kernel**.
+- **Program** = file; **process** = program being executed (PID).
+- Files live in a single **tree** starting at `/`.
+- **GNU/Linux**: GNU tools (1983) + Linux kernel (1991), distributed as **free software** by distributions such as Debian.
+
+In the next module, hands on the keyboard: **first steps in the shell**.

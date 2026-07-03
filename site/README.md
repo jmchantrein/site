@@ -66,7 +66,8 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Duo>` prose + `<Fragment slot="media">` — figure **en regard** du texte qu'elle illustre (contiguïté spatiale de Mayer) ; réservé aux figures verticales/compactes (ArchiStack, LayerStack…), repli en pile quand la colonne est étroite (container query) et à l'impression ;
 - `<CodeFile path="…" lang="…">` — affiche un fichier de corrigé réel (`src/solutions/…`) tel quel : source unique, testée par le harnais (cf. « Corrigés testables ») ;
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
-- `<IpSim />`, `<BootBench />` — îlots interactifs existants.
+- `<IpSim />`, `<BootBench />` — îlots interactifs existants ;
+- `<ArchiStack kind="vm|conteneur" />`, `<LayerStack>`, `<BuildStack>`, `<MachineMap kind="anatomie|memoires" />` — figures statiques thémables (accessibles, bilingues), pensées pour `<Duo>`.
 
 **Traduction anglaise (règle projet)** : chaque contenu FR a son pendant EN
 dans le sous-dossier `en/` de sa collection (`src/content/cours/en/…`),
