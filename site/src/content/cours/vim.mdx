@@ -1,0 +1,175 @@
+---
+title: "Vim : éditer sans interface graphique"
+description: "Modes, déplacements, édition, recherche et configuration : l'éditeur incontournable des serveurs, austère trois jours, redoutable ensuite."
+order: 10
+serie: outils-admin
+topics: [linux]
+duration: 20
+badge: "Outils"
+tags: [vim, éditeur, vimrc, vimtutor]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Objectifs de ce module :
+
+- comprendre pourquoi Vim est incontournable dans les environnements non graphiques ;
+- maîtriser les commandes de base de navigation et d'édition ;
+- se configurer un Vim efficace pour l'administration système.
+
+## Pourquoi Vim ?
+
+La majorité des serveurs n'ont pas d'interface graphique : pour éditer un fichier de configuration ou un script *sur* la machine, il faut un éditeur qui vive dans le terminal. Vim s'impose parce qu'il est :
+
+- **présent par défaut** (lui ou son ancêtre `vi`) sur la quasi-totalité des distributions et des Unix ;
+- **léger et rapide**, même sur une machine chargée ou à travers une connexion SSH médiocre ;
+- **redoutablement efficace** une fois maîtrisé — la courbe d'apprentissage est abrupte, mais l'investissement se rembourse chaque jour.
+
+<Note title="L'idée qui change tout : les modes">
+  Dans un éditeur classique, chaque touche insère un caractère. Dans Vim, **cela dépend du mode** : les mêmes touches servent tantôt à naviguer et manipuler le texte (mode normal), tantôt à écrire (mode insertion). C'est déroutant au début — c'est aussi ce qui permet d'éditer à la vitesse de la pensée, sans jamais quitter le clavier.
+</Note>
+
+## Les modes de Vim
+
+| Mode | Rôle | On y entre par |
+|---|---|---|
+| **Normal** | naviguer, supprimer, copier, coller | `Échap` (toujours) |
+| **Insertion** | ajouter du texte | `i` |
+| **Commande** | sauvegarder, quitter, remplacer… | `:` |
+| **Visuel** | sélectionner (caractères) | `v` |
+| **Visuel ligne** | sélectionner des lignes entières | `V` |
+| **Visuel bloc** | sélectionner des colonnes | `Ctrl`+`v` |
+
+Le réflexe à graver : **perdu ? `Échap`** — vous revenez toujours en mode normal.
+
+## Survivre : ouvrir, écrire, sauvegarder, quitter
+
+```console
+jmc@laptop ~ $ vim fichier.txt
+```
+
+1. `i` — passer en insertion ;
+2. taper son texte ;
+3. `Échap` — revenir en mode normal ;
+4. `:wq` — sauvegarder (*write*) et quitter (*quit*).
+
+Les variantes du mode commande à connaître :
+
+- `:w` — sauvegarder sans quitter ;
+- `:q` — quitter (refuse si non sauvegardé) ;
+- `:q!` — quitter **sans** sauvegarder ;
+- `:%s/chaine1/chaine2/g` — remplacer toutes les occurrences de `chaine1` par `chaine2` dans le fichier (une syntaxe que vous reverrez : c'est celle de sed).
+
+<Exercise id="vim-hello" level={1}>
+  Créez un fichier `bonjour.txt` avec Vim, écrivez-y « Hello world ! », sauvegardez et quittez. Donnez la séquence complète de touches.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ vim bonjour.txt
+    ```
+
+    Puis : `i` (insertion) → taper `Hello world !` → `Échap` (mode normal) → `:wq` → `Entrée`.
+
+    C'est la boucle de survie complète : tant qu'elle n'est pas automatique, refaites-la.
+  </Fragment>
+</Exercise>
+
+## Se déplacer et éditer (mode normal)
+
+**Déplacements :**
+
+- `h` `j` `k` `l` — gauche, bas, haut, droite (les flèches marchent aussi, mais la rangée du milieu évite d'aller chercher les flèches) ;
+- `gg` — début du fichier ; `G` — fin du fichier ;
+- `/mot` — chercher `mot` ; `n` / `N` — occurrence suivante / précédente ;
+- `%` — sauter à la parenthèse ou accolade correspondante.
+
+**Édition :**
+
+- `dw` (*delete word*) — supprimer un mot ;
+- `dd` — supprimer une ligne (elle part dans le presse-papier de Vim) ;
+- `yy` (*yank*) — copier une ligne ;
+- `p` (*put*) — coller après le curseur ;
+- `r` — remplacer le caractère sous le curseur ; `R` — remplacer en continu ;
+- `u` — annuler (*undo*) ; `Ctrl`+`r` — rétablir.
+
+<Note type="info" title="Un langage, pas une liste de raccourcis">
+  Ces touches se **composent** : `d` (supprimer) + `w` (mot) = `dw` ; `3dd` supprime trois lignes ; `d/toto` supprime jusqu'à « toto ». Apprendre Vim, c'est apprendre une petite grammaire — pas un catalogue.
+</Note>
+
+## Sélectionner : les modes visuels
+
+- `v` — sélection caractère par caractère ;
+- `V` — sélection par lignes entières ;
+- `Ctrl`+`v` — sélection **en colonne** ;
+- puis `y` (copier), `d` (supprimer), `p` (coller).
+
+La sélection en colonne est l'astuce d'admin par excellence : sélectionnez une colonne de début de lignes (`Ctrl`+`v`, descendez), `I`, tapez `#`, `Échap` — toutes les lignes sont commentées d'un coup.
+
+<Exercise id="vim-navigation" level={2}>
+  Dans un fichier existant de plusieurs dizaines de lignes : allez à la fin du fichier, revenez au début, cherchez un mot précis, copiez les trois lignes autour de la première occurrence et collez-les à la fin du fichier. Quelles touches ?
+
+  <Fragment slot="solution">
+    `G` (fin) → `gg` (début) → `/mot` puis `Entrée` (recherche) → `k` (remonter d'une ligne pour englober la ligne du dessus) → `3yy` (copier 3 lignes) → `G` (fin) → `p` (coller).
+
+    Variante : `V` puis `2j` pour sélectionner visuellement les 3 lignes, `y`, `G`, `p`. Les deux sont idiomatiques ; la seconde se « voit » mieux en apprenant.
+  </Fragment>
+</Exercise>
+
+## Configurer : le fichier ~/.vimrc
+
+Vim se personnalise dans `~/.vimrc`, lu à chaque démarrage :
+
+```vim
+" Numéros de ligne
+set number
+" Indentation automatique
+set autoindent
+" Une tabulation = 4 espaces
+set tabstop=4
+" Coloration syntaxique
+syntax on
+```
+
+Hautement paramétrable (et extensible par greffons) — mais ces quatre lignes couvrent déjà l'essentiel du quotidien.
+
+<Exercise id="vim-vimrc" level={1}>
+  Avec Vim, créez votre `~/.vimrc` contenant `set number` et `set tabstop=4`. Sauvegardez, rouvrez le fichier, et remplacez le 4 par un 2 **avec la touche `r`** (sans repasser en insertion).
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ vim ~/.vimrc
+    ```
+
+    `i` → taper les deux lignes → `Échap` → `:wq`. Puis `vim ~/.vimrc`, `/4` `Entrée` pour poser le curseur sur le 4, et `r2` : le caractère est remplacé, sans passer par le mode insertion. `:wq` pour conclure.
+
+    Au passage : les numéros de ligne (`set number`) sont apparus dès la réouverture — la configuration est lue au démarrage.
+  </Fragment>
+</Exercise>
+
+## L'entraînement qui marche : vimtutor
+
+<Exercise id="vim-vimtutor" level={1}>
+  Ouvrez un terminal et lancez `vimtutor`. Faites le tutoriel en entier (~30 min). Refaites-le régulièrement jusqu'à ce qu'aucune étape ne vous ralentisse — puis servez-vous de Vim tous les jours.
+
+  <Fragment slot="solution">
+    Il n'y a pas de correction : `vimtutor` **est** la correction — un fichier texte que l'on modifie en suivant ses propres instructions, installé avec Vim. La seule erreur possible est de ne pas le refaire.
+
+    Et ne basculez pas du côté obscur : pas d'`emacs` ici ;-).
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Vim est **partout** où il y a un terminal ; le maîtriser est non négociable pour administrer des systèmes.
+- Tout repose sur les **modes** : `Échap` → normal, `i` → insertion, `:` → commande, `v`/`V`/`Ctrl`+`v` → visuels.
+- La boucle de survie : `vim fichier` → `i` → texte → `Échap` → `:wq`.
+- Les commandes se **composent** (`3dd`, `d/mot`) : une grammaire, pas des raccourcis.
+- `~/.vimrc` personnalise ; `vimtutor` entraîne ; la pratique quotidienne fait le reste — beaucoup d'IDE modernes proposent d'ailleurs un « mode Vim ».
+
+## Ressources supplémentaires
+
+- [OpenVim](https://www.openvim.com) — simulateur interactif ;
+- [Vim Adventures](https://vim-adventures.com) — apprendre en jouant ;
+- [Vim Cheat Sheet](https://vim.rtorr.com) — l'antisèche des commandes.

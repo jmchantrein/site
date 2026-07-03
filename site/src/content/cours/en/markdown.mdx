@@ -1,0 +1,249 @@
+---
+title: "Markdown: documenting in plain text"
+description: "Headings, lists, links, code, tables: the format of READMEs and technical documentation — readable raw, convertible anywhere with pandoc."
+order: 11
+serie: outils-admin
+topics: [linux]
+duration: 15
+badge: "Tools"
+tags: [markdown, documentation, README, pandoc]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Goals of this module:
+
+- understand what Markdown is and what it is for;
+- structure technical documentation effectively with its syntax;
+- convert a Markdown document to other formats with pandoc.
+
+## Why Markdown?
+
+Markdown is a **lightweight** markup language: a plain-text file, readable as is, where a few typographic conventions (`#`, `*`, `-`…) describe the structure. It won over technical documentation because it is:
+
+- **readable without rendering** — a `README.md` reads in a terminal as well as in a browser;
+- **understood everywhere** — GitHub, GitLab, forums, site generators (this site is written in MDX, an extended Markdown);
+- **convertible** — HTML, PDF, ODT… via pandoc;
+- **durable** — plain text versions perfectly with Git, searches with grep, edits with Vim.
+
+<Note type="info" title="Rendering depends on the recipient">
+  The same `.md` file will render slightly differently on GitHub, through pandoc or on a blog: Markdown standardizes the **structure**, not the appearance. The examples below show the syntax, then its rendering on this site.
+</Note>
+
+## Headings
+
+```markdown
+# Level 1 heading
+## Level 2 heading
+### Level 3 heading
+###### Level 6 heading
+```
+
+The number of `#` sets the level. A document has a single level-1 heading; levels nest without skipping — which is what makes tables of contents and anchors possible (this page's outline is built that way). Headings are rendered… everywhere on this site, so we do not reproduce them here: inserting real example headings would corrupt this page's outline.
+
+## Emphasis
+
+```markdown
+*italic* or _italic_
+**bold** or __bold__
+***bold italic***
+```
+
+This gives: *italic* or _italic_, **bold** or __bold__, ***bold italic***.
+
+## Lists
+
+```markdown
+- Item
+- Item
+  - Sub-item (indented by 2 spaces)
+
+1. First
+2. Second
+   1. Sub-item
+```
+
+This gives:
+
+- Item
+- Item
+  - Sub-item (indented by 2 spaces)
+
+1. First
+2. Second
+   1. Sub-item
+
+## Links and images
+
+```markdown
+[Link text](https://en.wikipedia.org/wiki/Markdown)
+![Alt text for the image](/site/favicon.svg)
+```
+
+This gives: [Link text](https://en.wikipedia.org/wiki/Markdown) — and the image, identical to a link preceded by `!`:
+
+![This site's favicon, as a local example](/site/favicon.svg)
+
+<Note type="warning" title="Alt text is not optional">
+  The bracketed text of an image is read by screen readers and shown when the image is missing: describe what the image **shows**. Basic accessibility (and a courtesy for slow connections).
+</Note>
+
+## Quotes
+
+```markdown
+> This is a quote.
+```
+
+This gives:
+
+> This is a quote.
+
+## Code
+
+Inline code between backticks: `` `int a = 2;` `` gives `int a = 2;`. Code blocks between triple backticks, with the language for highlighting:
+
+````markdown
+```bash
+#!/bin/bash
+echo "hello world !"
+exit 0
+```
+````
+
+This gives:
+
+```bash
+#!/bin/bash
+echo "hello world !"
+exit 0
+```
+
+## Tables
+
+```markdown
+| Left-aligned | Centered | Right-aligned |
+|:-------------|:--------:|--------------:|
+| a            |    b     |             c |
+| No need | to align | the cells here |
+```
+
+This gives:
+
+| Left-aligned | Centered | Right-aligned |
+|:-------------|:--------:|--------------:|
+| a            |    b     |             c |
+| No need | to align | the cells here |
+
+The dash row sets the alignment (`:` on the left, both ends, or the right); cells need not be visually aligned in the source — though a readable source remains a goal in itself.
+
+## Horizontal rules
+
+Three dashes (or asterisks) alone on a line, surrounded by blank lines, produce a rule:
+
+```markdown
+---
+```
+
+## Converting: pandoc
+
+Markdown is no dead end: pandoc converts it to (and from) most document formats.
+
+```console
+jmc@laptop ~ $ sudo apt install pandoc texlive-latex-base texlive-latex-recommended
+jmc@laptop ~ $ pandoc doc.md -o doc.html     # HTML
+jmc@laptop ~ $ pandoc doc.md -o doc.pdf      # PDF (via LaTeX, hence texlive)
+jmc@laptop ~ $ pandoc doc.md -o doc.odt      # LibreOffice
+jmc@laptop ~ $ pandoc doc.md -o doc.tex      # LaTeX
+```
+
+## Exercises
+
+<Exercise id="md-doc-commande" level={1}>
+  With Vim, create a `doc.md` file documenting the `ls` command: a level-1 heading "Documentation of the ls command", a paragraph explaining what it does, a code block showing an example, and a bulleted list of its common options.
+
+  <Fragment slot="solution">
+    ````markdown
+    # Documentation of the ls command
+
+    The `ls` command lists a directory's contents:
+    files, subdirectories, and — with the right options —
+    their permissions, sizes and dates.
+
+    ```bash
+    ls -lh /etc
+    ```
+
+    Common options:
+
+    - `-l`: long format (permissions, owner, size, date);
+    - `-a`: include hidden files;
+    - `-h`: human-readable sizes (KB, MB);
+    - `-t`: sort by modification time.
+    ````
+
+    Note the inline code around `ls` and the `bash` block: documenting a command without readable code blocks condemns the reader to guessing what to type.
+  </Fragment>
+</Exercise>
+
+<Exercise id="md-readme" level={2}>
+  Still with Vim, create the `README.md` of a fictitious project: a level-1 heading "My project", a description section, an external link, a **numbered** list of the installation steps, and a code block with the installation command.
+
+  <Fragment slot="solution">
+    ````markdown
+    # My project
+
+    ## Description
+
+    An incremental backup tool for home directories,
+    written in Bash.
+
+    Inspired by [rsync](https://rsync.samba.org/).
+
+    ## Installation
+
+    1. Clone the repository;
+    2. Make the script executable;
+    3. Run a first backup.
+
+    ```bash
+    git clone https://forge.example.org/mon-projet.git
+    cd mon-projet && chmod u+x sauvegarde.sh
+    ./sauvegarde.sh ~/documents
+    ```
+    ````
+
+    The archetypal README structure: **what** (description), **why** (link, context), **how** (step-by-step installation). A good README is often documentation enough for a small project.
+  </Fragment>
+</Exercise>
+
+<Exercise id="md-pandoc" level={2}>
+  Install pandoc and convert your two previous files to HTML, LaTeX, ODT and PDF. Consult `man pandoc` to find out how to force the output format explicitly.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ sudo apt install pandoc texlive-latex-base texlive-latex-recommended
+    jmc@laptop ~ $ for f in doc README; do
+    >   pandoc "$f.md" -o "$f.html"
+    >   pandoc "$f.md" -o "$f.tex"
+    >   pandoc "$f.md" -o "$f.odt"
+    >   pandoc "$f.md" -o "$f.pdf"
+    > done
+    ```
+
+    Pandoc infers the format from the output extension; `-t html` / `-f markdown` (*to*, *from*) force it explicitly (`man pandoc`). And notice the `for` loop: the Bash module's automation is already earning its keep.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- Markdown structures **readable plain text**: `#` headings, `-`/`1.` lists, `[…](…)` links, `![…](…)` images, `` ` `` and ```` ``` ```` code, `|` tables.
+- Its strength: readable unrendered, understood everywhere, versionable, convertible (pandoc).
+- The Vim + Markdown + Git trio covers most of a sysadmin team's technical documentation.
+
+## Further resources
+
+- [Markdown Guide](https://www.markdownguide.org/) — a complete guide;
+- [GitHub: Mastering Markdown](https://guides.github.com/features/mastering-markdown/) — GitHub specifics;
+- [Dillinger](https://dillinger.io/) — online editor with preview.
