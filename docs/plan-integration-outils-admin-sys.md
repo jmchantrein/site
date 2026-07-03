@@ -446,7 +446,32 @@ chapitre « De Qt4 à Qt5 ». Reste à trancher **avant conversion**
    cadrent mal avec le design (cf. ArchiStack qui a remplacé les PNG
    du cours Docker).
 
-### 10.5 Ordre de réalisation du lot 2
+### 10.5 Glossaire — maillage systématique (demande auteur, juillet 2026)
+
+Index/glossaire des termes techniques et des personnages des sciences,
+à la Wikipédia : popup de définition brève au survol, fiche complète au
+clic ; correspondance FR ↔ EN pour les anglicismes ; liens inter-modules
+via le module canonique de chaque notion. Décisions (auteur : « pas de
+préférence » → recommandations retenues) : **auto-liaison au build**
+depuis une liste prédéfinie (première occurrence par page, exclusions
+code/titres/liens/terminal, surcharge `<G>`), **liste complète du
+parcours** d'emblée (~115 entrées, brefs bilingues, rédaction IA à
+relire), fiches longues progressives.
+
+**Phase 1 — réalisée** : source unique `src/data/glossaire.mjs` ;
+plugin `rehype-glossaire` ; popup accessible (`gloss.js`, WCAG 1.4.13,
+tactile) ; pages `/glossaire/` (index + fiches, FR/EN, repli sur le
+bref) ; endpoint `glossaire.json` ; entrées dans la recherche Ctrl+K ;
+4 fiches longues de démonstration (Lovelace, Hopper, Conway,
+idempotence). Clic par défaut : fiche dédiée.
+
+**Phase 2 — à faire** : rail latéral droit (fiche sans quitter le
+cours, quand la largeur le permet) + préférence lecteur dans le panneau
+Paramètres (persistée, couverte par l'export global — règle projet) ;
+fiches longues au fil des conversions ; entrées nouvelles à chaque
+module (règle ajoutée à CLAUDE.md).
+
+### 10.6 Ordre de réalisation du lot 2
 
 1. Articles Miscelánea bash (courts, sources déjà complètes) ;
 2. Série découverte (dès réception du PDF Santini — sinon cadrage

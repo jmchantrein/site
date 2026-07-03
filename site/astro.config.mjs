@@ -5,6 +5,7 @@ import sitemap from "@astrojs/sitemap";
 import { unified } from "@astrojs/markdown-remark";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import rehypeGlossaire from "./src/lib/rehype-glossaire.mjs";
 
 // Tout est statique et local : polices (@fontsource), icônes (lucide-static)
 // et maths (KaTeX) sont résolus au build — aucun CDN au runtime.
@@ -25,7 +26,9 @@ export default defineConfig({
     processor: unified({
       // Les maths s'écrivent $…$ / $$…$$ dans le MDX et sont rendues au build.
       remarkPlugins: [remarkMath],
-      rehypePlugins: [[rehypeKatex, { strict: false }]],
+      // Glossaire APRÈS KaTeX : l'auto-liaison saute les formules rendues
+      // (maillage systématique des termes — cf. src/lib/rehype-glossaire.mjs).
+      rehypePlugins: [[rehypeKatex, { strict: false }], [rehypeGlossaire, { base: "/site" }]],
     }),
     // Pas de coloration syntaxique inline : les blocs de code suivent les
     // tokens du terminal (--term-*), donc le thème du site (cf. base.css).

@@ -1,0 +1,46 @@
+---
+import Reading from "../../../layouts/Reading.astro";
+import { GLOSSAIRE } from "../../../data/glossaire.mjs";
+
+/* GLOSSARY INDEX (EN) — generated from the single source of truth
+   (src/data/glossaire.mjs), like the FR page. */
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const coll = new Intl.Collator("en");
+const termes = GLOSSAIRE.filter((e) => e.type === "terme").sort((a, b) => coll.compare(a.en, b.en));
+const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b) =>
+  coll.compare(a.en.split(" ").at(-1) ?? a.en, b.en.split(" ").at(-1) ?? b.en),
+);
+---
+<Reading
+  title="Glossary"
+  description="Technical terms, borrowed terms and figures of science: the brief definitions weaving through every course on this site."
+  crumb={{ href: `${base}/en/`, label: "home" }}
+  lead="Every entry weaves through the courses: while reading, the first occurrence of a term is underlined — hover for the brief definition, click for the full entry. Borrowed terms carry their French ↔ English correspondence."
+  locale="en"
+  altUrl={`${base}/glossaire/`}
+>
+  <h2 id="terms">Technical terms</h2>
+  <ul class="gloss-index">
+    {termes.map((e) => (
+      <li>
+        <a href={`${base}/en/glossaire/${e.slug}/`}>{e.en}</a>
+        {e.en.toLowerCase() !== e.fr.toLowerCase() && <em> · fr&nbsp;: {e.fr}</em>}
+        — {e.brefEn}
+      </li>
+    ))}
+  </ul>
+
+  <h2 id="figures">Figures of science</h2>
+  <ul class="gloss-index">
+    {personnages.map((e) => (
+      <li>
+        <a href={`${base}/en/glossaire/${e.slug}/`}>{e.en}</a> — {e.brefEn}
+      </li>
+    ))}
+  </ul>
+</Reading>
+
+<style>
+  .gloss-index { display: grid; gap: var(--space-2); padding-left: 1.2em; }
+  .gloss-index em { color: var(--color-text-muted, inherit); }
+</style>

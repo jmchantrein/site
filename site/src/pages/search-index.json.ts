@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import GithubSlugger from "github-slugger";
+import { GLOSSAIRE } from "../data/glossaire.mjs";
 
 /** Index de la recherche Ctrl+K, GÉNÉRÉ AU BUILD depuis les collections —
     aucune duplication manuelle, aucun serveur. Schéma d'une entrée :
@@ -73,6 +74,16 @@ export const GET: APIRoute = async () => {
     for (const h of sectionsOf(a.body ?? "")) {
       index.push({ p: a.data.title, t: h.text, page, hash: h.slug, b: h.body });
     }
+  }
+
+  // Glossaire — chaque entrée dans les deux langues (bref en corps).
+  index.push(
+    { p: "Glossaire", t: "Glossaire", page: `${base}/glossaire/` },
+    { p: "Glossary", t: "Glossary", page: `${base}/en/glossaire/` },
+  );
+  for (const g of GLOSSAIRE) {
+    index.push({ p: "Glossaire", t: g.fr, page: `${base}/glossaire/${g.slug}/`, b: g.brefFr });
+    index.push({ p: "Glossary", t: g.en, page: `${base}/en/glossaire/${g.slug}/`, b: g.brefEn });
   }
 
   return new Response(JSON.stringify(index), {
