@@ -68,7 +68,8 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Escape>` — trappe d'évasion : la seule zone où le contenu libre (HTML/JS, îlot custom) est attendu ;
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants ;
 - `<ArchiStack kind="vm|conteneur" />`, `<LayerStack>`, `<BuildStack>`, `<MachineMap kind="anatomie|memoires" />` — figures statiques thémables (accessibles, bilingues), pensées pour `<Duo>` ;
-- `<G t="slug">…</G>` / `<G off>…</G>` — surcharge du glossaire : forcer un lien vers une fiche, ou inhiber l'auto-liaison (faux positif).
+- `<G t="slug">…</G>` / `<G off>…</G>` — surcharge du glossaire : forcer un lien vers une fiche, ou inhiber l'auto-liaison (faux positif) ;
+- `<WikiImage file="…" alt="…" caption="…" width={720}>` — illustration libre affichée **depuis Wikimedia Commons** (exception assumée à « aucune ressource externe », cf. CLAUDE.md) : attribution liée vers la page Commons, repli silencieux si l'image manque, `alt` obligatoire.
 
 ## Glossaire (maillage systématique)
 
