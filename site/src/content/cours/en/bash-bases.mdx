@@ -1,0 +1,196 @@
+---
+title: "Bash: shell fundamentals"
+description: "Standard streams, redirections, pipes, variables, conditions and loops: composing Unix's small tools into complete treatments."
+order: 12
+serie: outils-admin
+topics: [linux]
+duration: 25
+badge: "Tools"
+tags: [bash, pipe, redirection, variables, loops]
+terminal: true
+terminalTitle: "bash — workshop"
+terminalComment: "# shell fundamentals — click a command from the course to run it here"
+status: [construction]
+---
+
+## Introduction
+
+Goals of this module:
+
+- understand the **standard streams** and how to redirect and connect them (pipes);
+- handle variables, conditions and loops directly in the shell;
+- lay the ground for the next module: writing robust scripts.
+
+The elementary moves (`pwd`, `ls`, `cd`, `cat`, `man`…) are assumed — they are covered by [First steps in the shell](../intro-shell/).
+
+## The three standard streams
+
+Every process is born with three channels:
+
+- **standard input** (stdin, descriptor 0) — what it reads;
+- **standard output** (stdout, 1) — what it produces;
+- **standard error** (stderr, 2) — its error messages.
+
+By default, all three are plugged into the terminal. The art of the shell is **replugging** them.
+
+## Redirecting to files
+
+<Cmd cmd="ls -l /etc > liste.txt">
+  <TermLine type="ok" tag="note">&gt; plugs standard output into a file (created, or OVERWRITTEN if it exists).</TermLine>
+</Cmd>
+
+<Cmd cmd="ls -l /var >> liste.txt">
+  <TermLine type="ok" tag="note">&gt;&gt; appends to the file instead of overwriting.</TermLine>
+</Cmd>
+
+<Cmd cmd="ls /nulle/part 2> erreurs.txt">
+  <TermLine type="ok" tag="note">2&gt; redirects standard error; 2&gt;&amp;1 merges it into standard output.</TermLine>
+</Cmd>
+
+<Note type="warning" title="&gt; overwrites without warning">
+  `command > file` destroys `file`'s previous content before the command even runs. The `>>` of doubt is safer than the `>` of habit.
+</Note>
+
+## Pipes: composing tools
+
+A **pipe** (`|`) plugs one command's standard output into the next one's standard input:
+
+<Cmd cmd="ls -l /etc | grep '.conf'">
+  <TermLine>-rw-r--r-- 1 root root  2969 Mar 12 09:14 adduser.conf</TermLine>
+  <TermLine>-rw-r--r-- 1 root root  5910 Apr  2 11:02 ca-certificates.conf</TermLine>
+  <TermLine type="ok" tag="note">ls's output becomes grep's input, which filters the lines containing ".conf".</TermLine>
+</Cmd>
+
+Pipes chain into **pipelines** — the Unix philosophy: small specialized tools, freely composed:
+
+<Cmd cmd="cut -d';' -f3 pionnieres.csv | sort | uniq -c | sort -rn">
+  <TermLine>      2 langages</TermLine>
+  <TermLine>      1 reseau</TermLine>
+  <TermLine>      1 programmation</TermLine>
+  <TermLine type="ok" tag="note">extract a column, sort, count duplicates, rank: four tools, zero temporary file.</TermLine>
+</Cmd>
+
+And everything combines — pipes then a final redirection:
+
+```console
+jmc@laptop ~ $ ls -l | grep '.txt' > resultats.txt
+```
+
+<Note type="danger" title="| is not ||">
+  `cmd1 | cmd2` **plugs** the first command's output into the second's input. `cmd1 || cmd2` runs the second **only if the first fails** (logical OR on exit codes; `&&` is the AND). Confusing the two produces memorable bugs.
+</Note>
+
+<Exercise id="bash-gameshell" level={1}>
+  Install and launch [GameShell](https://github.com/phyver/GameShell), an adventure game played entirely in the shell. Progress at least through the redirection missions.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ wget https://github.com/phyver/GameShell/releases/download/latest/gameshell.sh
+    jmc@laptop ~ $ bash gameshell.sh
+    ```
+
+    No solution to give: the game validates each mission itself (`check`). It is the most effective training there is to anchor this module's moves.
+  </Fragment>
+</Exercise>
+
+## Variables
+
+<Cmd cmd={`nom='Ada'; echo "Bonjour $nom"`}>
+  <TermLine>Bonjour Ada</TermLine>
+  <TermLine type="warn" tag="note">no spaces around the =; $nom is expanded INSIDE double quotes, not single ones.</TermLine>
+</Cmd>
+
+- `NAME=value` sets; `$NAME` reads; `"$NAME"` reads **safely** (the next module explains why quotes are not optional);
+- some ready-made variables: `$HOME`, `$USER`, `$PATH` (the directories where the shell looks for commands).
+
+## Conditions
+
+```bash
+if [ -d "/backup" ]; then
+    echo "Le répertoire /backup existe"
+else
+    echo "Le répertoire /backup n'existe pas"
+fi
+```
+
+The brackets call the `test` command, which can interrogate:
+
+**files** — `-e` exists, `-f` regular file, `-d` directory, `-r`/`-w`/`-x` readable/writable/executable, `-s` non-empty;
+
+**strings** — `-z` empty, `-n` non-empty, `=` equal, `!=` different;
+
+**numbers** — `-eq` equal, `-ne` different, `-lt`/`-le` less (or equal), `-gt`/`-ge` greater (or equal).
+
+<Note type="info" title="Prefer [[ … ]]">
+  Double brackets (Bash-specific) accept `&&` and `||` directly, can test a regular expression (`[[ $x =~ ^[0-9]+$ ]]`) and forgive empty variables. The single brackets' `-a`/`-o` operators are marked **obsolescent** by POSIX: combine with `[[ … && … ]]`, or with two `test` joined by `&&`.
+</Note>
+
+## Loops
+
+**`for` — walking a list:**
+
+```bash
+for fichier in *.txt; do
+    echo "Fichier : $fichier"
+done
+```
+
+**`while` — repeating while a condition holds:**
+
+```bash
+count=1
+while [ "$count" -le 5 ]; do
+    echo "Itération $count"
+    count=$((count + 1))
+done
+```
+
+`$(( … ))` is shell arithmetic; `{1..5}` produces the sequence 1 to 5 (`for i in {1..5}`).
+
+<Exercise id="bash-pipeline" level={2}>
+  On the terminal's `pionnieres.csv` file (columns `nom;annee;domaine;contribution`): in a single pipeline, print the number of **distinct domains**. Then, in a second pipeline, the 3 most recent lines (largest year).
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ cut -d';' -f3 pionnieres.csv | tail -n +2 | sort -u | wc -l
+    6
+    jmc@laptop ~ $ tail -n +2 pionnieres.csv | sort -t';' -k2 -rn | head -n 3
+    Perlman Radia;1985;reseau;protocole spanning tree
+    Goldwasser Shafi;1982;cryptographie;chiffrement probabiliste
+    Conway Lynn;1978;materiel;révolution VLSI
+    ```
+
+    `tail -n +2` skips the header; `sort -u` deduplicates; `sort -t';' -k2 -rn` sorts on the 2nd column, numerically, in reverse. Each brick is simple — the power is in the composition.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-boucle" level={2}>
+  Write, directly in the shell, a `for` loop creating `sauvegarde-1.txt` through `sauvegarde-5.txt`, then a `while` loop printing a countdown from 5 to 1.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ for i in {1..5}; do touch "sauvegarde-$i.txt"; done
+    jmc@laptop ~ $ n=5; while [ "$n" -ge 1 ]; do echo "$n"; n=$((n - 1)); done
+    5
+    4
+    3
+    2
+    1
+    ```
+
+    Variables are quoted inside the tests — the habit to build right now; the next module shows what breaks without them.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- Three streams per process: **stdin**, **stdout**, **stderr**; `>` overwrites, `>>` appends, `2>` catches errors.
+- The **pipe** `|` composes small tools into pipelines — and `|` ≠ `||`.
+- Variables: `x=…`, `"$x"`; conditions: `test`/`[ ]`/`[[ ]]` on files, strings, numbers; `for`/`while` loops.
+- All of this runs at the keyboard; the next module packs these moves into production-worthy **scripts**.
+
+## Further resources
+
+- [linuxcommand.org](https://linuxcommand.org/lc3_learning_the_shell.php) — learning the shell step by step;
+- [GameShell](https://github.com/phyver/GameShell) — the shell adventure game;
+- [explainshell.com](https://explainshell.com/) — dissect any command line.

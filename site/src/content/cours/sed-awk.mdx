@@ -1,0 +1,189 @@
+---
+title: "sed & awk : traiter des flux de texte"
+description: "Substituer, filtrer, calculer sur des fichiers entiers en une ligne : l'éditeur de flux sed et le langage awk, en mode dojo sur des données réelles."
+order: 14
+serie: outils-admin
+topics: [linux]
+duration: 30
+badge: "Outils"
+tags: [sed, awk, regex, flux, CSV]
+terminal: true
+terminalTitle: "bash — dojo sed & awk"
+terminalComment: "# dojo sed & awk — cliquez une commande du cours pour l'exécuter ici"
+status: [construction]
+---
+
+## Introduction
+
+L'administration système est un métier de fichiers texte : configurations, journaux, exports CSV. Deux outils les traitent **en flux**, sans les ouvrir dans un éditeur :
+
+- **sed** (*stream editor*) : éditer — substituer, supprimer, insérer ;
+- **awk** : un vrai **langage** orienté colonnes — filtrer, calculer, agréger.
+
+Tous deux parlent [expressions régulières](../../glossaire/expression-reguliere/) et travaillent ligne à ligne, ce qui les rend insensibles à la taille des fichiers : un million de lignes se traite comme dix.
+
+## Les données du dojo
+
+Tout le module s'exerce sur deux fichiers (disponibles dans le terminal ci-contre, et testés par le harnais du site) :
+
+<CodeFile path="outils-admin/sed-awk/data/pionnieres.csv" lang="text" />
+
+<CodeFile path="outils-admin/sed-awk/data/services.conf" lang="ini" />
+
+## sed : éditer un flux
+
+### La substitution
+
+<Cmd cmd="sed 's/materiel/matériel/' data/pionnieres.csv">
+  <TermLine>…</TermLine>
+  <TermLine>Conway Lynn;1978;matériel;révolution VLSI</TermLine>
+  <TermLine type="ok" tag="note">s = substitute : le flux de SORTIE est corrigé, le fichier n'est PAS modifié.</TermLine>
+</Cmd>
+
+Anatomie : `s` / motif / remplacement / drapeaux. Sans drapeau, seule la **première** occurrence de chaque ligne est remplacée ; `g` (*global*) les traite toutes ; `2` ne traite que la deuxième.
+
+Le séparateur `/` n'est qu'une convention — précieux à savoir dès que le motif contient des chemins :
+
+<Cmd cmd="sed 's,^port = 0,port = disabled,' data/services.conf">
+  <TermLine>port = disabled</TermLine>
+  <TermLine type="ok" tag="note">une virgule (ou : ou #) comme séparateur : fini les /chemins\/illisibles/.</TermLine>
+</Cmd>
+
+### Supprimer, insérer
+
+<Cmd cmd="sed '1d' data/pionnieres.csv">
+  <TermLine>Lovelace Ada;1843;programmation;premier programme publié</TermLine>
+  <TermLine type="ok" tag="note">d = delete : ici la ligne 1 (l'en-tête). '2,4d' supprimerait une plage ; '/motif/d', les lignes qui matchent.</TermLine>
+</Cmd>
+
+```console
+jmc@laptop ~ $ sed '1i # Pionnières de l'\''informatique' data/pionnieres.csv
+```
+
+`i` insère **avant** la ligne visée, `a` ajoute **après**.
+
+### Modifier le fichier : -i, avec des gants
+
+<Cmd cmd="sed -i 's/autostart = yes/autostart = no/' services.conf">
+  <TermLine type="warn" tag="attention">-i (in-place) modifie le FICHIER, sans retour arrière. Toujours tester la commande SANS -i d'abord — ou travailler sur une copie.</TermLine>
+</Cmd>
+
+### Les groupes de capture
+
+Les parenthèses `\( \)` **capturent** une partie du motif, réutilisable dans le remplacement (`\1`, `\2`…). Le dojo : nos pionnières sont notées `Nom Prénom` — inversons :
+
+<Cmd cmd="sed -E 's/^([^ ;]+) ([^;]+);/\2 \1;/' data/pionnieres.csv">
+  <TermLine>Ada Lovelace;1843;programmation;premier programme publié</TermLine>
+  <TermLine>Kathleen Booth;1947;langages;premier langage d'assemblage</TermLine>
+  <TermLine type="ok" tag="note">-E : regex étendues (parenthèses sans antislash). \1 = le nom capturé, \2 = le prénom — réordonnés dans le remplacement. Un fichier d'un million de lignes y passerait aussi vite.</TermLine>
+</Cmd>
+
+sed sait bien plus (plages adressées par motifs, multi-lignes, `&` pour réutiliser le match entier, `\U` pour capitaliser…) : `man sed` une fois ces fondations acquises.
+
+## awk : le langage des colonnes
+
+### Le modèle : motif → action
+
+```text
+awk 'motif { action }' fichier
+```
+
+Pour chaque ligne (*record*), si le **motif** est vrai, l'**action** s'exécute. Sans motif : toutes les lignes ; sans action : afficher la ligne. La ligne est découpée en **champs** `$1`, `$2`… (`$0` = la ligne entière, `NF` = nombre de champs, `NR` = numéro de ligne). Notre CSV utilise `;` : on le déclare avec `-F';'`.
+
+<Cmd cmd="awk -F';' 'NR > 1 { print $1, $2 }' data/pionnieres.csv">
+  <TermLine>Lovelace Ada 1843</TermLine>
+  <TermLine>Booth Kathleen 1947</TermLine>
+  <TermLine type="ok" tag="note">NR &gt; 1 saute l'en-tête ; print $1, $2 affiche deux champs séparés par OFS (espace par défaut).</TermLine>
+</Cmd>
+
+### Filtrer — et le piège de la comparaison
+
+<Cmd cmd="awk -F';' 'NR > 1 && $2 < 1970 { print $1, $2 }' data/pionnieres.csv">
+  <TermLine>Lovelace Ada 1843</TermLine>
+  <TermLine>Booth Kathleen 1947</TermLine>
+  <TermLine>Hopper Grace 1952</TermLine>
+  <TermLine>Johnson Katherine 1962</TermLine>
+  <TermLine>Hamilton Margaret 1969</TermLine>
+  <TermLine type="warn" tag="piège">1970 SANS guillemets : $2 &lt; "1970" comparerait des CHAÎNES ("9" &gt; "1970" lexicalement !) et donnerait des résultats faux.</TermLine>
+</Cmd>
+
+<Note type="danger" title="Nombre ou chaîne ?">
+  awk compare **numériquement** quand les deux côtés ressemblent à des nombres, **lexicalement** dès qu'un côté est une chaîne — et des guillemets suffisent à en faire une. `$2 < 1970` : numérique ; `$2 < "1970"` : lexical, et faux. (Le support d'origine de ce cours contenait ce piège en exemple « qui marche » — par chance sur ses données ; le harnais du site vérifie désormais le cas limite.)
+</Note>
+
+### Calculer, agréger
+
+<Cmd cmd={`awk -F';' 'NR > 1 { somme += $2 } END { print "Total :", somme }' data/pionnieres.csv`}>
+  <TermLine>Total : 15618</TermLine>
+  <TermLine type="ok" tag="note">le bloc END s'exécute après la dernière ligne — BEGIN existe aussi, avant la première.</TermLine>
+</Cmd>
+
+<Cmd cmd="awk -F';' 'NR > 1 { n[$3]++ } END { for (d in n) print d, n[d] }' data/pionnieres.csv">
+  <TermLine>langages 2</TermLine>
+  <TermLine>reseau 1</TermLine>
+  <TermLine type="ok" tag="note">n[$3]++ : un tableau associatif indexé par le domaine — l'agrégation « group by » du pauvre, en 60 caractères.</TermLine>
+</Cmd>
+
+### Filtrer par expression régulière
+
+<Cmd cmd="awk -F';' '$4 ~ /premier/ { print $1 }' data/pionnieres.csv">
+  <TermLine>Lovelace Ada</TermLine>
+  <TermLine>Booth Kathleen</TermLine>
+  <TermLine>Hopper Grace</TermLine>
+  <TermLine type="ok" tag="note">~ teste un champ contre une regex ; !~ est la négation.</TermLine>
+</Cmd>
+
+awk sait aussi : changer le séparateur de sortie (`OFS`), écrire dans plusieurs fichiers, définir des fonctions, tourner en script autonome (`#!/usr/bin/awk -f`)… C'est un langage complet — ce module en pose la grammaire de survie.
+
+## Le dojo : exercices
+
+Chaque corrigé est un **script réel**, exécuté et vérifié par le harnais du site (`scripts/test-solutions-bash.sh --up`) — y compris le piège de la comparaison numérique.
+
+<Exercise id="sedawk-sed" level={2}>
+  Sur les données du dojo, avec sed uniquement : 1) corrigez `materiel` en `matériel` ; 2) affichez le fichier sans son en-tête ; 3) ajoutez une ligne de titre avant la ligne 1 ; 4) sur une **copie** de `services.conf`, passez tous les `autostart` à `no`, in-place ; 5) inversez `Nom Prénom` en `Prénom Nom` avec des groupes de capture ; 6) remplacez `port = 0` par `port = disabled` avec un séparateur autre que `/`.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/sed-awk/exercices-sed.sh" lang="bash" />
+
+    Le point difficile est le 5 : `[^ ;]+` capture « tout sauf espace et point-virgule » (le nom), puis `[^;]+` le reste jusqu'au `;` (le prénom) — et `\2 \1` les rend dans l'autre ordre. Relisez-le jusqu'à pouvoir le réécrire les yeux fermés : les captures sont l'outil sed le plus rentable.
+  </Fragment>
+</Exercise>
+
+<Exercise id="sedawk-awk" level={2}>
+  Avec awk uniquement : 1) nom et année, sans l'en-tête ; 2) les contributions **strictement antérieures à 1970** (attention au type de comparaison !) ; 3) la somme des années ; 4) le nombre d'entrées **par domaine** ; 5) les lignes dont la contribution contient « premier » ; 6) un extrait nom/domaine séparé par des tabulations.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/sed-awk/exercices-awk.sh" lang="bash" />
+
+    Le harnais vérifie que le filtre de l'exercice 2 retient exactement **5 lignes** (1969 inclus, 1978 exclu) : si vous aviez écrit `"1970"` entre guillemets, le test l'aurait attrapé — c'est exactement à ça que servent des corrigés testés.
+  </Fragment>
+</Exercise>
+
+<Exercise id="sedawk-sshd" level={3}>
+  Cas réel d'administration : écrivez la commande sed qui, dans une copie de `/etc/ssh/sshd_config`, force `PasswordAuthentication no` — en capturant le nom de la directive plutôt qu'en le réécrivant. Que manque-t-il à votre commande pour modifier le vrai fichier, et pourquoi attendre le module SSH pour le faire ?
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ sed -E 's,^#?(PasswordAuthentication) .*,\1 no, ' sshd_config.copie
+    ```
+
+    La capture `(PasswordAuthentication)` évite la faute de frappe dans le remplacement, et le `#?` traite aussi la ligne encore commentée. Pour le vrai fichier il faudrait `-i` **et** les droits root (`sudo`) — et surtout une session SSH de secours ouverte : couper l'authentification par mot de passe sans avoir vérifié sa clé, c'est s'enfermer dehors. Le module SSH fait cette manipulation dans les règles.
+  </Fragment>
+</Exercise>
+
+<Note type="info" title="Pourquoi ces exercices ne sont pas ceux du tutoriel historique">
+  La partie exercices du cours s'appuyait sur un excellent tutoriel tiers ([sed-awk-tutoriel](https://github.com/jmchantrein/sed-awk-tutoriel), fork), qui ne porte pas de licence libre : il ne peut pas être republié ici. Les exercices de ce dojo sont donc **originaux** — dans le même esprit progressif — et le tutoriel reste une excellente séance d'entraînement complémentaire, chez lui.
+</Note>
+
+## Récapitulatif
+
+- **sed** édite un flux : `s/motif/remplacement/g`, `d`, `i`/`a`, séparateur libre, `-i` avec des gants, groupes de capture `\( \)` → `\1`.
+- **awk** raisonne en colonnes : `motif { action }`, champs `$1…`, `-F` pour le séparateur, `NR`/`NF`, `END`/`BEGIN`, tableaux associatifs, `~` pour les regex.
+- Comparaison **numérique vs lexicale** : `$2 < 1970` ≠ `$2 < "1970"` — le piège classique d'awk.
+- Ni l'un ni l'autre ne modifie un fichier sans qu'on le demande : la sortie standard d'abord, `-i` ensuite, root en dernier.
+
+## Ressources supplémentaires
+
+- `man sed`, `man awk` — les références installées avec le système ;
+- [sed-awk-tutoriel](https://github.com/jmchantrein/sed-awk-tutoriel) — le dojo complémentaire (dépôt externe) ;
+- [regex101](https://regex101.com/) — tester ses expressions régulières en visuel.

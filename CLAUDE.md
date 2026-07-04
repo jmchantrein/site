@@ -47,6 +47,16 @@ Mayer), WCAG AA (corps AAA).
   Toute nouvelle persistance locale doit être couverte par l'export global
   du panneau Paramètres (ou fournir son propre export/import, comme les
   annotations).
+- **Illustrations systématiques** : pour **tout cours** (existant ou à
+  venir), proposer des illustrations dès qu'elles servent la
+  compréhension — figures thémables (`ArchiStack`, `MachineMap`…),
+  **vues éclatées et animations en JS** (îlots, cf. `MachineExplode`),
+  images libres via `<WikiImage>`. **La qualité prime sur la source** :
+  une image Wikimedia n'est retenue que si elle est à jour, lisible et
+  correctement légendée (vérifier chaque référence de légende) — sinon,
+  préférer une figure thémable ou un îlot animé. Une figure en regard
+  du texte qu'elle illustre passe par `<Duo>`. C'est une proposition à
+  faire par défaut, pas une option.
 - **Glossaire systématique** : les termes techniques, anglicismes
   (correspondance FR ↔ EN) et personnages des sciences vivent dans la
   source unique `site/src/data/glossaire.mjs` ; l'auto-liaison au build

@@ -69,7 +69,8 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<IpSim />`, `<BootBench />` — îlots interactifs existants ;
 - `<ArchiStack kind="vm|conteneur" />`, `<LayerStack>`, `<BuildStack>`, `<MachineMap kind="anatomie|memoires" />` — figures statiques thémables (accessibles, bilingues), pensées pour `<Duo>` ;
 - `<G t="slug">…</G>` / `<G off>…</G>` — surcharge du glossaire : forcer un lien vers une fiche, ou inhiber l'auto-liaison (faux positif) ;
-- `<WikiImage file="…" alt="…" caption="…" width={720}>` — illustration libre affichée **depuis Wikimedia Commons** (exception assumée à « aucune ressource externe », cf. CLAUDE.md) : attribution liée vers la page Commons, repli silencieux si l'image manque, `alt` obligatoire.
+- `<WikiImage file="…" alt="…" caption="…" width={720}>` — illustration libre affichée **depuis Wikimedia Commons** (exception assumée à « aucune ressource externe », cf. CLAUDE.md) : attribution liée vers la page Commons, repli silencieux si l'image manque, `alt` obligatoire. **Qualité avant source** : ne retenir une image Commons que si elle est à jour, lisible, bien légendée ;
+- `<MachineExplode />` — vue éclatée **animée** d'une tour de PC (îlot CSS/JS thémable, bilingue, bouton assembler ⇄ éclater, `prefers-reduced-motion` respecté) — le modèle pour les futures vues dynamiques.
 
 ## Glossaire (maillage systématique)
 

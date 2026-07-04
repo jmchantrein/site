@@ -1,0 +1,218 @@
+---
+title: "Bash: writing robust scripts"
+description: "From pipeline to production script: arguments, quoting, cron, shellcheck, debugging, Bats unit tests and structuring with functions."
+order: 13
+serie: outils-admin
+topics: [linux]
+duration: 30
+badge: "Tools"
+tags: [bash, scripts, shellcheck, bats, cron]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+The [previous module](../bash-bases/) composed commands at the keyboard. This one packs them into **scripts**: replayable, shareable, schedulable files — robust enough for production. Goals:
+
+- write, run and schedule a script;
+- defeat the quoting and brace traps;
+- tool up for quality: shellcheck, debugging, Bats unit tests;
+- structure with functions and a `main()` entry point.
+
+## From pipeline to script
+
+A Bash script is a text file starting with a **shebang** and carrying the execute permission:
+
+```bash
+#!/bin/bash
+echo "Script lancé"
+for i in {1..5}; do
+    echo "Itération $i"
+done
+exit 0
+```
+
+```console
+jmc@laptop ~ $ chmod u+x script.sh
+jmc@laptop ~ $ ./script.sh
+```
+
+The **exit code** tells the world how it went: `0` = success, anything else = failure (conventionally, one code per error family). It is read in `$?`, and it is what `&&`, `||` and CI test.
+
+<Note type="danger" title="exit, not return">
+  At script level, you finish with `exit 0` — **not** `return 0`: `return` only makes sense inside a function or a *sourced* script, and otherwise produces "can only “return” from a function or sourced script". (The original version of this course contained that trap; it is real and frequent.)
+</Note>
+
+## Receiving data
+
+**Through arguments** (non-interactive mode — scriptable, cron-able):
+
+<CodeFile path="outils-admin/bash/exemple_argument.bash" lang="bash" />
+
+```console
+jmc@laptop ~ $ ./exemple_argument.bash arg1 arg2
+L'argument zero est : ./exemple_argument.bash
+Le premier argument est : arg1
+Le deuxième argument est : arg2
+```
+
+Also worth knowing: `$#` (argument count) and `"$@"` (all arguments, properly protected).
+
+**Interactively** (`read`):
+
+<CodeFile path="outils-admin/bash/exemple_saisie.bash" lang="bash" />
+
+<Note type="warning" title="Interactive does not schedule">
+  A script awaiting input cannot run under cron or in an automated deployment. Sysadmin reflex: inputs come through **arguments** (or a configuration file); interactivity is for humans.
+</Note>
+
+## Quotes and braces: the two traps
+
+**Without quotes, spaces explode:**
+
+```bash
+dossier="Mon dossier important"
+cd $dossier      # SPLIT into 3 arguments → error
+cd "$dossier"    # correct
+```
+
+**Without quotes, empty variables break tests:**
+
+```bash
+nom=
+if [ $nom = "Ada" ]; then …    # [ = "Ada" ] → syntax error
+if [ "$nom" = "Ada" ]; then …  # correct, even when empty
+```
+
+**Without braces, concatenation gets ambiguous:**
+
+```bash
+fichier="rapport"; ext="txt"
+echo "$fichierext"      # looks up a variable named "fichierext" → empty
+echo "${fichier}.${ext}"  # rapport.txt
+```
+
+Golden rule: **`"${variable}"`** — quotes always, braces as soon as something is glued after.
+
+## Digression: scheduling with cron
+
+The cron service runs tasks at fixed times. Each account has its table, edited with `crontab -e`, in a **five-field** format:
+
+```text
+# min  hour  day  month  weekday  command
+  0    2     *    *      1        /usr/local/bin/sauvegarde.sh
+```
+
+— that is: every Monday at 2:00 am. A typical backup script to schedule:
+
+```bash
+#!/bin/bash
+DATE=$(date +%Y%m%d)
+tar -czf "/backup/backup_${DATE}.tar.gz" /chemin/vers/dossier
+exit 0
+```
+
+<Note type="warning" title="Two crontab formats">
+  The **system** file (`/etc/crontab`, `/etc/cron.d/*`) has one extra field — the user who runs the job: `0 2 * * 1 root /usr/local/bin/sauvegarde.sh`. The **user** table (`crontab -e`) does **not** have that field. Copying one into the other is a classic: the extra field becomes the start of the command, which fails silently.
+</Note>
+
+## Robustness: the three options that save you
+
+```bash
+set -euo pipefail
+```
+
+- `-e`: the script **stops** at the first failing command;
+- `-u`: using an undefined variable becomes an error (farewell, silent typos);
+- `-o pipefail`: a pipeline fails if **any** of its links fails (not just the last one).
+
+For debugging: `bash -x script.sh` prints every executed command with expanded values; `echo` at critical points completes the picture.
+
+## shellcheck: the tireless reviewer
+
+```console
+jmc@laptop ~ $ sudo apt install shellcheck
+jmc@laptop ~ $ shellcheck script.sh
+```
+
+shellcheck spots unprotected variables, dubious comparisons, missing quotes — with the rule number and an online explanation. **Every Bash solution on this site passes shellcheck in CI**; demand the same of your scripts (it integrates with Vim and Git hooks — the Git module returns to this).
+
+## Testing: unit tests with Bats
+
+A **unit test** automatically checks one small isolated behaviour, and replays on every change. For Bash, the reference tool is **Bats** (*Bash Automated Testing System*):
+
+<CodeFile path="outils-admin/bash/exemple_test_unit.bats" lang="bash" />
+
+```console
+jmc@laptop ~ $ bats exemple_test_unit.bats
+1..1
+ok 1 Test de la commande ls
+```
+
+`run` captures the exit code (`$status`) and the output (`$output`); the brackets make the assertions. This module's solutions are covered by a real suite (`solutions.bats`, replayed in CI) — here are two of its cases:
+
+```bash
+@test "liste_fichiers: exit code 1 on a missing directory" {
+    run bash "$BATS_TEST_DIRNAME/liste_fichiers.bash" <<< "/nulle/part"
+    [ "$status" -eq 1 ]
+}
+```
+
+## Structuring: functions and main()
+
+<CodeFile path="outils-admin/bash/exemple_main_function.bash" lang="bash" />
+
+- each task lives in a **function**; its variables are declared `local` (otherwise they leak — a Miscelánea article will dissect that surprise);
+- `main()` is the **entry point**: the script's flow reads in one place;
+- `main "$@"` forwards the script's arguments to the function.
+
+<Note type="danger" title="source is not ./">
+  To reuse a file of functions: `source file` or its POSIX synonym `. file` (**dot space** file) execute its content **in the current shell**. `./file` is something else entirely: it **executes** the file in a separate process — the functions and variables it defines never reach your shell. (Another correction of a confusion present in the original material.)
+</Note>
+
+## Exercises
+
+<Exercise id="bash-liste-fichiers" level={2}>
+  Write `liste_fichiers.bash`: the script asks for a directory, prints a personalized message for each of its files, and exits with code 1 if the directory does not exist. Run it through shellcheck.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/liste_fichiers.bash" lang="bash" />
+
+    Points of vigilance: `read -r`, variables **quoted** everywhere, error message sent to `stderr` (`>&2`), distinct exit codes. This file passes shellcheck and its Bats suite in CI.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-copie-fichiers" level={2}>
+  Write `copie_fichiers.bash`: source and destination directories asked interactively, destination created when needed, copy, confirmation message — and a different exit code per error case.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/copie_fichiers.bash" lang="bash" />
+
+    Note the pattern `command || { echo "…" >&2; exit N; }`: failure is handled **where it happens**, with a dedicated code (1: missing source; 2: creation failed; 3: copy failed) — precious for whoever calls this script from another.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-bats" level={3}>
+  Write a Bats test checking that `copie_fichiers.bash` returns code 1 when the source does not exist, then that a successful copy creates the expected files. Run the suite.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/solutions.bats" lang="bash" />
+
+    The full suite for this module's solutions — `setup()`/`teardown()` prepare and clean a scratch directory, `<<<` injects the "interactive" answers. This is exactly the suite the site's CI replays on every change to the solutions.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- A script: **shebang** + `chmod u+x` + **exit codes** (`exit`, never `return` outside a function).
+- Input through **arguments** (`$1`, `"$@"`) for automation; `read -r` for humans.
+- **`"${variable}"`**: quotes always, braces on concatenation.
+- cron schedules (5 fields in `crontab -e`, +user in `/etc/crontab`); `set -euo pipefail` hardens; `bash -x` illuminates.
+- **shellcheck** reviews, **Bats** verifies, `main()` + `local` functions structure — and `source`/`. ` ≠ `./`.
+
+## Further resources
+
+- [ShellCheck online](https://www.shellcheck.net/);
+- [Bats](https://bats-core.readthedocs.io/) — the framework's documentation;
+- [Bash Reference Manual](https://www.gnu.org/software/bash/manual/) — the GNU reference.

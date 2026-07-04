@@ -330,7 +330,14 @@ conservés aux points structurants.
    rejoué en CI avec yamllint + yq ; corrections § 7 intégrées :
    booléens YAML 1.1/1.2, note « deux yq », IaC/IaaS, bloc scalaire,
    ligne « types explicites » du tableau, image Markdown locale).
-3. Bash ×2 (+ corrigés bats), sed & awk (exercices réécrits).
+3. Bash ×2 (+ corrigés bats), sed & awk (exercices réécrits) —
+   **réalisés** (juillet 2026, FR/EN, status construction : Bash
+   scindé bases/scripts robustes, corrections § 7 intégrées — exit vs
+   return, source vs ./, crontab utilisateur vs système, comparaison
+   numérique awk, encart corrompu du séparateur sed ; dojo sed/awk
+   original sur data/pionnieres.csv, corrigés réels testés par
+   scripts/test-solutions-bash.sh : shellcheck, suites Bats,
+   sorties attendues rejouées — 25/25 en local, câblé en CI).
 4. SSH (+ tmux), WireGuard (+ mini-labo).
 5. Git (+ rejeu harnais).
 6. Ansible : concepts + TP labo Docker (+ CI). → *jalon : relecture
