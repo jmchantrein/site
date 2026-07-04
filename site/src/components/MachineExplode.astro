@@ -1,0 +1,131 @@
+---
+/**
+ * MACHINEEXPLODE — vue éclatée ANIMÉE d'une tour de PC (îlot JS).
+ *
+ * Remplace les images de vues éclatées d'époque : figure thémable
+ * (tokens), bilingue (data-lang), animée en CSS (transitions), avec un
+ * bouton assembler ⇄ éclater. `prefers-reduced-motion` supprime la
+ * transition (bascule instantanée). Départ : vue éclatée, étiquettes
+ * visibles — l'assemblage montre comment les organes s'emboîtent.
+ *
+ * Usage MDX : <MachineExplode />
+ */
+---
+<figure class="mex" data-mex>
+  <div class="mex__scene is-exploded" role="img" aria-label="Vue éclatée d'une tour de PC : l'alimentation, le processeur et son ventirad, les barrettes de mémoire vive, la carte graphique et le SSD se détachent de la carte mère fixée dans le boîtier.">
+    <div class="mex__part mex__part--boitier" data-p="boitier">
+      <span class="mex__label"><span data-lang="fr">Boîtier</span><span data-lang="en">Case</span></span>
+    </div>
+    <div class="mex__part mex__part--cm" data-p="cm">
+      <span class="mex__label"><span data-lang="fr">Carte mère</span><span data-lang="en">Motherboard</span></span>
+    </div>
+    <div class="mex__part mex__part--alim" data-p="alim">
+      <span class="mex__label"><span data-lang="fr">Alimentation</span><span data-lang="en">Power supply</span></span>
+    </div>
+    <div class="mex__part mex__part--cpu" data-p="cpu">
+      <span class="mex__label"><span data-lang="fr">Processeur + ventirad</span><span data-lang="en">Processor + cooler</span></span>
+    </div>
+    <div class="mex__part mex__part--ram" data-p="ram">
+      <span class="mex__label"><span data-lang="fr">Mémoire vive</span><span data-lang="en">Main memory</span></span>
+    </div>
+    <div class="mex__part mex__part--gpu" data-p="gpu">
+      <span class="mex__label"><span data-lang="fr">Carte graphique</span><span data-lang="en">Graphics card</span></span>
+    </div>
+    <div class="mex__part mex__part--ssd" data-p="ssd">
+      <span class="mex__label"><span data-lang="fr">SSD</span><span data-lang="en">SSD</span></span>
+    </div>
+  </div>
+  <figcaption class="mex__bar">
+    <button type="button" class="mex__btn" data-mex-toggle aria-pressed="true">
+      <span class="mex__btn-exploded"><span data-lang="fr">Assembler la machine</span><span data-lang="en">Assemble the machine</span></span>
+      <span class="mex__btn-assembled"><span data-lang="fr">Éclater la vue</span><span data-lang="en">Explode the view</span></span>
+    </button>
+    <span class="mex__hint"><span data-lang="fr">Chaque organe se branche sur la carte mère.</span><span data-lang="en">Every organ plugs into the motherboard.</span></span>
+  </figcaption>
+</figure>
+
+<script>
+  for (const fig of document.querySelectorAll("[data-mex]")) {
+    const scene = fig.querySelector(".mex__scene");
+    const btn = fig.querySelector("[data-mex-toggle]");
+    if (!scene || !btn) continue;
+    btn.addEventListener("click", () => {
+      const exploded = scene.classList.toggle("is-exploded");
+      btn.setAttribute("aria-pressed", String(exploded));
+    });
+  }
+</script>
+
+<style>
+  .mex { margin: var(--space-4) 0; max-width: 34rem; }
+  .mex__scene {
+    position: relative;
+    aspect-ratio: 5 / 4;
+    border-radius: var(--radius-md);
+  }
+  .mex__part {
+    position: absolute;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    transition: transform 0.6s ease;
+    font-size: var(--text-xs);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mex__part { transition: none; }
+  }
+  .mex__label {
+    position: absolute;
+    left: 50%; top: 100%;
+    transform: translateX(-50%);
+    padding-top: 2px;
+    white-space: nowrap;
+    color: var(--color-text-strong);
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .is-exploded .mex__label { opacity: 1; }
+
+  /* Positions ASSEMBLÉES (une tour vue de côté, panneau ouvert). */
+  .mex__part--boitier { inset: 4% 10% 4% 10%; background: var(--color-surface-sunken); z-index: 0; }
+  .mex__part--boitier .mex__label { top: auto; bottom: 2px; opacity: 1; font-weight: 400; }
+  .mex__part--cm   { left: 22%; top: 14%; width: 52%; height: 68%; background: var(--color-accent-weak); z-index: 1; }
+  .mex__part--cm .mex__label { top: auto; bottom: 2px; }
+  .mex__part--alim { left: 58%; top: 8%;  width: 24%; height: 14%; z-index: 2; }
+  .mex__part--cpu  { left: 30%; top: 22%; width: 16%; height: 20%; background: var(--color-warning-weak); z-index: 2; }
+  .mex__part--ram  { left: 52%; top: 22%; width: 7%;  height: 26%; background: var(--color-info-weak); z-index: 2;
+                     box-shadow: 10px 0 0 -1.5px var(--color-info-weak), 10px 0 0 0 var(--color-border-strong); }
+  .mex__part--gpu  { left: 28%; top: 56%; width: 40%; height: 10%; background: var(--color-info-weak); z-index: 2; }
+  .mex__part--ssd  { left: 14%; top: 70%; width: 12%; height: 9%;  z-index: 2; }
+
+  /* Translations ÉCLATÉES : chaque organe se détache de la carte mère. */
+  .is-exploded .mex__part--alim { transform: translate(28%, -34%); }
+  .is-exploded .mex__part--cpu  { transform: translate(-90%, -55%); }
+  .is-exploded .mex__part--ram  { transform: translate(120%, -48%); }
+  .is-exploded .mex__part--gpu  { transform: translate(34%, 175%); }
+  .is-exploded .mex__part--ssd  { transform: translate(-72%, 60%); }
+  .is-exploded .mex__part--cm   { transform: translate(-4%, 3%); }
+
+  .mex__bar {
+    display: flex; align-items: center; gap: var(--space-3);
+    margin-top: var(--space-5);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted, inherit);
+  }
+  .mex__btn {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-strong);
+    cursor: pointer;
+    font-size: var(--text-sm);
+  }
+  .mex__btn:hover { background: var(--color-surface-sunken); }
+  .mex__btn-assembled { display: none; }
+  .mex__btn[aria-pressed="false"] .mex__btn-exploded { display: none; }
+  .mex__btn[aria-pressed="false"] .mex__btn-assembled { display: inline; }
+  @media print { .mex__bar { display: none; } }
+</style>

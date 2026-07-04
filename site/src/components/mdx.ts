@@ -19,6 +19,7 @@ import Duo from "./Duo.astro";
 import MachineMap from "./MachineMap.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
+import MachineExplode from "./MachineExplode.astro";
 
 export const mdxComponents = {
   Note,
@@ -39,4 +40,5 @@ export const mdxComponents = {
   MachineMap,
   G,
   WikiImage,
+  MachineExplode,
 };

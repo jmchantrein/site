@@ -1,0 +1,196 @@
+---
+title: "Bash : les bases du shell"
+description: "Flux standards, redirections, tubes, variables, conditions et boucles : composer les petits outils d'Unix pour en faire des traitements complets."
+order: 12
+serie: outils-admin
+topics: [linux]
+duration: 25
+badge: "Outils"
+tags: [bash, pipe, redirection, variables, boucles]
+terminal: true
+terminalTitle: "bash — atelier"
+terminalComment: "# bases du shell — cliquez une commande du cours pour l'exécuter ici"
+status: [construction]
+---
+
+## Introduction
+
+Objectifs de ce module :
+
+- comprendre les **flux standards** et savoir les rediriger et les brancher (tubes) ;
+- manipuler variables, conditions et boucles directement dans le shell ;
+- préparer le terrain du module suivant : l'écriture de scripts robustes.
+
+Les gestes élémentaires (`pwd`, `ls`, `cd`, `cat`, `man`…) sont supposés acquis — ils sont couverts par [Premiers pas dans le shell](../intro-shell/).
+
+## Les trois flux standards
+
+Tout processus naît avec trois canaux :
+
+- l'**entrée standard** (stdin, descripteur 0) — ce qu'il lit ;
+- la **sortie standard** (stdout, 1) — ce qu'il produit ;
+- l'**erreur standard** (stderr, 2) — ses messages d'erreur.
+
+Par défaut, les trois sont branchés sur le terminal. Tout l'art du shell consiste à les **rebrancher**.
+
+## Rediriger vers des fichiers
+
+<Cmd cmd="ls -l /etc > liste.txt">
+  <TermLine type="ok" tag="note">&gt; branche la sortie standard sur un fichier (créé, ou ÉCRASÉ s'il existe).</TermLine>
+</Cmd>
+
+<Cmd cmd="ls -l /var >> liste.txt">
+  <TermLine type="ok" tag="note">&gt;&gt; ajoute à la fin du fichier au lieu d'écraser.</TermLine>
+</Cmd>
+
+<Cmd cmd="ls /nulle/part 2> erreurs.txt">
+  <TermLine type="ok" tag="note">2&gt; redirige l'erreur standard ; 2&gt;&amp;1 la fusionne avec la sortie standard.</TermLine>
+</Cmd>
+
+<Note type="warning" title="&gt; écrase sans prévenir">
+  `commande > fichier` détruit le contenu précédent de `fichier` avant même que la commande ne s'exécute. Le `>>` du doute est moins dangereux que le `>` de l'habitude.
+</Note>
+
+## Les tubes : composer les outils
+
+Un **tube** (`|`) branche la sortie standard d'une commande sur l'entrée standard de la suivante :
+
+<Cmd cmd="ls -l /etc | grep '.conf'">
+  <TermLine>-rw-r--r-- 1 root root  2969 mars  12 09:14 adduser.conf</TermLine>
+  <TermLine>-rw-r--r-- 1 root root  5910 avril  2 11:02 ca-certificates.conf</TermLine>
+  <TermLine type="ok" tag="note">la sortie de ls devient l'entrée de grep, qui filtre les lignes contenant « .conf ».</TermLine>
+</Cmd>
+
+Les tubes s'enchaînent en **pipelines** — c'est la philosophie Unix : de petits outils spécialisés, composés librement :
+
+<Cmd cmd="cut -d';' -f3 pionnieres.csv | sort | uniq -c | sort -rn">
+  <TermLine>      2 langages</TermLine>
+  <TermLine>      1 reseau</TermLine>
+  <TermLine>      1 programmation</TermLine>
+  <TermLine type="ok" tag="note">extraire une colonne, trier, compter les doublons, classer : quatre outils, zéro fichier temporaire.</TermLine>
+</Cmd>
+
+Et tout se combine — tubes puis redirection finale :
+
+```console
+jmc@laptop ~ $ ls -l | grep '.txt' > resultats.txt
+```
+
+<Note type="danger" title="| n'est pas ||">
+  `cmd1 | cmd2` **branche** la sortie de la première sur l'entrée de la seconde. `cmd1 || cmd2` exécute la seconde **seulement si la première échoue** (OU logique sur les codes de retour ; `&&` est le ET). Confondre les deux produit des bugs mémorables.
+</Note>
+
+<Exercise id="bash-gameshell" level={1}>
+  Installez et lancez [GameShell](https://github.com/phyver/GameShell), un jeu d'aventure qui se joue entièrement au shell. Progressez au moins jusqu'aux missions sur les redirections.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ wget https://github.com/phyver/GameShell/releases/download/latest/gameshell.sh
+    jmc@laptop ~ $ bash gameshell.sh
+    ```
+
+    Pas de correction à donner : le jeu valide lui-même chaque mission (`check`). C'est l'entraînement le plus efficace qui soit pour ancrer les gestes de ce module.
+  </Fragment>
+</Exercise>
+
+## Les variables
+
+<Cmd cmd={`nom='Ada'; echo "Bonjour $nom"`}>
+  <TermLine>Bonjour Ada</TermLine>
+  <TermLine type="warn" tag="à noter">pas d'espaces autour du = ; $nom est développé DANS les guillemets doubles, pas dans les simples.</TermLine>
+</Cmd>
+
+- `NOM=valeur` définit ; `$NOM` lit ; `"$NOM"` lit **en sécurité** (le module suivant explique pourquoi les guillemets ne sont pas optionnels) ;
+- quelques variables toutes prêtes : `$HOME`, `$USER`, `$PATH` (les répertoires où le shell cherche les commandes).
+
+## Les conditions
+
+```bash
+if [ -d "/backup" ]; then
+    echo "Le répertoire /backup existe"
+else
+    echo "Le répertoire /backup n'existe pas"
+fi
+```
+
+Les crochets appellent la commande `test`, qui sait interroger :
+
+**les fichiers** — `-e` existe, `-f` fichier ordinaire, `-d` répertoire, `-r`/`-w`/`-x` lisible/modifiable/exécutable, `-s` non vide ;
+
+**les chaînes** — `-z` vide, `-n` non vide, `=` égales, `!=` différentes ;
+
+**les nombres** — `-eq` égal, `-ne` différent, `-lt`/`-le` inférieur (ou égal), `-gt`/`-ge` supérieur (ou égal).
+
+<Note type="info" title="Préférez [[ … ]]">
+  Les doubles crochets (propres à Bash) acceptent `&&` et `||` directement, savent tester une expression régulière (`[[ $x =~ ^[0-9]+$ ]]`) et pardonnent les variables vides. Les opérateurs `-a`/`-o` des simples crochets sont d'ailleurs marqués **obsolescents** par POSIX : combinez avec `[[ … && … ]]`, ou avec deux `test` reliés par `&&`.
+</Note>
+
+## Les boucles
+
+**`for` — parcourir une liste :**
+
+```bash
+for fichier in *.txt; do
+    echo "Fichier : $fichier"
+done
+```
+
+**`while` — répéter tant qu'une condition tient :**
+
+```bash
+count=1
+while [ "$count" -le 5 ]; do
+    echo "Itération $count"
+    count=$((count + 1))
+done
+```
+
+`$(( … ))` est l'arithmétique du shell ; `{1..5}` produit la séquence 1 à 5 (`for i in {1..5}`).
+
+<Exercise id="bash-pipeline" level={2}>
+  Sur le fichier `pionnieres.csv` du terminal (colonnes `nom;annee;domaine;contribution`) : en un seul pipeline, affichez le nombre de **domaines distincts**. Puis, en un second pipeline, les 3 lignes les plus récentes (année la plus grande).
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ cut -d';' -f3 pionnieres.csv | tail -n +2 | sort -u | wc -l
+    6
+    jmc@laptop ~ $ tail -n +2 pionnieres.csv | sort -t';' -k2 -rn | head -n 3
+    Perlman Radia;1985;reseau;protocole spanning tree
+    Goldwasser Shafi;1982;cryptographie;chiffrement probabiliste
+    Conway Lynn;1978;materiel;révolution VLSI
+    ```
+
+    `tail -n +2` saute l'en-tête ; `sort -u` dédoublonne ; `sort -t';' -k2 -rn` trie sur la 2ᵉ colonne, numériquement, en ordre inverse. Chaque brique est simple — la puissance vient de la composition.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-boucle" level={2}>
+  Écrivez, directement dans le shell, une boucle `for` qui crée `sauvegarde-1.txt` à `sauvegarde-5.txt`, puis une boucle `while` qui affiche un compte à rebours de 5 à 1.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ for i in {1..5}; do touch "sauvegarde-$i.txt"; done
+    jmc@laptop ~ $ n=5; while [ "$n" -ge 1 ]; do echo "$n"; n=$((n - 1)); done
+    5
+    4
+    3
+    2
+    1
+    ```
+
+    Les variables sont entre guillemets dans les tests — l'habitude à prendre dès maintenant ; le module suivant montre ce qui casse sans eux.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Trois flux par processus : **stdin**, **stdout**, **stderr** ; `>` écrase, `>>` ajoute, `2>` capte les erreurs.
+- Le **tube** `|` compose les petits outils en pipelines — et `|` ≠ `||`.
+- Variables : `x=…`, `"$x"` ; conditions : `test`/`[ ]`/`[[ ]]` sur fichiers, chaînes, nombres ; boucles `for`/`while`.
+- Tout ceci s'exécute au clavier ; le module suivant range ces gestes dans des **scripts** dignes de la production.
+
+## Ressources supplémentaires
+
+- [linuxcommand.org](https://linuxcommand.org/lc3_learning_the_shell.php) — apprendre le shell pas à pas ;
+- [GameShell](https://github.com/phyver/GameShell) — le jeu d'aventure au shell ;
+- [explainshell.com](https://explainshell.com/) — décortiquer n'importe quelle ligne de commande.

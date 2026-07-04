@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Harnais frère de test-solutions.sh pour les corrigés Bash et sed/awk
+# des modules de la série Outils — pas besoin de Docker.
+#
+# SOURCE UNIQUE : ce script valide les fichiers de
+#   site/src/solutions/outils-admin/bash/    (scripts + suites Bats)
+#   site/src/solutions/outils-admin/sed-awk/ (exercices sur data/)
+# c'est-à-dire EXACTEMENT ceux que les cours affichent via <CodeFile>.
+#
+# Usage : scripts/test-solutions-bash.sh [--lint|--up]
+#   --lint  (défaut) shellcheck sur tous les .bash/.sh + bash -n (syntaxe).
+#   --up    En plus : exécute les suites Bats (bats requis) et rejoue les
+#           exercices sed/awk en vérifiant des sorties attendues.
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash_sol="$here/../src/solutions/outils-admin/bash"
+sedawk_sol="$here/../src/solutions/outils-admin/sed-awk"
+mode="${1:---lint}"
+
+pass=0; fail=0; declare -a failed=()
+ok(){ echo "✅ $*"; pass=$((pass+1)); }
+ko(){ echo "❌ $*"; fail=$((fail+1)); failed+=("$*"); }
+
+# ——— 1. Lint : syntaxe bash + shellcheck ———
+for f in "$bash_sol"/*.bash "$sedawk_sol"/*.sh; do
+  if bash -n "$f"; then ok "bash -n $(basename "$f")"; else ko "bash -n $(basename "$f")"; fi
+  if command -v shellcheck >/dev/null; then
+    if shellcheck "$f"; then ok "shellcheck $(basename "$f")"; else ko "shellcheck $(basename "$f")"; fi
+  fi
+done
+
+if [ "$mode" = "--up" ]; then
+  # ——— 2. Suites Bats (les corrigés Bash s'exécutent et s'affirment) ———
+  if command -v bats >/dev/null; then
+    for suite in "$bash_sol"/*.bats; do
+      if bats "$suite"; then ok "bats $(basename "$suite")"; else ko "bats $(basename "$suite")"; fi
+    done
+  else
+    echo "ℹ bats absent : suites non exécutées (apt install bats)."
+  fi
+
+  # ——— 3. Exercices sed/awk : sorties attendues ———
+  out_sed="$(bash "$sedawk_sol/exercices-sed.sh")"
+  [[ "$out_sed" == *"matériel"* ]] \
+    && ok "sed : substitution (matériel)" || ko "sed : substitution"
+  [[ "$out_sed" == *"Ada Lovelace;"* ]] \
+    && ok "sed : capture (Prénom Nom inversés)" || ko "sed : capture"
+  [[ "$out_sed" == *"port = disabled"* ]] \
+    && ok "sed : séparateur alternatif" || ko "sed : séparateur alternatif"
+
+  out_awk="$(bash "$sedawk_sol/exercices-awk.sh")"
+  [[ "$out_awk" == *"Hamilton Margaret 1969"* ]] \
+    && ok "awk : filtre numérique (< 1970 inclut 1969)" || ko "awk : filtre numérique"
+  # Le filtre < 1970 doit garder exactement 5 lignes (comparaison NUMÉRIQUE).
+  n_avant_1970="$(awk -F';' 'NR > 1 && $2 < 1970' "$sedawk_sol/data/pionnieres.csv" | wc -l)"
+  [ "$n_avant_1970" -eq 5 ] \
+    && ok "awk : filtre numérique (5 lignes < 1970)" || ko "awk : filtre numérique ($n_avant_1970 ≠ 5)"
+  [[ "$out_awk" == *"langages 2"* ]] \
+    && ok "awk : regroupement par domaine" || ko "awk : regroupement"
+  [[ "$out_awk" == *"Total : 15618"* ]] \
+    && ok "awk : somme de colonne (15618)" || ko "awk : somme (attendu 15618)"
+fi
+
+echo; echo "Bilan : $pass OK, $fail KO"
+[ "$fail" -eq 0 ] || { printf ' - %s\n' "${failed[@]}"; exit 1; }

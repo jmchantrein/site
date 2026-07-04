@@ -1,0 +1,218 @@
+---
+title: "Bash : écrire des scripts robustes"
+description: "Du pipeline au script de production : arguments, guillemets, cron, shellcheck, débogage, tests unitaires Bats et structuration en fonctions."
+order: 13
+serie: outils-admin
+topics: [linux]
+duration: 30
+badge: "Outils"
+tags: [bash, scripts, shellcheck, bats, cron]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Le [module précédent](../bash-bases/) composait des commandes au clavier. Celui-ci les range dans des **scripts** : des fichiers rejouables, partageables, planifiables — et suffisamment robustes pour la production. Objectifs :
+
+- écrire, exécuter et planifier un script ;
+- déjouer les pièges des guillemets et des accolades ;
+- outiller la qualité : shellcheck, débogage, tests unitaires Bats ;
+- structurer avec des fonctions et un point d'entrée `main()`.
+
+## Du pipeline au script
+
+Un script Bash est un fichier texte qui commence par un **shebang** et porte le droit d'exécution :
+
+```bash
+#!/bin/bash
+echo "Script lancé"
+for i in {1..5}; do
+    echo "Itération $i"
+done
+exit 0
+```
+
+```console
+jmc@laptop ~ $ chmod u+x script.sh
+jmc@laptop ~ $ ./script.sh
+```
+
+Le **code de retour** dit au monde comment ça s'est passé : `0` = succès, tout le reste = échec (conventionnellement, un code par famille d'erreur). Il se lit dans `$?`, et c'est lui que testent `&&`, `||` et la CI.
+
+<Note type="danger" title="exit, pas return">
+  Au niveau d'un script, on termine par `exit 0` — **pas** `return 0` : `return` ne vaut que dans une fonction ou un script *sourcé*, et produit sinon l'erreur « can only “return” from a function or sourced script ». (La version d'origine de ce cours contenait ce piège ; il est réel et fréquent.)
+</Note>
+
+## Recevoir des données
+
+**En arguments** (mode non interactif — scriptable, cronnable) :
+
+<CodeFile path="outils-admin/bash/exemple_argument.bash" lang="bash" />
+
+```console
+jmc@laptop ~ $ ./exemple_argument.bash arg1 arg2
+L'argument zero est : ./exemple_argument.bash
+Le premier argument est : arg1
+Le deuxième argument est : arg2
+```
+
+À connaître aussi : `$#` (nombre d'arguments) et `"$@"` (tous les arguments, correctement protégés).
+
+**En interactif** (`read`) :
+
+<CodeFile path="outils-admin/bash/exemple_saisie.bash" lang="bash" />
+
+<Note type="warning" title="L'interactif ne se planifie pas">
+  Un script qui attend une saisie ne peut pas tourner via cron ou dans un déploiement automatisé. Réflexe d'admin : les entrées passent par des **arguments** (ou un fichier de configuration), l'interactif reste pour l'humain.
+</Note>
+
+## Guillemets et accolades : les deux pièges
+
+**Sans guillemets, les espaces explosent :**
+
+```bash
+dossier="Mon dossier important"
+cd $dossier      # ÉCLATÉ en 3 arguments → erreur
+cd "$dossier"    # correct
+```
+
+**Sans guillemets, les variables vides cassent les tests :**
+
+```bash
+nom=
+if [ $nom = "Ada" ]; then …    # [ = "Ada" ] → erreur de syntaxe
+if [ "$nom" = "Ada" ]; then …  # correct, même vide
+```
+
+**Sans accolades, la concaténation devient ambiguë :**
+
+```bash
+fichier="rapport"; ext="txt"
+echo "$fichierext"      # cherche la variable « fichierext » → vide
+echo "${fichier}.${ext}"  # rapport.txt
+```
+
+Règle d'or : **`"${variable}"`** — guillemets systématiques, accolades dès qu'on colle quelque chose derrière.
+
+## Digression : planifier avec cron
+
+Le service cron exécute des tâches à heures fixes. Chaque compte a sa table, éditée par `crontab -e`, au format **cinq champs** :
+
+```text
+# min  heure  jour  mois  jour_semaine  commande
+  0    2      *     *     1             /usr/local/bin/sauvegarde.sh
+```
+
+— soit : chaque lundi à 2 h 00. Un script de sauvegarde typique à cronner :
+
+```bash
+#!/bin/bash
+DATE=$(date +%Y%m%d)
+tar -czf "/backup/backup_${DATE}.tar.gz" /chemin/vers/dossier
+exit 0
+```
+
+<Note type="warning" title="Deux formats de crontab">
+  Le fichier **système** (`/etc/crontab`, `/etc/cron.d/*`) a un champ supplémentaire — l'utilisateur qui exécute : `0 2 * * 1 root /usr/local/bin/sauvegarde.sh`. La table **utilisateur** (`crontab -e`) n'a **pas** ce champ. Recopier l'un dans l'autre est un classique : le champ en trop devient le début de la commande, qui échoue silencieusement.
+</Note>
+
+## Robustesse : les trois options qui sauvent
+
+```bash
+set -euo pipefail
+```
+
+- `-e` : le script **s'arrête** à la première commande en échec ;
+- `-u` : utiliser une variable non définie devient une erreur (adieu les fautes de frappe silencieuses) ;
+- `-o pipefail` : un pipeline échoue si **l'un** de ses maillons échoue (pas seulement le dernier).
+
+Pour déboguer : `bash -x script.sh` affiche chaque commande exécutée, valeurs développées ; des `echo` aux points critiques complètent.
+
+## shellcheck : le relecteur infatigable
+
+```console
+jmc@laptop ~ $ sudo apt install shellcheck
+jmc@laptop ~ $ shellcheck script.sh
+```
+
+shellcheck détecte les variables non protégées, les comparaisons douteuses, les oublis de guillemets — avec le numéro de règle et l'explication en ligne. **Tous les corrigés Bash de ce site passent shellcheck en CI** ; exigez la même chose de vos scripts (il s'intègre à Vim et aux hooks Git — le module Git y reviendra).
+
+## Tester : les tests unitaires avec Bats
+
+Un **test unitaire** vérifie automatiquement un petit comportement isolé, et se rejoue à chaque modification. Pour Bash, l'outil de référence est **Bats** (*Bash Automated Testing System*) :
+
+<CodeFile path="outils-admin/bash/exemple_test_unit.bats" lang="bash" />
+
+```console
+jmc@laptop ~ $ bats exemple_test_unit.bats
+1..1
+ok 1 Test de la commande ls
+```
+
+`run` capture le code de retour (`$status`) et la sortie (`$output`) ; les crochets font les assertions. Les corrigés de ce module sont couverts par une vraie suite (`solutions.bats`, rejouée en CI) — dont voici deux cas :
+
+```bash
+@test "liste_fichiers: exit code 1 on a missing directory" {
+    run bash "$BATS_TEST_DIRNAME/liste_fichiers.bash" <<< "/nulle/part"
+    [ "$status" -eq 1 ]
+}
+```
+
+## Structurer : fonctions et main()
+
+<CodeFile path="outils-admin/bash/exemple_main_function.bash" lang="bash" />
+
+- chaque tâche vit dans une **fonction** ; les variables y sont déclarées `local` (sinon elles fuient — un module Miscelánea décortiquera cette surprise) ;
+- `main()` est le **point d'entrée** : le flux du script se lit en un endroit ;
+- `main "$@"` transmet les arguments du script à la fonction.
+
+<Note type="danger" title="source n'est pas ./">
+  Pour réutiliser un fichier de fonctions : `source fichier` ou son synonyme POSIX `. fichier` (**point espace** fichier) exécutent son contenu **dans le shell courant**. `./fichier` est tout autre chose : il **exécute** le fichier dans un processus séparé — les fonctions et variables définies n'atteignent jamais votre shell. (Autre correction d'une confusion présente dans le support d'origine.)
+</Note>
+
+## Exercices
+
+<Exercise id="bash-liste-fichiers" level={2}>
+  Écrivez `liste_fichiers.bash` : le script demande un répertoire, affiche un message personnalisé pour chacun de ses fichiers, et sort avec le code 1 si le répertoire n'existe pas. Passez-le à shellcheck.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/liste_fichiers.bash" lang="bash" />
+
+    Points de vigilance : `read -r`, variables **entre guillemets** partout, message d'erreur envoyé sur `stderr` (`>&2`), codes de retour distincts. Ce fichier passe shellcheck et sa suite Bats en CI.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-copie-fichiers" level={2}>
+  Écrivez `copie_fichiers.bash` : répertoires source et destination demandés à l'utilisateurice, création de la destination si besoin, copie, message de confirmation — et un code de retour différent par cas d'erreur.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/copie_fichiers.bash" lang="bash" />
+
+    Notez le motif `commande || { echo "…" >&2; exit N; }` : l'échec est traité **au point où il survient**, avec un code dédié (1 : source absente ; 2 : création impossible ; 3 : copie échouée) — précieux pour qui appellera ce script depuis un autre.
+  </Fragment>
+</Exercise>
+
+<Exercise id="bash-bats" level={3}>
+  Écrivez un test Bats vérifiant que `copie_fichiers.bash` renvoie bien le code 1 quand la source n'existe pas, puis qu'une copie réussie crée les fichiers attendus. Lancez la suite.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/bash/solutions.bats" lang="bash" />
+
+    La suite complète des corrigés du module — `setup()`/`teardown()` préparent et nettoient un répertoire témoin, `<<<` injecte les réponses « interactives ». C'est exactement cette suite que la CI du site rejoue à chaque changement des corrigés.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Un script : **shebang** + `chmod u+x` + **codes de retour** (`exit`, jamais `return` hors fonction).
+- Entrées par **arguments** (`$1`, `"$@"`) pour l'automatisable ; `read -r` pour l'humain.
+- **`"${variable}"`** : guillemets toujours, accolades dès concaténation.
+- cron planifie (5 champs en `crontab -e`, +utilisateur dans `/etc/crontab`) ; `set -euo pipefail` durcit ; `bash -x` éclaire.
+- **shellcheck** relit, **Bats** vérifie, `main()` + fonctions `local` structurent — et `source`/`. ` ≠ `./`.
+
+## Ressources supplémentaires
+
+- [ShellCheck en ligne](https://www.shellcheck.net/) ;
+- [Bats](https://bats-core.readthedocs.io/) — la documentation du framework ;
+- [Bash Reference Manual](https://www.gnu.org/software/bash/manual/) — la référence GNU.
