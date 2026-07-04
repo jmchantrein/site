@@ -824,9 +824,11 @@ a.gloss:hover, a.gloss:focus-visible {
   border: 1px solid var(--color-border);
 }
 .gloss-pop__links { margin: 0; font-size: var(--text-xs); }
+.gloss-pop__cours { margin: 0 0 var(--space-1); font-size: var(--text-xs); }
 
 /* RAIL GLOSSAIRE — la fiche à droite du cours, sans quitter la lecture
    (préférence lecteur : panneau Paramètres ; repli : navigation). */
+.gloss-rail[hidden] { display: none; } /* display:flex ci-dessous écraserait [hidden] sinon */
 .gloss-rail {
   position: fixed;
   top: 0; right: 0; bottom: 0;

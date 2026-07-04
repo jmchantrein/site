@@ -278,8 +278,14 @@ function runCommand(cmd) {
   if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
   const screen = term.querySelector(".terminal__screen");
   const text = cmd.getAttribute("data-cmd") || (cmd.querySelector("code") ? cmd.querySelector("code").textContent : "");
-  const tpl = cmd.parentNode.querySelector(".cmd-out") ||
-    (cmd.nextElementSibling && cmd.nextElementSibling.matches(".cmd-out") ? cmd.nextElementSibling : null);
+  // La sortie est LE template qui suit CE bouton (Cmd.astro les émet
+  // adjacents) — jamais le premier du parent : avec plusieurs <Cmd> dans
+  // une même section, chaque bouton doit rejouer SA sortie.
+  let tpl = cmd.nextElementSibling;
+  while (tpl && !tpl.matches(".cmd-out")) {
+    if (tpl.matches(".cmd")) { tpl = null; break; }
+    tpl = tpl.nextElementSibling;
+  }
   const out = tpl ? tpl.innerHTML : "";
   if (cmd.getAttribute("data-running") === "true") return;
   cmd.setAttribute("data-running", "true");

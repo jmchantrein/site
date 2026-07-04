@@ -98,6 +98,19 @@ function render(e) {
   bref.className = "gloss-pop__bref";
   bref.textContent = e.bref;
   p.appendChild(bref);
+  if (Array.isArray(e.cours) && e.cours.length) {
+    const c = document.createElement("p");
+    c.className = "gloss-pop__cours";
+    c.append(EN ? "Taught in: " : "Enseigné dans : ");
+    e.cours.forEach((m, i) => {
+      if (i) c.append(" · ");
+      const a = document.createElement("a");
+      a.href = m.url;
+      a.textContent = m.t;
+      c.appendChild(a);
+    });
+    p.appendChild(c);
+  }
   const links = document.createElement("p");
   links.className = "gloss-pop__links";
   const more = document.createElement("a");
@@ -192,9 +205,16 @@ async function openRail(url, from) {
   try {
     const html = await fetch(url).then((x) => x.text());
     const doc = new DOMParser().parseFromString(html, "text/html");
+    // La fiche se recompose : titre (héros), chapeau (bref), corps d'article
+    // — le héros vit HORS de .article dans le gabarit de lecture.
+    const title = doc.querySelector("h1");
+    const lead = doc.querySelector(".lead");
     const article = doc.querySelector(".article") ?? doc.querySelector("main") ?? doc.body;
-    body.replaceChildren(...Array.from(article.children).map((n) => document.importNode(n, true)));
-    // Les fiches du rail ne rouvrent pas un rail : liens internes normaux.
+    r.querySelector(".gloss-rail__title").textContent =
+      (title?.textContent ?? "").trim() || (EN ? "Glossary" : "Glossaire");
+    body.replaceChildren();
+    if (lead) body.appendChild(document.importNode(lead, true));
+    body.append(...Array.from(article.children).map((n) => document.importNode(n, true)));
     body.querySelectorAll("script").forEach((s) => s.remove());
   } catch {
     body.textContent = EN ? "Loading failed — open the page instead." : "Chargement impossible — ouvrez la page.";
@@ -238,6 +258,14 @@ function init() {
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") { hidePop(); closeRail(); }
+  });
+  // Clic en dehors du rail (et hors d'un terme) : fermeture, comme les
+  // autres colonnes latérales du site.
+  document.addEventListener("click", (ev) => {
+    if (!rail || rail.hidden) return;
+    if (!(ev.target instanceof Element)) return;
+    if (ev.target.closest(".gloss-rail, a.gloss, .gloss-pop")) return;
+    closeRail();
   });
   document.addEventListener("click", (ev) => {
     if (!(ev.target instanceof Element)) return;

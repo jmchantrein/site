@@ -70,7 +70,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<ArchiStack kind="vm|conteneur" />`, `<LayerStack>`, `<BuildStack>`, `<MachineMap kind="anatomie|memoires" />` — figures statiques thémables (accessibles, bilingues), pensées pour `<Duo>` ;
 - `<G t="slug">…</G>` / `<G off>…</G>` — surcharge du glossaire : forcer un lien vers une fiche, ou inhiber l'auto-liaison (faux positif) ;
 - `<WikiImage file="…" alt="…" caption="…" width={720}>` — illustration libre affichée **depuis Wikimedia Commons** (exception assumée à « aucune ressource externe », cf. CLAUDE.md) : attribution liée vers la page Commons, repli silencieux si l'image manque, `alt` obligatoire. **Qualité avant source** : ne retenir une image Commons que si elle est à jour, lisible, bien légendée ;
-- `<MachineExplode />` — vue éclatée **animée** d'une tour de PC (îlot CSS/JS thémable, bilingue, bouton assembler ⇄ éclater, `prefers-reduced-motion` respecté) — le modèle pour les futures vues dynamiques.
+- `<Artefact file="nom/index.html" title="…" height={480}>` — intègre une **création de l'auteur faite ailleurs** (Claude Design, D3, HTML autonome…) déposée sous `public/artefacts/<nom>/` : cadre standard des îlots, iframe sandboxée, lien plein écran. Le fichier doit être autonome (styles/scripts inlinés).
 
 ## Glossaire (maillage systématique)
 

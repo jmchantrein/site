@@ -18,10 +18,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const fiches = await getCollection("glossaire", ({ id, data }) => id === entry.slug && !data.draft);
 const fiche = fiches[0];
 const Content = fiche ? (await render(fiche)).Content : null;
-// Module canonique (« enseigné dans ») — le lien inter-modules systématique.
-const cours = entry.cours
-  ? (await getCollection("cours", ({ id }) => id === entry.cours))[0]
-  : undefined;
+// Modules (« enseigné dans ») — le lien inter-modules systématique.
+const coursIds = Array.isArray(entry.cours) ? entry.cours : entry.cours ? [entry.cours] : [];
+const cours = await getCollection("cours", ({ id }) => coursIds.includes(id));
 const badges = [
   entry.type === "personnage" ? "Personnage" : "Terme",
   ...(entry.angl ? ["Anglicisme"] : []),
@@ -50,8 +49,10 @@ const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
   )}
   {Content ? <Content components={mdxComponents} /> : null}
   <p class="gloss-fiche__liens">
-    {cours && (
-      <span>Notion enseignée dans le module <a href={`${base}/cours/${cours.id}/`}>{cours.data.title}</a>.{" "}</span>
+    {cours.length > 0 && (
+      <span>Notion enseignée dans : {cours.map((c, i) => (
+        <>{i > 0 && " · "}<a href={`${base}/cours/${c.id}/`}>{c.data.title}</a></>
+      ))}.{" "}</span>
     )}
     {wiki && <a href={wiki} rel="external noopener">Lire sur Wikipédia ↗</a>}
   </p>
