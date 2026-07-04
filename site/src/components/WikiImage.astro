@@ -1,0 +1,60 @@
+---
+/**
+ * WIKIIMAGE — illustration AFFICHÉE DEPUIS Wikimedia Commons.
+ *
+ * Dépendance externe ASSUMÉE (décision auteur, cf. CLAUDE.md « Tout
+ * statique et local », exception) : images libres de droits servies par
+ * Commons — pas de fichiers à héberger ni de licences à gérer dans le
+ * dépôt. Repli silencieux : si l'image ne charge pas (hors-ligne,
+ * fichier renommé), la figure disparaît sans casser la page.
+ *
+ * L'attribution pointe vers la page Commons du fichier (auteur +
+ * licence y sont détaillés). Pensée pour vivre seule ou dans <Duo>.
+ *
+ * Usage MDX :
+ *   <WikiImage file="Personal computer, exploded 6.svg"
+ *              alt="Vue éclatée d'un ordinateur…"
+ *              caption="Les organes d'un PC de bureau." />
+ */
+interface Props {
+  /** Nom du fichier sur Commons, sans le préfixe « File: ». */
+  file: string;
+  /** Alternative textuelle — OBLIGATOIRE (décrire ce que montre l'image). */
+  alt: string;
+  /** Légende facultative, dans la langue de la page. */
+  caption?: string;
+  /** Largeur demandée à Commons (px) — le rendu reste fluide. */
+  width?: number;
+}
+const { file, alt, caption, width = 720 } = Astro.props;
+const src = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
+const page = `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replace(/ /g, "_"))}`;
+---
+<figure class="wikiimg">
+  <img src={src} alt={alt} loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden = true" />
+  <figcaption>
+    {caption && <span>{caption} </span>}<a href={page} rel="external noopener"><span data-lang="fr">Image : Wikimedia Commons ↗</span><span data-lang="en">Image: Wikimedia Commons ↗</span></a>
+  </figcaption>
+</figure>
+
+<style>
+  .wikiimg {
+    margin: var(--space-4) 0;
+    max-width: var(--measure-wide);
+  }
+  .wikiimg img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fff; /* les SVG Commons supposent souvent un fond clair */
+    padding: var(--space-2);
+    box-sizing: border-box;
+  }
+  .wikiimg figcaption {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted, inherit);
+  }
+  @media print { .wikiimg { display: none; } }
+</style>
