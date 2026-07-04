@@ -1,0 +1,175 @@
+---
+title: "Vim: editing without a GUI"
+description: "Modes, motions, editing, search and configuration: the unavoidable server editor — austere for three days, formidable ever after."
+order: 10
+serie: outils-admin
+topics: [linux]
+duration: 20
+badge: "Tools"
+tags: [vim, editor, vimrc, vimtutor]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Goals of this module:
+
+- understand why Vim is unavoidable in non-graphical environments;
+- master the basic navigation and editing commands;
+- set up an efficient Vim for system administration.
+
+## Why Vim?
+
+Most servers have no graphical interface: to edit a configuration file or a script *on* the machine, you need an editor that lives in the terminal. Vim prevails because it is:
+
+- **installed by default** (Vim or its ancestor `vi`) on nearly every distribution and Unix;
+- **light and fast**, even on a loaded machine or through a poor SSH connection;
+- **formidably efficient** once mastered — the learning curve is steep, but the investment pays back daily.
+
+<Note title="The idea that changes everything: modes">
+  In a classic editor, every key inserts a character. In Vim, **it depends on the mode**: the same keys either navigate and manipulate text (normal mode) or type it (insert mode). Disconcerting at first — and exactly what allows editing at the speed of thought, without ever leaving the keyboard.
+</Note>
+
+## Vim's modes
+
+| Mode | Role | Entered with |
+|---|---|---|
+| **Normal** | navigate, delete, copy, paste | `Esc` (always) |
+| **Insert** | add text | `i` |
+| **Command** | save, quit, replace… | `:` |
+| **Visual** | select (characters) | `v` |
+| **Visual line** | select whole lines | `V` |
+| **Visual block** | select columns | `Ctrl`+`v` |
+
+The reflex to engrave: **lost? `Esc`** — you always come back to normal mode.
+
+## Survival: open, write, save, quit
+
+```console
+jmc@laptop ~ $ vim fichier.txt
+```
+
+1. `i` — switch to insert;
+2. type your text;
+3. `Esc` — back to normal mode;
+4. `:wq` — write and quit.
+
+The command-mode variants to know:
+
+- `:w` — save without quitting;
+- `:q` — quit (refuses if unsaved);
+- `:q!` — quit **without** saving;
+- `:%s/string1/string2/g` — replace every occurrence of `string1` with `string2` in the file (a syntax you will meet again: it is sed's).
+
+<Exercise id="vim-hello" level={1}>
+  Create a file `bonjour.txt` with Vim, write "Hello world!" in it, save and quit. Give the complete key sequence.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ vim bonjour.txt
+    ```
+
+    Then: `i` (insert) → type `Hello world!` → `Esc` (normal mode) → `:wq` → `Enter`.
+
+    That is the full survival loop: until it is automatic, do it again.
+  </Fragment>
+</Exercise>
+
+## Moving and editing (normal mode)
+
+**Motions:**
+
+- `h` `j` `k` `l` — left, down, up, right (arrows work too, but the home row saves the trip to the arrow keys);
+- `gg` — top of file; `G` — end of file;
+- `/word` — search for `word`; `n` / `N` — next / previous occurrence;
+- `%` — jump to the matching parenthesis or brace.
+
+**Editing:**
+
+- `dw` (*delete word*) — delete a word;
+- `dd` — delete a line (into Vim's clipboard);
+- `yy` (*yank*) — copy a line;
+- `p` (*put*) — paste after the cursor;
+- `r` — replace the character under the cursor; `R` — replace continuously;
+- `u` — undo; `Ctrl`+`r` — redo.
+
+<Note type="info" title="A language, not a list of shortcuts">
+  These keys **compose**: `d` (delete) + `w` (word) = `dw`; `3dd` deletes three lines; `d/toto` deletes up to "toto". Learning Vim is learning a small grammar — not a catalogue.
+</Note>
+
+## Selecting: the visual modes
+
+- `v` — character-wise selection;
+- `V` — whole-line selection;
+- `Ctrl`+`v` — **column** selection;
+- then `y` (copy), `d` (delete), `p` (paste).
+
+Column selection is the sysadmin trick par excellence: select a column of line starts (`Ctrl`+`v`, go down), `I`, type `#`, `Esc` — every line is commented out at once.
+
+<Exercise id="vim-navigation" level={2}>
+  In an existing file of several dozen lines: go to the end of the file, come back to the top, search for a specific word, copy the three lines around its first occurrence and paste them at the end of the file. Which keys?
+
+  <Fragment slot="solution">
+    `G` (end) → `gg` (top) → `/word` then `Enter` (search) → `k` (up one line to include the line above) → `3yy` (copy 3 lines) → `G` (end) → `p` (paste).
+
+    Variant: `V` then `2j` to select the 3 lines visually, `y`, `G`, `p`. Both are idiomatic; the second is easier to "see" while learning.
+  </Fragment>
+</Exercise>
+
+## Configuring: the ~/.vimrc file
+
+Vim is customized in `~/.vimrc`, read at every startup:
+
+```vim
+" Line numbers
+set number
+" Automatic indentation
+set autoindent
+" One tab = 4 spaces
+set tabstop=4
+" Syntax highlighting
+syntax on
+```
+
+Highly configurable (and extensible with plugins) — but these four lines already cover most of the daily needs.
+
+<Exercise id="vim-vimrc" level={1}>
+  With Vim, create your `~/.vimrc` containing `set number` and `set tabstop=4`. Save, reopen the file, and replace the 4 with a 2 **using the `r` key** (without entering insert mode).
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ vim ~/.vimrc
+    ```
+
+    `i` → type the two lines → `Esc` → `:wq`. Then `vim ~/.vimrc`, `/4` `Enter` to land on the 4, and `r2`: the character is replaced without insert mode. `:wq` to finish.
+
+    In passing: line numbers (`set number`) appeared as soon as you reopened — the configuration is read at startup.
+  </Fragment>
+</Exercise>
+
+## The training that works: vimtutor
+
+<Exercise id="vim-vimtutor" level={1}>
+  Open a terminal and run `vimtutor`. Do the whole tutorial (~30 min). Redo it regularly until no step slows you down — then use Vim every day.
+
+  <Fragment slot="solution">
+    There is no solution to give: `vimtutor` **is** the solution — a text file you edit by following its own instructions, installed with Vim. The only possible mistake is not doing it again.
+
+    And do not fall to the dark side: no `emacs` here ;-).
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- Vim is **everywhere** there is a terminal; mastering it is non-negotiable for administering systems.
+- Everything rests on **modes**: `Esc` → normal, `i` → insert, `:` → command, `v`/`V`/`Ctrl`+`v` → visual.
+- The survival loop: `vim file` → `i` → text → `Esc` → `:wq`.
+- Commands **compose** (`3dd`, `d/word`): a grammar, not shortcuts.
+- `~/.vimrc` customizes; `vimtutor` trains; daily practice does the rest — many modern IDEs offer a "Vim mode", too.
+
+## Further resources
+
+- [OpenVim](https://www.openvim.com) — interactive simulator;
+- [Vim Adventures](https://vim-adventures.com) — learn by playing;
+- [Vim Cheat Sheet](https://vim.rtorr.com) — the command crib sheet.

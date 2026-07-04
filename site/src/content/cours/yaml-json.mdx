@@ -1,0 +1,288 @@
+---
+title: "YAML & JSON : structurer des données"
+description: "Deux façons de sérialiser des données : YAML lisible et hiérarchique par l'indentation, JSON strict et omniprésent — avec yq et jq pour les manipuler."
+order: 18
+serie: outils-admin
+topics: [linux]
+duration: 25
+badge: "Outils"
+tags: [YAML, JSON, sérialisation, yq, jq, yamllint]
+terminal: true
+terminalTitle: "bash — yq & jq"
+terminalComment: "# yaml & json — cliquez une commande du cours pour l'exécuter ici"
+status: [construction]
+---
+
+## Introduction
+
+Presque tout ce que nous automatiserons ensuite — compose, Ansible, Kubernetes — se décrit en **YAML** ; presque tout ce que les APIs échangent circule en **JSON**. Ce module pose les deux syntaxes, leurs différences, et les outils pour les interroger en ligne de commande.
+
+## YAML en bref
+
+Dans sa version initiale, *YAML* signifiait *Yet Another Markup Language* (« encore un autre langage de balisage ») ; depuis la version 1.1, l'acronyme est récursif : *YAML Ain't Markup Language*. L'évolution dit l'essentiel : YAML vise les qualités d'un langage de balisage **sans en être un**.
+
+YAML est un langage de **sérialisation** de données conçu pour être lu et modifié par des humains :
+
+- l'**indentation** (des espaces, jamais de tabulations) porte la hiérarchie ;
+- `-` introduit les éléments de liste, `:` sépare clé et valeur ;
+- `#` introduit un **commentaire** ;
+- les **ancres** (`&`) et **alias** (`*`) permettent de réutiliser des blocs.
+
+## JSON en bref
+
+*JSON* (*JavaScript Object Notation*) est un **format de données** issu de la notation des objets JavaScript, quasi standard pour l'échange entre applications (APIs web) :
+
+- syntaxe **stricte** : accolades `{}`, crochets `[]`, guillemets doubles obligatoires, virgules séparatrices ;
+- types : chaînes, nombres, booléens, tableaux, objets, `null` ;
+- ni commentaires, ni ancres — mais un traitement machine très rapide.
+
+## Peut-on les comparer ?
+
+Comparer un langage (YAML) et un format de données (JSON) n'est pas habituel, mais la comparaison est pertinente en pratique : les deux servent aux mêmes usages — fichiers de configuration, sérialisation, transfert de données. Le même objet, dans quatre représentations :
+
+En CSV — plat, sans hiérarchie :
+
+```csv
+nom,age,rue,ville,hobby1,hobby2,hobby3
+John Doe,30,123 Main St,Paris,lecture,course,voyage
+```
+
+En XML — hiérarchique, mais verbeux :
+
+```xml
+<personne>
+  <nom>John Doe</nom>
+  <age>30</age>
+  <adresse><rue>123 Main St</rue><ville>Paris</ville></adresse>
+  <hobbies><hobby>lecture</hobby><hobby>course</hobby><hobby>voyage</hobby></hobbies>
+</personne>
+```
+
+En JSON — hiérarchique, plus sobre :
+
+```json
+{
+  "personne": {
+    "nom": "John Doe",
+    "age": 30,
+    "adresse": { "rue": "123 Main St", "ville": "Paris" },
+    "hobbies": ["lecture", "course", "voyage"]
+  }
+}
+```
+
+En YAML — la hiérarchie par l'indentation, rien d'autre :
+
+```yaml
+personne:
+  nom: John Doe
+  age: 30
+  adresse:
+    rue: 123 Main St
+    ville: Paris
+  hobbies:
+    - lecture
+    - course
+    - voyage
+```
+
+Observations :
+
+- le CSV ne sait pas dire qu'une adresse **contient** une rue et une ville, et fige le nombre de hobbies (`hobby1..3` — et la personne qui en a quatre ?) ;
+- XML et JSON survivent à la mise sur une seule ligne ; YAML **non** — son indentation *est* sa structure ;
+- YAML est le plus lisible, JSON le plus rapide à traiter, XML le plus outillé en validation.
+
+| Critère | JSON | YAML | XML | CSV |
+|---|---|---|---|---|
+| Lisibilité (déplié) | 4/5 | 5/5 | 3/5 | 2/5 |
+| Concision | 3/5 | 5/5 | 2/5 | 4/5 |
+| Hiérarchie | oui | oui | oui | non |
+| Types **explicites** | non (implicites par syntaxe) | oui (tags `!!type`) | oui (schémas) | non |
+| Commentaires | non | oui | oui | non |
+| Indentation significative | non | oui | non | non |
+| Ancres / alias | non | oui | non | non |
+
+## YAML est-il un sur-ensemble de JSON ?
+
+On lit souvent que tout JSON est du YAML valide. *Stricto sensu*, ce n'est pas tout à fait exact (cas limites d'échappement et de types) — mais en pratique, presque toujours : on peut même écrire du JSON **dans** du YAML. La réciproque est fausse par construction : les commentaires ou les ancres YAML n'ont pas d'équivalent JSON (les convertisseurs les résolvent ou les abandonnent).
+
+## Cas d'usage : qui choisir ?
+
+- **YAML** quand un humain lit et écrit : configuration, Ansible, compose, Kubernetes ;
+- **JSON** quand des machines échangent : APIs web, sérialisation rapide, journalisation structurée.
+
+## La syntaxe YAML en détail
+
+```yaml
+---
+# Les --- ouvrent un « document » (plusieurs possibles par fichier) ;
+# ceci est un commentaire.
+cle: valeur
+chaine_explicite: "entre guillemets si besoin"
+
+# Dictionnaire (mapping) : la hiérarchie par l'indentation (espaces !)
+adresse:
+  rue: 123 Main St
+  ville: Paris
+
+# Listes (séquences)
+fruits:
+  - pomme
+  - banane
+liste_en_ligne: [pomme, banane]
+
+# Chaîne sur plusieurs lignes (bloc littéral)
+message: |
+  Ceci est une chaîne
+  sur plusieurs lignes.
+
+# Nombres, booléens, null
+entier: 42
+flottant: 3.14
+actif: true
+non_defini: null   # ou ~
+
+# Ancre (&) et alias (*) : définir une fois, réutiliser
+defaut: &defaut
+  couleur: bleu
+  taille: M
+objet1:
+  <<: *defaut     # fusion : hérite de defaut…
+  taille: L       # …et surcharge une clé
+objet2: *defaut
+```
+
+<Note type="warning" title="Booléens : yes, on… à éviter">
+  YAML 1.1 accepte `yes`/`no`/`on`/`off` comme booléens — la spécification 1.2 ne garde que `true`/`false`, et les linters (yamllint, ansible-lint) signalent les autres (règle *truthy*). Écrivez `true`/`false`, toujours : c'est portable, et c'est ce que vos propres outils vous demanderont.
+</Note>
+
+Chaque type peut aussi être **explicité** par un tag — utile pour lever une ambiguïté :
+
+```yaml
+naissance: !!int 1894      # explicitement un entier
+code_postal: !!str 75011   # explicitement une chaîne (sinon : nombre !)
+```
+
+## yq et jq : interroger en ligne de commande
+
+`jq` (JSON query) et `yq` (YAML query) extraient, filtrent et modifient des données structurées depuis le shell. Le `yq` documenté ici convertit le YAML en JSON puis applique la syntaxe de `jq` : savoir se servir de l'un, c'est savoir se servir de l'autre.
+
+<Note type="danger" title="Deux outils incompatibles s'appellent « yq »">
+  Le `yq` de ce cours est le **wrapper Python de jq** — celui qu'installe `apt install yq` sur Debian/Ubuntu (options `-y`, `-i`, filtres jq). Il existe un **autre** yq, en Go (mikefarah, installé par snap/brew), à la syntaxe différente (`yq eval '.a.b' f.yaml`). Si les exemples ci-dessous échouent chez vous, vérifiez lequel vous avez : `yq --help` mentionne « jq filter » pour la variante Python.
+</Note>
+
+Soit `config.yaml` :
+
+```yaml
+application:
+  nom: MonApplication
+  version: 1.2.3
+  environnements:
+    production:
+      url: https://production.example.org
+```
+
+<Cmd cmd="yq . config.yaml">
+  <TermLine>{`{"application": {"nom": "MonApplication", "version": "1.2.3",`}</TermLine>
+  <TermLine>{`  "environnements": {"production": {"url": "https://production.example.org"}}}}`}</TermLine>
+  <TermLine type="ok" tag="note">sans option, yq convertit en JSON ; -y pour une sortie YAML.</TermLine>
+</Cmd>
+
+<Cmd cmd="yq -r '.application.environnements.production.url' config.yaml">
+  <TermLine>https://production.example.org</TermLine>
+  <TermLine type="ok" tag="note">le filtre navigue de clé en clé ; -r (raw) retire les guillemets de la sortie.</TermLine>
+</Cmd>
+
+<Cmd cmd={`yq -yi '.application.version = "1.2.4"' config.yaml`}>
+  <TermLine type="warn" tag="à noter">-i modifie le fichier en place (comme sed -i) — SANS -y, il serait réécrit en JSON ! Sans -i, seule la sortie est modifiée.</TermLine>
+</Cmd>
+
+## Vers l'infrastructure as code
+
+Rien n'empêche de décrire des actions d'administration en YAML :
+
+```yaml
+---
+command:
+  - bash
+  - -c
+  - |
+    #!/bin/bash
+    echo hello world
+```
+
+Chacun·e pourrait bricoler son propre format de ce genre pour déployer des configurations. C'est précisément pour **ne pas** réinventer cette roue qu'existe un outil dédié qui fait du YAML le langage de description d'un état voulu : Ansible, l'infrastructure as code — l'objet de la série suivante.
+
+## Exercices
+
+Consignes globales : vos fichiers doivent être validés par yamllint (`sudo apt install yamllint yq jq`). Ces corrigés sont des **fichiers réels**, vérifiés par le harnais du site (`scripts/test-solutions-yaml.sh`) — y compris la résolution des ancres et les requêtes yq.
+
+Les données : trois livres — *1984* (George Orwell, 1949, dystopie), *Le meilleur des mondes* (Aldous Huxley, 1932, dystopie), *Les portes de la perception* (Aldous Huxley, 1954, essai) ; mots-clés respectifs `[dystopie, politique, science-fiction]` (×2) et `[philosophie, perception, science]`.
+
+<Exercise id="yaml-livre" level={1}>
+  Écrivez `livre.yaml` décrivant le premier livre : titre, auteur, année de publication, genre, et une liste de mots-clés.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livre.yaml" lang="yaml" />
+
+    Le titre est entre guillemets : sans eux, `1984` serait interprété comme un **entier** — le piège classique des types implicites.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-livres" level={1}>
+  Écrivez `livres.yaml` décrivant les trois livres (une liste de dictionnaires).
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres.yaml" lang="yaml" />
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-vers-json" level={2}>
+  Convertissez `livres.yaml` en JSON (`livres.json`). Deux méthodes : à la main, puis avec yq — comparez.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres.json" lang="json" />
+
+    Avec yq, la conversion tient en une commande :
+
+    ```console
+    jmc@laptop ~ $ yq . livres.yaml > livres.json
+    ```
+
+    Le harnais du site vérifie que les deux fichiers contiennent **exactement les mêmes données** — c'est toute l'idée : deux syntaxes, une même structure.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-ancres" level={3}>
+  `livres.yaml` répète l'auteur. Éliminez cette redondance avec une ancre et des alias, en partant du principe (données de l'exercice) qu'un auteur par défaut se nomme Aldous Huxley, né en 1894, de nationalité britannique — l'année de naissance **explicitement typée entier**. Surchargez les champs qui diffèrent pour *1984*. La redondance des mots-clés peut rester.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres-ancres.yaml" lang="yaml" />
+
+    Trois mécanismes travaillent ensemble : l'**ancre** `&auteur_defaut` définit le bloc, l'**alias** `*auteur_defaut` le réutilise tel quel, et la **clé de fusion** `<<:` en hérite tout en surchargeant `nom` et `naissance` pour Orwell. Le tag `!!int` garantit le type demandé.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-yq" level={2}>
+  Avec yq, sur `livres.yaml` : 1) extrayez le titre du deuxième livre ; 2) extrayez **uniquement les titres** des livres d'Aldous Huxley ; 3) modifiez *in-place* le titre `1984` en `2024`.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/requetes-yq.sh" lang="bash" />
+
+    Les listes sont indexées depuis 0 (`[1]` = deuxième) ; `select()` filtre ; et l'édition in-place exige `-yi` — le `-y` évite de réécrire silencieusement votre YAML… en JSON. Ces trois requêtes sont rejouées et vérifiées par la CI du site.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- **YAML** : lisible, hiérarchie par l'indentation, commentaires, ancres/alias — le langage des humains (Ansible, compose, Kubernetes).
+- **JSON** : strict, rapide, omniprésent dans les APIs — le format des machines.
+- En pratique, YAML englobe JSON ; les convertisseurs abandonnent ce que JSON ne sait pas dire (commentaires, ancres).
+- `true`/`false` uniquement ; typer explicitement (`!!int`, `!!str`) en cas d'ambiguïté ; valider avec yamllint.
+- `yq`/`jq` : interroger et modifier depuis le shell — en vérifiant **quel** yq est installé.
+
+## Ressources supplémentaires
+
+- [Spécification YAML 1.2](https://yaml.org/spec/1.2.2/) ;
+- [json.org en français](https://www.json.org/json-fr.html) ;
+- [Manuel de jq](https://jqlang.github.io/jq/manual/) — la syntaxe des filtres, commune à yq.

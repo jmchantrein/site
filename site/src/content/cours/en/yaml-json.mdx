@@ -1,0 +1,288 @@
+---
+title: "YAML & JSON: structuring data"
+description: "Two ways to serialize data: YAML, readable and hierarchical through indentation; JSON, strict and ubiquitous — with yq and jq to manipulate them."
+order: 18
+serie: outils-admin
+topics: [linux]
+duration: 25
+badge: "Tools"
+tags: [YAML, JSON, serialization, yq, jq, yamllint]
+terminal: true
+terminalTitle: "bash — yq & jq"
+terminalComment: "# yaml & json — click a command from the course to run it here"
+status: [construction]
+---
+
+## Introduction
+
+Nearly everything we will automate next — compose, Ansible, Kubernetes — is described in **YAML**; nearly everything APIs exchange travels as **JSON**. This module lays out both syntaxes, their differences, and the command-line tools to query them.
+
+## YAML in brief
+
+In its initial version, *YAML* stood for *Yet Another Markup Language*; since version 1.1 the acronym is recursive: *YAML Ain't Markup Language*. The evolution says it all: YAML aims for the qualities of a markup language **without being one**.
+
+YAML is a data **serialization** language designed to be read and edited by humans:
+
+- **indentation** (spaces, never tabs) carries the hierarchy;
+- `-` introduces list items, `:` separates key and value;
+- `#` introduces a **comment**;
+- **anchors** (`&`) and **aliases** (`*`) let you reuse blocks.
+
+## JSON in brief
+
+*JSON* (*JavaScript Object Notation*) is a **data format** derived from JavaScript object notation, the near-standard for exchange between applications (web APIs):
+
+- **strict** syntax: braces `{}`, brackets `[]`, mandatory double quotes, separating commas;
+- types: strings, numbers, booleans, arrays, objects, `null`;
+- no comments, no anchors — but very fast machine processing.
+
+## Can they be compared?
+
+Comparing a language (YAML) with a data format (JSON) is unusual, but the comparison is relevant in practice: both serve the same uses — configuration files, serialization, data transfer. The same object, in four representations:
+
+CSV — flat, no hierarchy:
+
+```csv
+nom,age,rue,ville,hobby1,hobby2,hobby3
+John Doe,30,123 Main St,Paris,lecture,course,voyage
+```
+
+XML — hierarchical, but verbose:
+
+```xml
+<personne>
+  <nom>John Doe</nom>
+  <age>30</age>
+  <adresse><rue>123 Main St</rue><ville>Paris</ville></adresse>
+  <hobbies><hobby>lecture</hobby><hobby>course</hobby><hobby>voyage</hobby></hobbies>
+</personne>
+```
+
+JSON — hierarchical, more sober:
+
+```json
+{
+  "personne": {
+    "nom": "John Doe",
+    "age": 30,
+    "adresse": { "rue": "123 Main St", "ville": "Paris" },
+    "hobbies": ["lecture", "course", "voyage"]
+  }
+}
+```
+
+YAML — hierarchy through indentation, nothing else:
+
+```yaml
+personne:
+  nom: John Doe
+  age: 30
+  adresse:
+    rue: 123 Main St
+    ville: Paris
+  hobbies:
+    - lecture
+    - course
+    - voyage
+```
+
+Observations:
+
+- CSV cannot say that an address **contains** a street and a city, and freezes the number of hobbies (`hobby1..3` — what about someone with four?);
+- XML and JSON survive being put on a single line; YAML does **not** — its indentation *is* its structure;
+- YAML is the most readable, JSON the fastest to process, XML the best tooled for validation.
+
+| Criterion | JSON | YAML | XML | CSV |
+|---|---|---|---|---|
+| Readability (expanded) | 4/5 | 5/5 | 3/5 | 2/5 |
+| Concision | 3/5 | 5/5 | 2/5 | 4/5 |
+| Hierarchy | yes | yes | yes | no |
+| **Explicit** types | no (implicit by syntax) | yes (`!!type` tags) | yes (schemas) | no |
+| Comments | no | yes | yes | no |
+| Significant indentation | no | yes | no | no |
+| Anchors / aliases | no | yes | no | no |
+
+## Is YAML a superset of JSON?
+
+You often read that any JSON is valid YAML. *Stricto sensu*, not quite (edge cases of escaping and typing) — but in practice, almost always: you can even write JSON **inside** YAML. The converse is false by construction: YAML comments or anchors have no JSON equivalent (converters resolve or drop them).
+
+## Use cases: which one?
+
+- **YAML** when a human reads and writes: configuration, Ansible, compose, Kubernetes;
+- **JSON** when machines exchange: web APIs, fast serialization, structured logging.
+
+## YAML syntax in detail
+
+```yaml
+---
+# The --- opens a "document" (a file may hold several);
+# this is a comment.
+cle: valeur
+chaine_explicite: "quoted when needed"
+
+# Mapping: hierarchy through indentation (spaces!)
+adresse:
+  rue: 123 Main St
+  ville: Paris
+
+# Lists (sequences)
+fruits:
+  - pomme
+  - banane
+liste_en_ligne: [pomme, banane]
+
+# Multi-line string (literal block)
+message: |
+  This is a string
+  over several lines.
+
+# Numbers, booleans, null
+entier: 42
+flottant: 3.14
+actif: true
+non_defini: null   # or ~
+
+# Anchor (&) and alias (*): define once, reuse
+defaut: &defaut
+  couleur: bleu
+  taille: M
+objet1:
+  <<: *defaut     # merge: inherits from defaut…
+  taille: L       # …and overrides one key
+objet2: *defaut
+```
+
+<Note type="warning" title="Booleans: yes, on… avoid them">
+  YAML 1.1 accepts `yes`/`no`/`on`/`off` as booleans — the 1.2 specification keeps only `true`/`false`, and linters (yamllint, ansible-lint) flag the others (*truthy* rule). Write `true`/`false`, always: it is portable, and it is what your own tools will demand.
+</Note>
+
+Any type can also be made **explicit** with a tag — useful to lift an ambiguity:
+
+```yaml
+naissance: !!int 1894      # explicitly an integer
+code_postal: !!str 75011   # explicitly a string (otherwise: a number!)
+```
+
+## yq and jq: querying from the command line
+
+`jq` (JSON query) and `yq` (YAML query) extract, filter and modify structured data from the shell. The `yq` documented here converts YAML to JSON then applies `jq`'s syntax: knowing one is knowing the other.
+
+<Note type="danger" title="Two incompatible tools are called “yq”">
+  The `yq` in this course is the **Python jq wrapper** — the one `apt install yq` provides on Debian/Ubuntu (options `-y`, `-i`, jq filters). There is **another** yq, in Go (mikefarah, installed via snap/brew), with a different syntax (`yq eval '.a.b' f.yaml`). If the examples below fail on your machine, check which one you have: `yq --help` mentions "jq filter" for the Python flavour.
+</Note>
+
+Given `config.yaml`:
+
+```yaml
+application:
+  nom: MonApplication
+  version: 1.2.3
+  environnements:
+    production:
+      url: https://production.example.org
+```
+
+<Cmd cmd="yq . config.yaml">
+  <TermLine>{`{"application": {"nom": "MonApplication", "version": "1.2.3",`}</TermLine>
+  <TermLine>{`  "environnements": {"production": {"url": "https://production.example.org"}}}}`}</TermLine>
+  <TermLine type="ok" tag="note">with no option, yq converts to JSON; -y for YAML output.</TermLine>
+</Cmd>
+
+<Cmd cmd="yq -r '.application.environnements.production.url' config.yaml">
+  <TermLine>https://production.example.org</TermLine>
+  <TermLine type="ok" tag="note">the filter walks from key to key; -r (raw) strips the quotes from the output.</TermLine>
+</Cmd>
+
+<Cmd cmd={`yq -yi '.application.version = "1.2.4"' config.yaml`}>
+  <TermLine type="warn" tag="note">-i edits the file in place (like sed -i) — WITHOUT -y it would be rewritten as JSON! Without -i, only the output is modified.</TermLine>
+</Cmd>
+
+## Towards infrastructure as code
+
+Nothing prevents describing administration actions in YAML:
+
+```yaml
+---
+command:
+  - bash
+  - -c
+  - |
+    #!/bin/bash
+    echo hello world
+```
+
+Anyone could hack together their own format of this kind to deploy configurations. It is precisely to **avoid** reinventing that wheel that a dedicated tool makes YAML the language for describing a desired state: Ansible, infrastructure as code — the subject of the next series.
+
+## Exercises
+
+Global instructions: your files must pass yamllint (`sudo apt install yamllint yq jq`). These solutions are **real files**, checked by the site's harness (`scripts/test-solutions-yaml.sh`) — including anchor resolution and the yq queries.
+
+The data: three books — *1984* (George Orwell, 1949, dystopia), *Le meilleur des mondes* (Aldous Huxley, 1932, dystopia), *Les portes de la perception* (Aldous Huxley, 1954, essay); respective keywords `[dystopie, politique, science-fiction]` (×2) and `[philosophie, perception, science]`.
+
+<Exercise id="yaml-livre" level={1}>
+  Write `livre.yaml` describing the first book: title, author, publication year, genre, and a list of keywords.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livre.yaml" lang="yaml" />
+
+    The title is quoted: without quotes, `1984` would be interpreted as an **integer** — the classic implicit-typing trap.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-livres" level={1}>
+  Write `livres.yaml` describing the three books (a list of mappings).
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres.yaml" lang="yaml" />
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-vers-json" level={2}>
+  Convert `livres.yaml` to JSON (`livres.json`). Two methods: by hand, then with yq — compare.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres.json" lang="json" />
+
+    With yq, the conversion is a one-liner:
+
+    ```console
+    jmc@laptop ~ $ yq . livres.yaml > livres.json
+    ```
+
+    The site's harness checks that both files hold **exactly the same data** — which is the whole point: two syntaxes, one structure.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-ancres" level={3}>
+  `livres.yaml` repeats the author. Remove that redundancy with an anchor and aliases, taking as given (exercise data) that the default author is Aldous Huxley, born 1894, British — the birth year **explicitly typed as an integer**. Override the differing fields for *1984*. The keyword redundancy may stay.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/livres-ancres.yaml" lang="yaml" />
+
+    Three mechanisms work together: the **anchor** `&auteur_defaut` defines the block, the **alias** `*auteur_defaut` reuses it as is, and the **merge key** `<<:` inherits from it while overriding `nom` and `naissance` for Orwell. The `!!int` tag guarantees the required type.
+  </Fragment>
+</Exercise>
+
+<Exercise id="yaml-yq" level={2}>
+  With yq, on `livres.yaml`: 1) extract the title of the second book; 2) extract **only the titles** of Aldous Huxley's books; 3) edit the title `1984` to `2024` in place.
+
+  <Fragment slot="solution">
+    <CodeFile path="outils-admin/yaml/requetes-yq.sh" lang="bash" />
+
+    Lists are 0-indexed (`[1]` = second); `select()` filters; and in-place editing requires `-yi` — the `-y` keeps your YAML from being silently rewritten… as JSON. These three queries are replayed and checked by the site's CI.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- **YAML**: readable, hierarchy through indentation, comments, anchors/aliases — the language for humans (Ansible, compose, Kubernetes).
+- **JSON**: strict, fast, ubiquitous in APIs — the format for machines.
+- In practice YAML encompasses JSON; converters drop what JSON cannot express (comments, anchors).
+- `true`/`false` only; type explicitly (`!!int`, `!!str`) on ambiguity; validate with yamllint.
+- `yq`/`jq`: query and edit from the shell — after checking **which** yq is installed.
+
+## Further resources
+
+- [YAML 1.2 specification](https://yaml.org/spec/1.2.2/);
+- [json.org](https://www.json.org/json-en.html);
+- [jq manual](https://jqlang.github.io/jq/manual/) — the filter syntax, shared with yq.

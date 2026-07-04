@@ -25,6 +25,20 @@ export const SERIES = {
       en: { by: "ai", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 90 },
     },
   },
+  "outils-admin": {
+    fr: "Outils de l'administration système",
+    en: "System administration tools",
+    desc: {
+      fr: "Vim, Markdown, Bash, sed & awk, SSH, WireGuard, Git, YAML & JSON : les outils fondamentaux de l'admin sys, jusqu'aux portes d'Ansible.",
+      en: "Vim, Markdown, Bash, sed & awk, SSH, WireGuard, Git, YAML & JSON: the sysadmin's fundamental tools, up to Ansible's doorstep.",
+    },
+    /** Cours de l'auteur (Beamer + dépôts, sources/) converti en manuel ;
+        l'IA reformule la prose et régénère les exercices. */
+    prov: {
+      fr: { by: "human", reviewedBy: "ai", model: "Claude Fable 5", aiShare: 30 },
+      en: { by: "human", reviewedBy: "ai", model: "Claude Fable 5", translated: "ai", aiShare: 65 },
+    },
+  },
   docker: {
     fr: "Fondements de Docker",
     en: "Docker fundamentals",

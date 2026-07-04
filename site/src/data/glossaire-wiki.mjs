@@ -136,6 +136,8 @@ export const WIKI = {
   sed: { fr: "Sed", en: "Sed" },
   awk: { fr: "Awk", en: "AWK" },
   devops: { fr: "DevOps", en: "DevOps" },
+  jq: { en: "Jq (programming language)" },
+  pandoc: { fr: "Pandoc", en: "Pandoc" },
   cloud: { fr: "Cloud computing", en: "Cloud computing" },
   // Personnages (portraits Commons — repli silencieux si absent)
   "ada-lovelace": { fr: "Ada Lovelace", en: "Ada Lovelace", img: "Ada_Lovelace_portrait.jpg" },

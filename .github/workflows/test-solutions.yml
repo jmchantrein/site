@@ -1,8 +1,8 @@
-# Test E2E des corrigés du TP Docker (construit/teste les fichiers de
-# site/src/solutions/ — exactement ceux que le cours affiche via <CodeFile>).
+# Test E2E des corrigés (construit/teste les fichiers de
+# site/src/solutions/ — exactement ceux que les cours affichent via <CodeFile>).
 # Indépendant du déploiement Pages : il a besoin de Docker (présent sur
 # ubuntu-latest) et n'est PAS déclenché par les pushs ordinaires.
-name: Tester les corrigés du TP Docker
+name: Tester les corrigés
 
 on:
   workflow_dispatch:
@@ -16,6 +16,7 @@ on:
     paths:
       - "site/src/solutions/**"
       - "site/scripts/test-solutions.sh"
+      - "site/scripts/test-solutions-yaml.sh"
       - ".github/workflows/test-solutions.yml"
 
 jobs:
@@ -29,6 +30,12 @@ jobs:
       # main — le contrat « le code affiché est le code testé » est vérifié en
       # exécution réelle à chaque changement livré — et `build` sur les autres
       # branches (plus rapide en itération).
-      - name: Tester les corrigés
+      - name: Corrigés Docker (TP WordPress + images)
         working-directory: site
         run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
+      # Corrigés YAML (module « YAML & JSON ») — rapides, sans Docker.
+      - name: Outils YAML (yamllint + yq)
+        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq
+      - name: Corrigés YAML (module YAML & JSON)
+        working-directory: site
+        run: bash scripts/test-solutions-yaml.sh --up

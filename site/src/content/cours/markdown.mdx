@@ -1,0 +1,249 @@
+---
+title: "Markdown : documenter en texte brut"
+description: "Titres, listes, liens, code, tableaux : le format des README et de la documentation technique — lisible brut, convertible partout avec pandoc."
+order: 11
+serie: outils-admin
+topics: [linux]
+duration: 15
+badge: "Outils"
+tags: [markdown, documentation, README, pandoc]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Objectifs de ce module :
+
+- comprendre ce qu'est Markdown et à quoi il sert ;
+- structurer efficacement une documentation technique avec sa syntaxe ;
+- convertir un document Markdown vers d'autres formats avec pandoc.
+
+## Pourquoi Markdown ?
+
+Markdown est un langage de balisage **léger** : un fichier texte brut, lisible tel quel, dont quelques conventions typographiques (`#`, `*`, `-`…) décrivent la structure. Il s'est imposé pour la documentation technique parce qu'il est :
+
+- **lisible sans rendu** — un `README.md` se lit dans un terminal comme dans un navigateur ;
+- **compris partout** — GitHub, GitLab, forums, générateurs de sites (ce site est écrit en MDX, un Markdown étendu) ;
+- **convertible** — HTML, PDF, ODT… via pandoc ;
+- **stable dans le temps** — du texte brut se versionne parfaitement avec Git, se recherche avec grep, s'édite avec Vim.
+
+<Note type="info" title="Le rendu dépend du destinataire">
+  Le même fichier `.md` sera rendu un peu différemment par GitHub, par pandoc ou par un blog : Markdown normalise la **structure**, pas l'apparence. Les exemples ci-dessous montrent la syntaxe puis son rendu sur ce site.
+</Note>
+
+## Titres
+
+```markdown
+# Titre de niveau 1
+## Titre de niveau 2
+### Titre de niveau 3
+###### Titre de niveau 6
+```
+
+Le nombre de `#` donne le niveau. Un document n'a qu'un titre de niveau 1 ; les niveaux s'emboîtent sans sauter d'échelon — c'est ce qui permet de générer sommaires et ancres (le sommaire de cette page est fabriqué ainsi). Le rendu des titres est visible… partout sur ce site, on ne les reproduit donc pas ici : insérer de vrais titres d'exemple fausserait le sommaire de la page.
+
+## Emphase
+
+```markdown
+*italique* ou _italique_
+**gras** ou __gras__
+***gras italique***
+```
+
+Cela donne : *italique* ou _italique_, **gras** ou __gras__, ***gras italique***.
+
+## Listes
+
+```markdown
+- Élément
+- Élément
+  - Sous-élément (indenté de 2 espaces)
+
+1. Premier
+2. Deuxième
+   1. Sous-élément
+```
+
+Cela donne :
+
+- Élément
+- Élément
+  - Sous-élément (indenté de 2 espaces)
+
+1. Premier
+2. Deuxième
+   1. Sous-élément
+
+## Liens et images
+
+```markdown
+[Texte du lien](https://fr.wikipedia.org/wiki/Markdown)
+![Texte alternatif de l'image](/site/favicon.svg)
+```
+
+Cela donne : [Texte du lien](https://fr.wikipedia.org/wiki/Markdown) — et l'image, identique à un lien précédé de `!` :
+
+![Le favicon de ce site, en guise d'exemple local](/site/favicon.svg)
+
+<Note type="warning" title="Le texte alternatif n'est pas optionnel">
+  Le texte entre crochets d'une image est lu par les lecteurs d'écran et affiché si l'image manque : décrivez ce que l'image **montre**. C'est une exigence d'accessibilité de base (et une politesse pour les connexions lentes).
+</Note>
+
+## Citations
+
+```markdown
+> Ceci est une citation.
+```
+
+Cela donne :
+
+> Ceci est une citation.
+
+## Code
+
+Code en ligne entre accents graves : `` `int a = 2;` `` donne `int a = 2;`. Bloc de code entre triples accents graves, avec le langage pour la coloration :
+
+````markdown
+```bash
+#!/bin/bash
+echo "hello world !"
+exit 0
+```
+````
+
+Cela donne :
+
+```bash
+#!/bin/bash
+echo "hello world !"
+exit 0
+```
+
+## Tableaux
+
+```markdown
+| Aligné à gauche | Centré | Aligné à droite |
+|:----------------|:------:|----------------:|
+| a               |   b    |               c |
+| Pas besoin | d'aligner | les cellules ici |
+```
+
+Cela donne :
+
+| Aligné à gauche | Centré | Aligné à droite |
+|:----------------|:------:|----------------:|
+| a               |   b    |               c |
+| Pas besoin | d'aligner | les cellules ici |
+
+La ligne de tirets règle l'alignement (`:` à gauche, aux deux bouts, ou à droite) ; les cellules n'ont pas besoin d'être visuellement alignées dans la source — mais un fichier source lisible reste un objectif en soi.
+
+## Séparateurs
+
+Trois tirets (ou astérisques) seuls sur une ligne, entourés de lignes vides, produisent un filet horizontal :
+
+```markdown
+---
+```
+
+## Convertir : pandoc
+
+Markdown n'est pas une impasse : pandoc le convertit vers (et depuis) l'essentiel des formats de documents.
+
+```console
+jmc@laptop ~ $ sudo apt install pandoc texlive-latex-base texlive-latex-recommended
+jmc@laptop ~ $ pandoc doc.md -o doc.html     # HTML
+jmc@laptop ~ $ pandoc doc.md -o doc.pdf      # PDF (via LaTeX, d'où texlive)
+jmc@laptop ~ $ pandoc doc.md -o doc.odt      # LibreOffice
+jmc@laptop ~ $ pandoc doc.md -o doc.tex      # LaTeX
+```
+
+## Exercices
+
+<Exercise id="md-doc-commande" level={1}>
+  Avec Vim, créez un fichier `doc.md` qui documente la commande `ls` : un titre de niveau 1 « Documentation de la commande ls », un paragraphe expliquant à quoi elle sert, un bloc de code montrant un exemple d'utilisation, et une liste à puces de ses options courantes.
+
+  <Fragment slot="solution">
+    ````markdown
+    # Documentation de la commande ls
+
+    La commande `ls` liste le contenu d'un répertoire :
+    fichiers, sous-répertoires, et — avec les bonnes options —
+    leurs droits, tailles et dates.
+
+    ```bash
+    ls -lh /etc
+    ```
+
+    Options courantes :
+
+    - `-l` : format long (droits, propriétaire, taille, date) ;
+    - `-a` : inclut les fichiers cachés ;
+    - `-h` : tailles lisibles (Ko, Mo) ;
+    - `-t` : tri par date de modification.
+    ````
+
+    Notez le code en ligne autour de `ls` et le bloc `bash` : documenter une commande sans blocs de code lisibles, c'est condamner le lecteur à deviner ce qui se tape.
+  </Fragment>
+</Exercise>
+
+<Exercise id="md-readme" level={2}>
+  Toujours avec Vim, créez le `README.md` d'un projet fictif : titre de niveau 1 « Mon projet », une section de description, un lien externe, une liste **numérotée** des étapes d'installation, et un bloc de code avec la commande d'installation.
+
+  <Fragment slot="solution">
+    ````markdown
+    # Mon projet
+
+    ## Description
+
+    Un outil de sauvegarde incrémentale pour les répertoires
+    personnels, écrit en Bash.
+
+    Inspiré de [rsync](https://rsync.samba.org/).
+
+    ## Installation
+
+    1. Cloner le dépôt ;
+    2. Rendre le script exécutable ;
+    3. Lancer une première sauvegarde.
+
+    ```bash
+    git clone https://forge.example.org/mon-projet.git
+    cd mon-projet && chmod u+x sauvegarde.sh
+    ./sauvegarde.sh ~/documents
+    ```
+    ````
+
+    La structure type d'un README : **quoi** (description), **pourquoi** (lien, contexte), **comment** (installation pas à pas). Un bon README suffit souvent comme documentation d'un petit projet.
+  </Fragment>
+</Exercise>
+
+<Exercise id="md-pandoc" level={2}>
+  Installez pandoc et convertissez vos deux fichiers précédents en HTML, LaTeX, ODT et PDF. Consultez `man pandoc` pour découvrir comment forcer explicitement le format de sortie.
+
+  <Fragment slot="solution">
+    ```console
+    jmc@laptop ~ $ sudo apt install pandoc texlive-latex-base texlive-latex-recommended
+    jmc@laptop ~ $ for f in doc README; do
+    >   pandoc "$f.md" -o "$f.html"
+    >   pandoc "$f.md" -o "$f.tex"
+    >   pandoc "$f.md" -o "$f.odt"
+    >   pandoc "$f.md" -o "$f.pdf"
+    > done
+    ```
+
+    Pandoc déduit le format de l'extension de sortie ; `-t html` / `-f markdown` (*to*, *from*) le forcent explicitement (`man pandoc`). Et remarquez la boucle `for` : l'automatisation du module Bash commence déjà à servir.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Markdown structure du **texte brut lisible** : titres `#`, listes `-`/`1.`, liens `[…](…)`, images `![…](…)`, code `` ` `` et ```` ``` ````, tableaux `|`.
+- Sa force : lisible sans rendu, compris partout, versionnable, convertible (pandoc).
+- Le trio Vim + Markdown + Git couvre l'essentiel de la documentation technique d'une équipe d'administration système.
+
+## Ressources supplémentaires
+
+- [Markdown Guide](https://www.markdownguide.org/) — guide complet ;
+- [GitHub : Mastering Markdown](https://guides.github.com/features/mastering-markdown/) — les spécificités GitHub ;
+- [Dillinger](https://dillinger.io/) — éditeur en ligne avec aperçu.

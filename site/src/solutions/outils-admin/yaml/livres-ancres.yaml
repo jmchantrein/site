@@ -1,0 +1,38 @@
+---
+# Exercise 4 solution: remove author redundancy with an anchor (&) and
+# aliases (*). Default author (exercise rule): Aldous Huxley, born 1894,
+# British — the birth year is explicitly typed as an integer (!!int).
+# "1984" overrides the non-shared fields with the merge key (<<).
+auteur_defaut: &auteur_defaut
+  nom: Aldous Huxley
+  naissance: !!int 1894
+  nationalite: britannique
+
+livres:
+  - titre: Le meilleur des mondes
+    auteur: *auteur_defaut
+    annee_publication: 1932
+    genre: Dystopie
+    mots_cles:
+      - dystopie
+      - politique
+      - science-fiction
+  - titre: Les portes de la perception
+    auteur: *auteur_defaut
+    annee_publication: 1954
+    genre: Essai
+    mots_cles:
+      - philosophie
+      - perception
+      - science
+  - titre: "1984"
+    auteur:
+      <<: *auteur_defaut
+      nom: George Orwell
+      naissance: !!int 1903
+    annee_publication: 1949
+    genre: Dystopie
+    mots_cles:
+      - dystopie
+      - politique
+      - science-fiction

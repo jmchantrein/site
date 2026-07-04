@@ -323,7 +323,13 @@ conservés aux points structurants.
    renumérotation des `order` Docker ; entrées `SERIES` ; extension du
    harnais (bats, yamllint, ansible-lint). → *jalon : valider le rendu
    Duo et le gabarit sur un module court.*
-2. Modules courts : YAML & JSON, Markdown, Vim.
+2. Modules courts : YAML & JSON, Markdown, Vim — **réalisés**
+   (juillet 2026, FR/EN, `status: [construction]` en attente de
+   relecture ; corrigés YAML réels testés par
+   `scripts/test-solutions-yaml.sh` — harnais frère, sans Docker —
+   rejoué en CI avec yamllint + yq ; corrections § 7 intégrées :
+   booléens YAML 1.1/1.2, note « deux yq », IaC/IaaS, bloc scalaire,
+   ligne « types explicites » du tableau, image Markdown locale).
 3. Bash ×2 (+ corrigés bats), sed & awk (exercices réécrits).
 4. SSH (+ tmux), WireGuard (+ mini-labo).
 5. Git (+ rejeu harnais).

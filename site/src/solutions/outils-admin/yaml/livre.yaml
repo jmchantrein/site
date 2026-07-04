@@ -1,0 +1,10 @@
+---
+# Exercise 1 solution: describe book #1 with the required fields.
+titre: "1984"
+auteur: George Orwell
+annee_publication: 1949
+genre: Dystopie
+mots_cles:
+  - dystopie
+  - politique
+  - science-fiction
