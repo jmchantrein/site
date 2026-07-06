@@ -1,0 +1,6 @@
+# Handlers run AT THE END of the play, once, and only if notified.
+---
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted

@@ -1,0 +1,20 @@
+# The inventory: the machines Ansible manages, organized in groups.
+# In the lab the names resolve through Docker's DNS; on a real network,
+# ansible_host would carry an IP address or a FQDN.
+all:
+  hosts:
+    managed-node-1:
+      ansible_host: managed-node-1
+    managed-node-2:
+      ansible_host: managed-node-2
+
+# A group is a set of hosts a play (or an ad hoc command) can target.
+mon_groupe:
+  hosts:
+    managed-node-1:
+    managed-node-2:
+
+# The site-web.yml playbook deploys the nginx_hello_world role on this group.
+web_server:
+  hosts:
+    managed-node-1:

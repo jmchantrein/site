@@ -1,0 +1,28 @@
+# The role's tasks: install nginx, publish the page, template the vhost.
+# The template task NOTIFIES the restart handler: nginx only restarts when
+# its configuration actually changed — that is the whole point of handlers.
+---
+- name: Install the nginx package
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Publish the Hello world page
+  ansible.builtin.copy:
+    src: index.html
+    dest: /var/www/html/index.html
+    owner: www-data
+    group: www-data
+    mode: "0644"
+
+- name: Configure nginx on port {{ nginx_hello_world_port }}
+  ansible.builtin.template:
+    src: etc_nginx_sites_available_default.j2
+    dest: /etc/nginx/sites-available/default
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Ensure nginx is running
+  ansible.builtin.service:
+    name: nginx
+    state: started

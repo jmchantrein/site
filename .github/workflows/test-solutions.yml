@@ -19,6 +19,7 @@ on:
       - "site/scripts/test-solutions-yaml.sh"
       - "site/scripts/test-solutions-bash.sh"
       - "site/scripts/test-solutions-wireguard.sh"
+      - "site/scripts/test-solutions-ansible.sh"
       - ".github/workflows/test-solutions.yml"
 
 jobs:
@@ -36,8 +37,8 @@ jobs:
         working-directory: site
         run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
       # Corrigés YAML et Bash/sed-awk (série Outils) — rapides, sans Docker.
-      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats)
-        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats
+      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats, ansible-lint)
+        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats ansible-lint
       - name: Corrigés YAML (module YAML & JSON)
         working-directory: site
         run: bash scripts/test-solutions-yaml.sh --up
@@ -49,3 +50,9 @@ jobs:
       - name: Mini-labo WireGuard (tunnel Docker)
         working-directory: site
         run: bash scripts/test-solutions-wireguard.sh
+      # Labo Ansible (série Ansible) — lint + syntax-check, puis labo Docker
+      # complet : les playbooks passent DEUX fois, le second doit dire
+      # changed=0 — la CI incarne l'idempotence enseignée.
+      - name: Labo Ansible (lint + idempotence)
+        working-directory: site
+        run: bash scripts/test-solutions-ansible.sh --up

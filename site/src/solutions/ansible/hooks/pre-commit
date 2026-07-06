@@ -1,0 +1,39 @@
+#!/bin/bash
+# Git pre-commit hook: refuse the commit if shellcheck or ansible-lint
+# complains. Install it with:  cp hooks/pre-commit .git/hooks/pre-commit
+#
+# Only the files STAGED for this commit are checked (git diff --cached),
+# not the whole tree: linting everything on each commit would not scale
+# with the repository — and the point of a hook is to gate what enters.
+set -euo pipefail
+
+exit_status=0
+
+# Staged files only: Added, Copied or Modified.
+staged="$(git diff --cached --name-only --diff-filter=ACM)"
+
+# Shell scripts → shellcheck
+while IFS= read -r f; do
+  case "$f" in
+    *.bash | *.sh)
+      if ! shellcheck "$f"; then
+        echo "shellcheck refuses ${f} — fix it before committing." >&2
+        exit_status=1
+      fi
+      ;;
+  esac
+done <<< "$staged"
+
+# Ansible files (YAML) → ansible-lint
+while IFS= read -r f; do
+  case "$f" in
+    *.yaml | *.yml)
+      if ! ansible-lint "$f"; then
+        echo "ansible-lint refuses ${f} — fix it before committing." >&2
+        exit_status=1
+      fi
+      ;;
+  esac
+done <<< "$staged"
+
+exit "$exit_status"

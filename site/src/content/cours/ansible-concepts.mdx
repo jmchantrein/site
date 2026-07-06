@@ -1,0 +1,146 @@
+---
+title: "Ansible : les concepts"
+description: "Décrire l'état voulu de ses machines plutôt qu'énumérer des commandes : inventaire, modules, playbooks, idempotence, rôles — le vocabulaire complet avant le TP."
+order: 20
+serie: ansible
+topics: [linux, reseau]
+duration: 25
+badge: "Ansible"
+tags: [ansible, IaC, playbook, idempotence, rôles]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Toute la série Outils convergeait ici. Vous savez éditer (Vim), scripter (Bash), transformer du texte (sed & awk), vous connecter à des machines distantes (SSH), versionner (Git) et écrire du YAML : **Ansible** assemble tout cela en une seule pratique — décrire la configuration de ses machines dans des fichiers, et laisser l'outil les amener dans l'état décrit. Objectifs :
+
+- comprendre ce qu'est la **gestion de configuration** et l'*infrastructure as code* ;
+- connaître le modèle d'Ansible : nœud de contrôle, nœuds gérés, inventaire, modules, playbooks ;
+- comprendre l'**idempotence** — le contrat central, celui que le TP vérifiera en CI ;
+- savoir ce qu'apportent rôles, handlers, templates, collections et vault.
+
+## Le problème : administrer N machines
+
+Administrer une machine à la main, vous savez faire. Dix machines ? Une boucle Bash sur `ssh` fonctionne encore — jusqu'au jour où la machine 7 était éteinte pendant la boucle, où la 3 avait déjà la moitié de la configuration, et où personne ne sait plus *pourquoi* la 9 diffère des autres. Le script d'administration **énumère des actions** ; ce qu'il faudrait, c'est décrire un **état** : « sur toutes ces machines, nginx est installé, configuré ainsi, et démarré ».
+
+C'est le renversement de la **gestion de configuration** : l'état voulu vit dans des fichiers — donc versionnés dans Git, relus, testés — et un outil compare cet état à la réalité de chaque machine, en ne faisant que les actions manquantes. Décrire son infrastructure dans des fichiers versionnés porte un nom : **infrastructure as code** (IaC).
+
+<Note type="info" title="IaC, pas IaaS">
+  Deux sigles voisins, deux concepts sans rapport : l'**IaC** (*infrastructure as code*) est la pratique qu'on vient de décrire ; l'**IaaS** (*Infrastructure as a Service*) est une offre de cloud — louer des machines virtuelles à la demande. Le support d'origine de ce cours les confondait ; vous croiserez la confusion ailleurs, elle est fréquente.
+</Note>
+
+## Le modèle d'Ansible
+
+<Duo>
+  Ansible distingue deux rôles. Le **nœud de contrôle** (*control node*) est la machine où Ansible est installé : elle porte l'inventaire, les playbooks, et applique les changements. Les **nœuds gérés** (*managed nodes*) sont les machines administrées — et c'est la grande élégance d'Ansible : ils n'hébergent **aucun agent**. Un serveur SSH et un interpréteur Python suffisent, autrement dit ce que toute machine Linux a déjà. Ansible pousse par SSH de petits programmes Python (les modules), les exécute, récupère le résultat, et ne laisse rien derrière lui.
+
+  <Fragment slot="media">
+    <AnsibleMap />
+  </Fragment>
+</Duo>
+
+Trois conséquences pratiques : rien à installer ni maintenir sur les machines gérées (l'approche *agentless*, à l'inverse de Puppet ou Chef historiques) ; la sécurité est celle de SSH — clés, comptes, pare-feu du module précédent s'appliquent tels quels ; et tout ce que vous avez appris sur SSH (config client, `ssh-copy-id`) est directement réinvesti.
+
+## L'inventaire : qui gère-t-on ?
+
+L'**inventaire** est la liste des machines gérées, organisée en **groupes**, écrite le plus souvent en YAML :
+
+```yaml
+all:
+  hosts:
+    managed-node-1:
+      ansible_host: 203.0.113.10
+    managed-node-2:
+      ansible_host: 203.0.113.11
+
+web_server:
+  hosts:
+    managed-node-1:
+```
+
+Une machine peut appartenir à plusieurs groupes (`web_server`, `production`, `angers`…) ; un groupe est la cible naturelle d'une commande ou d'un playbook. Les **variables** se déclarent au niveau le plus pertinent : `group_vars/all.yaml` pour tout le monde, `group_vars/web_server.yaml` pour un groupe, `host_vars/managed-node-1.yaml` pour une seule machine. En cas de conflit, **le plus spécifique gagne** : une variable de `host_vars` masque celle de `group_vars` — c'est la *précédence* des variables, que le TP vous fera constater.
+
+## Modules et commandes ad hoc
+
+Le **module** est l'unité d'action d'Ansible : `ansible.builtin.apt` installe des paquets, `ansible.builtin.copy` dépose des fichiers, `ansible.builtin.service` gère les services, `ansible.builtin.ping` vérifie qu'un nœud répond… Il en existe des milliers, chacun documenté. Un module s'invoque directement — une commande **ad hoc** :
+
+```console
+ada@control-node ~ $ ansible all -m ping
+managed-node-1 | SUCCESS => { "ping": "pong" }
+managed-node-2 | SUCCESS => { "ping": "pong" }
+```
+
+Les **facts** méritent une mention : avant d'agir, Ansible collecte automatiquement une carte d'identité de chaque nœud (distribution, adresses, CPU, mémoire… le module `setup`), disponible dans les variables `ansible_*` — vos playbooks peuvent donc s'adapter à ce qu'ils trouvent.
+
+## Playbooks : l'état voulu, en YAML
+
+Le **playbook** est un fichier YAML qui applique des **tâches** (chacune : un module + ses paramètres) à des hôtes de l'inventaire :
+
+```yaml
+---
+- name: Install the infrastructure's web servers
+  hosts: web_server
+  tasks:
+    - name: Install the nginx package
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+```
+
+Lisez la tâche : elle ne dit pas « installe nginx » mais « nginx est présent » (`state: present`). La nuance est toute la philosophie de l'outil : le playbook décrit un état ; `ansible-playbook` le **réconcilie** avec la réalité.
+
+## L'idempotence : le contrat central
+
+Une action est **idempotente** si la rejouer ne change plus rien après la première fois. Les modules Ansible sont écrits pour l'être : `apt` n'installe pas un paquet déjà présent (`changed=0` au second passage), `copy` ne réécrit pas un fichier identique, `service` ne redémarre pas un service déjà démarré.
+
+Pourquoi c'est central : vous pouvez relancer un playbook **sans risque** — après une panne au milieu, après une modification, tous les jours par cron. Le playbook cesse d'être un script qu'on ose à peine rejouer, et devient la **définition vivante** de votre infrastructure : la machine est dans l'état du playbook, toujours, et la sortie `changed=…` vous dit exactement ce qui a dérivé.
+
+<Note type="warning" title="L'idempotence se perd facilement">
+  Les modules `shell` et `command` exécutent ce qu'on leur donne, à chaque passage — Ansible ne peut pas deviner leur effet. Un `echo hello >> /fichier` mal placé et chaque exécution allonge le fichier : idempotence brisée. La règle : **chercher d'abord le module dédié** (il y en a presque toujours un) ; ne recourir à `shell`/`command` qu'en dernier ressort, avec des gardes (`when`, `changed_when`) — le TP vous fera casser puis réparer l'idempotence, et le harnais de ce site rejoue chaque playbook deux fois en CI pour exiger `changed=0`.
+</Note>
+
+## Rôles : factoriser et distribuer
+
+Quand un playbook grossit, on le découpe en **rôles** : un rôle regroupe tout ce qu'il faut pour un service (tâches, fichiers, templates, variables par défaut, handlers) dans une arborescence conventionnelle :
+
+```text
+roles/nginx_hello_world/
+├── defaults/main.yml      # variables par défaut (surchargeables)
+├── files/index.html       # fichiers déposés tels quels
+├── handlers/main.yml      # actions déclenchées par notify
+├── meta/main.yml          # métadonnées (auteur, licence, plateformes)
+├── tasks/main.yml         # les tâches du rôle
+└── templates/…            # gabarits Jinja2
+```
+
+Deux mécanismes s'y rencontrent :
+
+- les **templates** : des fichiers à trous (syntaxe **Jinja2** : `{{ variable }}`) remplis au déploiement — une seule configuration nginx, un port différent par environnement ;
+- les **handlers** : des tâches déclenchées seulement si une autre tâche a **changé** quelque chose (`notify`) — nginx ne redémarre que si sa configuration a effectivement été modifiée. L'idempotence, jusque dans les redémarrages.
+
+Les rôles se partagent : **Ansible Galaxy** est leur dépôt communautaire (`ansible-galaxy install geerlingguy.docker` — un rôle éprouvé qui installe Docker), et les **collections** en sont le format de distribution moderne (rôles + modules + plugins versionnés ensemble). Réflexe professionnel : avant d'écrire un rôle, regarder si la communauté ne l'a pas déjà écrit — puis **lire son code**, ce sont d'excellents cours de bonnes pratiques.
+
+## L'outillage autour
+
+Le cycle de travail complet mobilise toute la série Outils :
+
+- **ansible-lint** vérifie playbooks et rôles (syntaxe, bonnes pratiques, pièges d'idempotence) — le linter des fichiers Ansible, comme shellcheck pour Bash ;
+- **Git** versionne le tout, avec des hooks qui refusent un commit non linté ;
+- **Ansible Vault** chiffre les secrets (mots de passe, clés d'API) *dans* le dépôt : les fichiers sensibles restent versionnés, mais illisibles sans la clé ;
+- **Molecule** teste les rôles dans des conteneurs jetables — écrire un test, jouer le rôle, vérifier l'état, détruire.
+
+## Récapitulatif
+
+- **Gestion de configuration** : décrire un **état** dans des fichiers versionnés (IaC), pas énumérer des actions — et ne pas confondre IaC et IaaS.
+- Modèle : **nœud de contrôle** → SSH → **nœuds gérés**, sans agent (sshd + Python suffisent).
+- **Inventaire** (machines, groupes, variables — le plus spécifique gagne), **modules** (l'unité d'action), **playbooks** (l'état voulu en YAML), **facts** (ce qu'Ansible sait des nœuds).
+- **Idempotence** : rejouer ne change rien — méfiance envers `shell`/`command`, confiance dans les modules dédiés.
+- **Rôles** (+ templates Jinja2, handlers), **Galaxy** et **collections** pour réutiliser ; **ansible-lint**, **Vault**, **Molecule** pour la qualité.
+- La suite est pratique : le TP monte un labo complet (un nœud de contrôle, deux nœuds gérés) et déroule tout ce vocabulaire.
+
+## Ressources supplémentaires
+
+- [Documentation officielle Ansible](https://docs.ansible.com/) — le TP vous y renverra systématiquement : c'est la source ;
+- [Ansible Galaxy](https://galaxy.ansible.com/) — rôles et collections communautaires ;
+- [Playlist Ansible de Xavki](https://www.youtube.com/playlist?list=PLn6POgpklwWoCpLKOSw3mXCqbRocnhrh-) — en français, très progressive.

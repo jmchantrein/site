@@ -1,0 +1,10 @@
+# Managed node for the Ansible lab: all it takes to be managed is an SSH
+# *server* and Python — no agent, nothing Ansible-specific.
+# python3-apt lets Ansible's apt module talk to dpkg/apt.
+FROM debian:bookworm-slim
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      openssh-server python3 python3-apt procps \
+    && mkdir -p /run/sshd
+# NOTE: the apt package lists are kept on purpose (no rm -rf) so the lab's
+# playbooks can apt-install packages without an update_cache step.
+CMD ["/usr/sbin/sshd", "-D"]

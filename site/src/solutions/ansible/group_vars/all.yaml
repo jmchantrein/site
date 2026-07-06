@@ -1,0 +1,4 @@
+# Variables for every host of the "all" group.
+# host_vars/<host>.yaml takes precedence over group_vars: managed-node-1
+# will display its own welcome_msg, managed-node-2 this one.
+welcome_msg: "Bonjour le monde from group_vars"

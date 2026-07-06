@@ -1,0 +1,15 @@
+# Install the packages every node should carry. Idempotent by construction:
+# the apt module describes a STATE ("these packages are present"), so a
+# second run finds nothing to do and reports changed=0.
+# (state: latest would break that contract — see the course.)
+---
+- name: Install common software
+  hosts: all
+  tasks:
+    - name: Install the common package list
+      ansible.builtin.apt:
+        name:
+          - htop
+          - ncdu
+          - vim
+        state: present
