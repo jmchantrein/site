@@ -1,0 +1,105 @@
+---
+title: "local n'est pas ce que vous croyez : la portée dynamique de Bash"
+description: "Une variable locale Bash est visible — et modifiable — par toutes les fonctions appelées. Démonstrations exécutables : portée dynamique, local -r, sous-shell vs nouveau processus, et l'attribut readonly qui ne survit pas à export."
+topics: [linux]
+duration: 8
+date: 2026-07-06
+status: [construction]
+provenance:
+  by: human
+  reviewedBy: ai
+  model: "Claude Fable 5"
+  aiShare: 40
+---
+
+## Le piège
+
+Tous les langages déconseillent les variables globales, et Bash n'y échappe pas : le [module sur les scripts robustes](../../cours/bash-scripts/) vous a fait déclarer `local` dans chaque fonction. Voici la mauvaise nouvelle : **`local` ne veut pas dire ce que vous croyez.** La preuve en quinze lignes — le script est un fichier réel, rejoué par le harnais du site, et la sortie montrée est la sortie réelle :
+
+<CodeFile path="miscelanea/local/portee-locale.bash" lang="bash" />
+
+```console
+ada@laptop ~ $ ./portee-locale.bash
+  ___visiteuse voit : « déclarée dans main »
+de retour dans main : « modifiée par ___visiteuse »
+```
+
+`___visiteuse` ne déclare rien, ne reçoit aucun argument — et pourtant elle **lit** la variable locale de `main`, et sa modification **écrase** la valeur de `main`. Si vous venez de C, de Python ou de JavaScript, ce comportement est un contresens complet.
+
+## Portée lexicale, portée dynamique
+
+Dans les langages à portée **lexicale** (C, Python, JavaScript…), la visibilité d'une variable se lit dans le **texte** du programme : une variable locale n'existe que dans le bloc qui la déclare. Bash, lui, pratique la portée **dynamique** : `local` signifie « locale à l'**appel** » — la variable vit tant que la fonction qui l'a déclarée est sur la pile, et elle est visible de **toutes les fonctions appelées** pendant ce temps, quelle que soit leur position dans le fichier.
+
+Autrement dit : `local` protège votre appelant (la variable disparaît au retour, elle ne fuit pas *vers le haut*), mais ne protège rien *vers le bas*. Toute la descendance d'appels partage vos locales.
+
+## local -r : la protection qui descend
+
+<CodeFile path="miscelanea/local/portee-readonly.bash" lang="bash" />
+
+```console
+ada@laptop ~ $ ./portee-readonly.bash
+— appel direct (même shell) :
+  je vois : « gravée dans main »
+./portee-readonly.bash: line 10: _constante: readonly variable
+  modification refusée (l'erreur a avorté le sous-shell)
+— appel en sous-shell ( … ) :
+  je vois : « gravée dans main »
+./portee-readonly.bash: line 10: _constante: readonly variable
+  modification refusée (l'erreur a avorté le sous-shell)
+main relit : « gravée dans main »
+```
+
+L'attribut *readonly* de `local -r` **descend avec la variable** : la fonction appelée la voit, mais ne peut pas la modifier — appel direct ou sous-shell, même refus.
+
+<Note type="warning" title="Une affectation refusée n'est pas un simple échec">
+  Dans le script, la tentative de modification est enveloppée dans `( … )`. Ce n'est pas une coquetterie : une affectation à une variable readonly n'échoue pas comme une commande ordinaire — elle **avorte la pile d'appels en cours** (la suite de la fonction *et* de son appelante ne s'exécute plus, sans que le script ne sorte en erreur pour autant). Le sous-shell contient l'avortement, et le `||` reprend la main. Testez sans les parenthèses : la ligne « main relit » disparaît silencieusement.
+</Note>
+
+## Sous-shell : la copie par fork
+
+Jusqu'ici, tout se passait dans le même shell. Les parenthèses `( … )` créent un **sous-shell**, et la règle change :
+
+<CodeFile path="miscelanea/local/portee-sous-shell.bash" lang="bash" />
+
+```console
+ada@laptop ~ $ ./portee-sous-shell.bash
+main : PID=6197, BASHPID=6197
+— appel direct (même shell) :
+  BASHPID=6197 : je vois « déclarée dans main »
+main relit : « modifiée par ___visiteuse »
+— appel en sous-shell ( … ) :
+  BASHPID=6198 : je vois « déclarée dans main »
+main relit : « déclarée dans main »
+```
+
+(Les valeurs numériques varieront chez vous.) Dans le sous-shell, la fonction voit toujours la locale de `main` — mais sa modification **ne remonte plus**. On lit parfois que les variables seraient « exportées implicitement » vers le sous-shell : c'est un abus de langage. Le sous-shell est un **fork** du shell : il démarre avec une **copie complète** de la mémoire de son parent — locales, constantes et attributs compris, `export` ou pas. Deux mondes séparés à partir de là : chacun modifie sa copie.
+
+C'est aussi ce que racontent les deux variables du script : `$$` donne le PID du shell **principal** (il est hérité tel quel par les sous-shells, par compatibilité POSIX), tandis que `BASHPID` donne le PID réel du processus courant. `$$ ≠ BASHPID` est la signature « je suis dans un sous-shell » — et vous êtes dans un sous-shell plus souvent que vous ne le croyez : `( … )`, mais aussi chaque `$( … )` et chaque maillon d'un tube.
+
+## Nouveau processus : rien ne passe, sauf l'export — et il voyage léger
+
+Un sous-shell hérite de tout ; un **nouveau processus** (`bash autre-script.sh`, `bash -c …`, `nohup …`) n'hérite de rien — sauf de l'**environnement**, c'est-à-dire des variables explicitement marquées `export`. Et l'export voyage léger :
+
+<CodeFile path="miscelanea/local/export-processus.bash" lang="bash" />
+
+```console
+ada@laptop ~ $ ./export-processus.bash
+  nouveau processus : je vois « en lecture seule ici »
+  readonly perdu    : « modifiée sans la moindre protestation »
+main relit : « en lecture seule ici » (la copie d'origine, toujours readonly)
+```
+
+`export` transmet des **valeurs** (des chaînes dans l'environnement), pas des variables Bash avec leurs attributs : la constante `local -r` ressort **modifiable** de l'autre côté. Même chose pour `export -f`, qui transmet le **texte** de la fonction pour qu'un `bash -c` la retrouve — c'est le duo classique avec `nohup` pour détacher un traitement long, et c'est précisément dans ce montage qu'on découvre, un jour de production, que ses « constantes » n'en sont plus.
+
+## Ce qu'il faut en retenir
+
+- `local` protège vers le **haut** (la variable meurt au retour), pas vers le **bas** (toutes les fonctions appelées la voient et peuvent l'écraser) : c'est la portée **dynamique**.
+- `local -r` est la seule protection qui descend — au prix d'une sémantique d'erreur brutale (l'affectation refusée avorte la pile).
+- Sous-shell = **fork** = copie de tout, modifications perdues au retour ; nouveau processus = environnement seul, via `export`, **valeurs sans attributs**. `$$` vs `BASHPID` pour savoir où l'on est.
+- En conséquence : une fonction ne devrait manipuler que ses propres locales et ses arguments ; si une fonction doit travailler sur les locales d'une autre, c'est probablement qu'elle devrait être **imbriquée** dans celle-ci — la structure du code dit alors ce que fait le code. Ce n'est pas parce qu'on *peut* atteindre les locales d'autrui qu'on le *doit* ; mais il est nécessaire de savoir que c'est possible, pour comprendre le jour où ça arrive.
+
+## Pour aller plus loin
+
+- `man bash`, sections *FUNCTIONS*, *Command Execution Environment* — les règles complètes ;
+- [BashFAQ/084](https://mywiki.wooledge.org/BashFAQ/084) — retourner une valeur depuis une fonction, proprement ;
+- le [module Bash : scripts robustes](../../cours/bash-scripts/) — le cadre général que cet article vient nuancer.

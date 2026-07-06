@@ -437,7 +437,15 @@ l'introduction du cours Outils. `order` 25-28 :
 ### 10.3 Miscelánea — « les subtilités de bash »
 
 ⬥ Deux **articles de blog** (pas des modules de cours), avec renvois
-croisés depuis les modules Bash de la série Outils :
+croisés depuis les modules Bash de la série Outils —
+**réalisés** (juillet 2026, FR/EN, status construction : démos
+exécutables sous solutions/miscelanea/{local,quoting}/ rejouées par
+test-solutions-bash.sh — 45 OK en local ; terminologie fork/héritage
+corrigée (§ 7 A n° 23) ; mémo quoting réécrit avec exemples originaux
+(pionnières), licence SO écartée ; bonus découvert en rejouant :
+l'affectation d'une readonly avorte la pile d'appels — documenté en
+encart ; renvois croisés posés dans bash-scripts FR/EN ; entrées
+glossaire portée dynamique + word splitting) :
 
 1. « `local` n'est pas ce que vous croyez : la portée **dynamique**
    de Bash » — les scripts de `sources/subtilites_bash/` deviennent
