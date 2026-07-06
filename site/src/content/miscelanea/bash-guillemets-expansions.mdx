@@ -1,0 +1,128 @@
+---
+title: "Guillemets, expansions et sous-shells"
+description: "Pourquoi Grace Hopper perd ses espaces, pourquoi *.txt devient trois fichiers, et ce qui distingue vraiment ' de \" : les règles d'expansion de Bash, démontrées par un script rejoué en CI — avec le mémo à garder sous la main."
+topics: [linux]
+duration: 8
+date: 2026-07-06
+status: [construction]
+provenance:
+  by: human
+  reviewedBy: ai
+  model: "Claude Fable 5"
+  aiShare: 40
+---
+
+## Une disparition d'espaces
+
+Avant d'exécuter la moindre commande, Bash **réécrit** votre ligne : il remplace les variables, développe les motifs, découpe en mots. Ces *expansions* sont la source des bugs les plus sournois du shell — sournois parce que la ligne fautive *a l'air* correcte. Tout l'article tient dans un script (fichier réel, rejoué par le harnais du site — les sorties montrées sont les sorties réelles) :
+
+<CodeFile path="miscelanea/quoting/expansions.bash" lang="bash" />
+
+Déroulons ses six leçons.
+
+## 1–2. Le découpage en mots
+
+```console
+— 1. Découpage en mots (word splitting) —
+Grace Hopper
+Grace     Hopper
+— 2. Une boucle for découpe aussi —
+  bonjour Ada
+  bonjour Grace
+  bonjour Hedy
+  bonjour Ada Grace Hedy
+```
+
+Sans guillemets, le résultat d'une expansion est **redécoupé en mots** sur les espaces, tabulations et sauts de ligne (la variable `IFS`) — puis `echo` recolle ses arguments avec *un* espace : les cinq espaces de `Grace     Hopper` ont disparu en route. Entre guillemets doubles, l'expansion produit **un seul mot**, intact.
+
+La boucle `for` rend le mécanisme visible : `for p in ${pionnieres}` itère sur trois mots ; `for p in "${pionnieres}"` sur un seul. Les deux sont utiles — mais il faut choisir en connaissance de cause, pas par accident.
+
+## 3. Le glob se déclenche sans guillemets
+
+```console
+— 3. Le glob se déclenche sans guillemets —
+ada.txt grace.txt hedy.txt
+*.txt
+```
+
+Deuxième réécriture sur les mots nus : l'**expansion des motifs** (*globbing*). `*.txt` hors guillemets devient la liste des fichiers correspondants du répertoire courant ; entre guillemets (simples ou doubles), l'étoile reste une étoile. Un `rm $motif` mal quoté ne supprime donc pas ce que vous croyez — et ce que vous croyez dépend du répertoire où vous êtes.
+
+## 4. Simples contre doubles : la vraie différence
+
+```console
+— 4. Simples vs doubles guillemets —
+Ada Lovelace
+${pionniere}
+'Ada Lovelace'
+"${pionniere}"
+```
+
+La règle tient en deux lignes :
+
+- entre guillemets **doubles** `"…"`, les expansions (`${…}`, `$(…)`, arithmétique) **ont lieu** ; le découpage en mots et le glob, **non** ;
+- entre guillemets **simples** `'…'`, **rien** n'a lieu : chaque caractère est littéral — et il est donc impossible d'y écrire une apostrophe, même échappée.
+
+Et les guillemets ne s'imbriquent pas « en poupées russes » : des simples **dans** des doubles sont des caractères ordinaires (`"'${pionniere}'"` → `'Ada Lovelace'`), des doubles dans des simples aussi.
+
+## 5. L'antislash et la troisième écriture : $'…'
+
+```console
+— 5. Échappements et cas limites —
+${pionniere} vaut Ada Lovelace
+un dollar seul en fin de chaîne : 100$
+antislash inerte entre simples : \n \t
+antislash inerte entre doubles aussi : \n \t
+mais interprété en ANSI-C ($'…') :
+	nouvelle ligne et tabulation
+```
+
+Trois détails qui déroutent :
+
+- entre doubles, `\$` produit un `$` littéral (c'est l'échappement utile) ; un `$` **sans nom de variable derrière** reste un `$` tout court ;
+- `\n` et `\t` ne sont **pas** des séquences spéciales pour les guillemets — ni simples, ni doubles : `echo` les affiche tels quels ;
+- pour obtenir réellement une nouvelle ligne ou une tabulation dans une chaîne, Bash offre une **troisième** écriture, le *quoting ANSI-C* `$'…'`, qui interprète `\n`, `\t`, `\x27`… C'est aussi le seul endroit où une apostrophe s'échappe (`$'aujourd\'hui'`).
+
+## 6. La substitution de commande est un sous-shell
+
+```console
+— 6. Substitution de commande —
+aujourd'hui : simulé
+aujourd'hui : $(echo simulé)
+```
+
+`$( … )` s'exécute **dans un sous-shell** dont la sortie remplace l'expression — entre guillemets doubles, elle a lieu ; entre simples, elle reste lettre morte. Sous-shell : le mot n'est pas anodin — tout ce que [l'article sur `local`](../bash-local/) raconte s'applique ici aussi (copie par fork, modifications perdues, `BASHPID` différent).
+
+## Le mémo
+
+Les exemples sont originaux — le tableau classique qui circule vient de StackOverflow, sous une licence incompatible avec celle de ce site ; les règles, elles, appartiennent à Bash. `p` vaut `Ada Lovelace` ; le répertoire contient `ada.txt`, `grace.txt`, `hedy.txt`.
+
+| Expression | Résultat | Pourquoi |
+|---|---|---|
+| `"${p}"` | `Ada Lovelace` | les variables s'expansent entre doubles |
+| `'${p}'` | `${p}` | rien ne s'expanse entre simples |
+| `"'${p}'"` | `'Ada Lovelace'` | des simples *dans* des doubles : caractères ordinaires |
+| `'"${p}"'` | `"${p}"` | des doubles *dans* des simples : idem |
+| `${p}` (nu) | `Ada` `Lovelace` | sans guillemets : découpage en deux mots |
+| `*.txt` (nu) | `ada.txt grace.txt hedy.txt` | glob hors guillemets |
+| `"*.txt"` | `*.txt` | glob inerte entre guillemets |
+| `"\${p}"` | `${p}` | `\$` neutralise l'expansion |
+| `"100$"` | `100$` | `$` sans nom de variable : littéral |
+| `'\n'` ou `"\n"` | `\n` | pas de séquences d'échappement dans les guillemets |
+| `$'\n\t'` | *(nouvelle ligne, tabulation)* | le quoting ANSI-C les interprète |
+| `$'\''` | `'` | la seule façon d'échapper une apostrophe « entre simples » |
+| `"$(echo hi)"` | `hi` | la substitution a lieu entre doubles |
+| `'$(echo hi)'` | `$(echo hi)` | et pas entre simples |
+
+<Note type="info" title="Et le point d'exclamation ?">
+  En shell **interactif**, `!` déclenche l'expansion d'historique (`!cmd` rejoue la dernière commande commençant par `cmd`) — y compris entre guillemets doubles, ce qui surprend. Dans un script, l'historique est désactivé : nos démos n'en montrent donc rien. Entre guillemets simples ou en `$'…'`, `!` est toujours littéral.
+</Note>
+
+## La règle pratique
+
+**Quotez tout, en doubles, par défaut** : `"${variable}"`, `"$(commande)"`. Ne retirez les guillemets que lorsque vous *voulez* le découpage ou le glob — et dites-le en commentaire, votre relecteur (et shellcheck, règle SC2086) vous le demandera. Les guillemets simples pour les chaînes vraiment fixes, `$'…'` pour les caractères de contrôle. C'est le prolongement direct des réflexes du [module Bash : scripts robustes](../../cours/bash-scripts/).
+
+## Pour aller plus loin
+
+- `man bash`, section *EXPANSION* — les sept expansions, dans l'ordre où Bash les applique ;
+- [BashPitfalls](https://mywiki.wooledge.org/BashPitfalls) — le bêtisier commenté, dont la moitié sont des erreurs de quoting ;
+- [ShellCheck](https://www.shellcheck.net/) — qui attrape l'immense majorité de ces pièges avant la production.

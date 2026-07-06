@@ -1,0 +1,129 @@
+---
+title: "Quotes, expansions and subshells"
+description: "Why Grace Hopper loses her spaces, why *.txt becomes three files, and what really separates ' from \": Bash's expansion rules, demonstrated by a CI-replayed script — with the memo to keep at hand."
+topics: [linux]
+duration: 8
+date: 2026-07-06
+status: [construction]
+provenance:
+  by: human
+  reviewedBy: ai
+  model: "Claude Fable 5"
+  translated: ai
+  aiShare: 55
+---
+
+## A disappearance of spaces
+
+Before running any command, Bash **rewrites** your line: it substitutes variables, expands patterns, splits into words. These *expansions* are the source of the shell's sneakiest bugs — sneaky because the faulty line *looks* correct. The whole article fits in one script (a real file, replayed by the site's harness — the outputs shown are the real outputs):
+
+<CodeFile path="miscelanea/quoting/expansions.bash" lang="bash" />
+
+Let us unroll its six lessons.
+
+## 1–2. Word splitting
+
+```console
+— 1. Découpage en mots (word splitting) —
+Grace Hopper
+Grace     Hopper
+— 2. Une boucle for découpe aussi —
+  bonjour Ada
+  bonjour Grace
+  bonjour Hedy
+  bonjour Ada Grace Hedy
+```
+
+Unquoted, an expansion's result is **re-split into words** on spaces, tabs and newlines (the `IFS` variable) — then `echo` glues its arguments back with *one* space: the five spaces of `Grace     Hopper` vanished on the way. Inside double quotes, the expansion yields **a single word**, intact.
+
+The `for` loop makes the mechanism visible: `for p in ${pionnieres}` iterates over three words; `for p in "${pionnieres}"` over a single one. Both are useful — but the choice must be deliberate, not accidental.
+
+## 3. The glob fires without quotes
+
+```console
+— 3. Le glob se déclenche sans guillemets —
+ada.txt grace.txt hedy.txt
+*.txt
+```
+
+Second rewriting applied to bare words: **pattern expansion** (*globbing*). Unquoted, `*.txt` becomes the list of matching files in the current directory; quoted (single or double), the star stays a star. A badly quoted `rm $pattern` therefore does not delete what you think — and what you think depends on which directory you are in.
+
+## 4. Single vs double: the real difference
+
+```console
+— 4. Simples vs doubles guillemets —
+Ada Lovelace
+${pionniere}
+'Ada Lovelace'
+"${pionniere}"
+```
+
+The rule fits in two lines:
+
+- inside **double** quotes `"…"`, expansions (`${…}`, `$(…)`, arithmetic) **happen**; word splitting and globbing do **not**;
+- inside **single** quotes `'…'`, **nothing** happens: every character is literal — which is why an apostrophe cannot be written inside them, even escaped.
+
+And quotes do not nest like Russian dolls: single quotes **inside** double quotes are ordinary characters (`"'${pionniere}'"` → `'Ada Lovelace'`), double inside single likewise.
+
+## 5. The backslash and the third quoting: $'…'
+
+```console
+— 5. Échappements et cas limites —
+${pionniere} vaut Ada Lovelace
+un dollar seul en fin de chaîne : 100$
+antislash inerte entre simples : \n \t
+antislash inerte entre doubles aussi : \n \t
+mais interprété en ANSI-C ($'…') :
+	nouvelle ligne et tabulation
+```
+
+Three details that confuse:
+
+- inside double quotes, `\$` yields a literal `$` (that is the useful escape); a `$` **with no variable name after it** stays a plain `$`;
+- `\n` and `\t` are **not** special sequences for quotes — neither single nor double: `echo` prints them as-is;
+- to actually get a newline or a tab inside a string, Bash offers a **third** quoting, *ANSI-C quoting* `$'…'`, which interprets `\n`, `\t`, `\x27`… It is also the only place an apostrophe can be escaped (`$'aujourd\'hui'`).
+
+## 6. Command substitution is a subshell
+
+```console
+— 6. Substitution de commande —
+aujourd'hui : simulé
+aujourd'hui : $(echo simulé)
+```
+
+`$( … )` runs **in a subshell** whose output replaces the expression — inside double quotes it happens; inside single quotes it stays dead letter. Subshell: the word is not innocent — everything [the `local` article](../bash-local/) tells applies here too (copy by fork, lost modifications, different `BASHPID`).
+
+## The memo
+
+The examples are original — the classic table in circulation comes from StackOverflow, under a licence incompatible with this site's; the rules, however, belong to Bash. `p` holds `Ada Lovelace`; the directory contains `ada.txt`, `grace.txt`, `hedy.txt`.
+
+| Expression | Result | Why |
+|---|---|---|
+| `"${p}"` | `Ada Lovelace` | variables expand inside double quotes |
+| `'${p}'` | `${p}` | nothing expands inside single quotes |
+| `"'${p}'"` | `'Ada Lovelace'` | single quotes *inside* double: ordinary characters |
+| `'"${p}"'` | `"${p}"` | double inside single: likewise |
+| `${p}` (bare) | `Ada` `Lovelace` | unquoted: split into two words |
+| `*.txt` (bare) | `ada.txt grace.txt hedy.txt` | glob outside quotes |
+| `"*.txt"` | `*.txt` | glob inert inside quotes |
+| `"\${p}"` | `${p}` | `\$` neutralizes the expansion |
+| `"100$"` | `100$` | `$` with no variable name: literal |
+| `'\n'` or `"\n"` | `\n` | no escape sequences inside quotes |
+| `$'\n\t'` | *(newline, tab)* | ANSI-C quoting interprets them |
+| `$'\''` | `'` | the only way to escape an apostrophe "inside singles" |
+| `"$(echo hi)"` | `hi` | substitution happens inside double quotes |
+| `'$(echo hi)'` | `$(echo hi)` | and not inside single quotes |
+
+<Note type="info" title="What about the exclamation mark?">
+  In an **interactive** shell, `!` triggers history expansion (`!cmd` replays the last command starting with `cmd`) — including inside double quotes, which surprises. In a script, history is disabled: our demos show none of it. Inside single quotes or `$'…'`, `!` is always literal.
+</Note>
+
+## The practical rule
+
+**Quote everything, double, by default**: `"${variable}"`, `"$(command)"`. Only drop the quotes when you *want* splitting or globbing — and say so in a comment; your reviewer (and shellcheck, rule SC2086) will ask. Single quotes for truly fixed strings, `$'…'` for control characters. It is the direct continuation of the reflexes from the [Bash: robust scripts module](../../cours/bash-scripts/).
+
+## Further reading
+
+- `man bash`, section *EXPANSION* — the seven expansions, in the order Bash applies them;
+- [BashPitfalls](https://mywiki.wooledge.org/BashPitfalls) — the annotated blooper reel, half of which are quoting mistakes;
+- [ShellCheck](https://www.shellcheck.net/) — which catches the vast majority of these traps before production.
