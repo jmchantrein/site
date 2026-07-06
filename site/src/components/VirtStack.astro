@@ -1,0 +1,113 @@
+---
+/**
+ * PILE DE VIRTUALISATION LINUX — schéma statique de la chaîne
+ * virsh / virt-manager → libvirt(d) → QEMU → KVM (noyau) → matériel.
+ * Le point du dessin : chaque couche ne parle qu'à sa voisine, et la
+ * frontière espace utilisateur / noyau passe entre QEMU et KVM.
+ * Thémable, accessible — remplace une capture d'écran.
+ *
+ * Usage MDX :
+ *   <VirtStack />
+ */
+import { pageLocale } from "../lib/locale";
+
+const locale = pageLocale(Astro.url);
+const label = {
+  fr: "Pile de virtualisation Linux : les clients virsh et virt-manager parlent au démon libvirtd, qui pilote QEMU en espace utilisateur ; QEMU s'appuie sur le module noyau KVM, qui commande la virtualisation matérielle du processeur.",
+  en: "Linux virtualization stack: the virsh and virt-manager clients talk to the libvirtd daemon, which drives QEMU in userspace; QEMU relies on the KVM kernel module, which commands the processor's hardware virtualization.",
+}[locale];
+
+const layers = [
+  { name: "virsh · virt-manager", note: { fr: "clients (CLI · GUI)", en: "clients (CLI · GUI)" }, zone: "user" },
+  { name: "libvirtd", note: { fr: "démon d'abstraction", en: "abstraction daemon" }, zone: "user" },
+  { name: "QEMU", note: { fr: "émulation & périphériques", en: "emulation & devices" }, zone: "user" },
+  { name: "KVM", note: { fr: "module du noyau", en: "kernel module" }, zone: "kernel" },
+  { name: { fr: "Matériel (VT-x / AMD-V)", en: "Hardware (VT-x / AMD-V)" }, note: { fr: "virtualisation assistée", en: "hardware-assisted" }, zone: "hw" },
+];
+---
+<figure class="vstack" role="img" aria-label={label}>
+  {layers.map((l, i) => (
+    <>
+      <div class={`vstack__layer vstack__layer--${l.zone}`}>
+        <span class="vstack__name">{typeof l.name === "string" ? l.name : l.name[locale]}</span>
+        <span class="vstack__note">{l.note[locale]}</span>
+      </div>
+      {i < layers.length - 1 && <span class="vstack__arrow" aria-hidden="true">↓</span>}
+    </>
+  ))}
+  <div class="vstack__legend">
+    <span><i class="vstack__dot vstack__dot--user" /><span data-lang="fr">espace utilisateur</span><span data-lang="en">userspace</span></span>
+    <span><i class="vstack__dot vstack__dot--kernel" /><span data-lang="fr">noyau</span><span data-lang="en">kernel</span></span>
+    <span><i class="vstack__dot vstack__dot--hw" /><span data-lang="fr">matériel</span><span data-lang="en">hardware</span></span>
+  </div>
+</figure>
+
+<style>
+  .vstack {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    margin: var(--space-4) 0;
+    font-size: var(--text-sm);
+  }
+  .vstack__layer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: min(100%, 26rem);
+    padding: var(--space-2) var(--space-3);
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .vstack__layer--kernel {
+    border-color: var(--color-accent);
+    background: var(--color-accent-weak);
+  }
+  .vstack__layer--hw {
+    background: var(--color-surface-sunken);
+  }
+  .vstack__name {
+    font-family: var(--font-mono);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-strong);
+  }
+  .vstack__note {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-align: right;
+  }
+  .vstack__arrow {
+    color: var(--color-text-muted);
+    line-height: 1;
+  }
+  .vstack__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+  .vstack__legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .vstack__dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border-strong);
+    background: var(--color-surface);
+  }
+  .vstack__dot--kernel {
+    border-color: var(--color-accent);
+    background: var(--color-accent-weak);
+  }
+  .vstack__dot--hw {
+    background: var(--color-surface-sunken);
+  }
+</style>

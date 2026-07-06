@@ -1,0 +1,28 @@
+<!-- A minimal libvirt domain: what `virsh dumpxml` gives you, reduced to
+     the essentials. To create a sibling VM from an existing one: dumpxml,
+     then change <name>, REMOVE <uuid> and the interface <mac> (libvirt
+     regenerates both), point <source file> to a new disk — virsh define.
+     Note: os/type machine and addresses vary per host; let libvirt fill
+     the gaps rather than copying them blindly. -->
+<domain type="kvm">
+  <name>vm-exemple</name>
+  <memory unit="MiB">2048</memory>
+  <vcpu>1</vcpu>
+  <os>
+    <type arch="x86_64">hvm</type>
+    <boot dev="hd"/>
+  </os>
+  <devices>
+    <disk type="file" device="disk">
+      <driver name="qemu" type="qcow2"/>
+      <source file="/var/lib/libvirt/images/vm-exemple.qcow2"/>
+      <target dev="vda" bus="virtio"/>
+    </disk>
+    <interface type="network">
+      <source network="default"/>
+      <model type="virtio"/>
+    </interface>
+    <console type="pty"/>
+    <graphics type="spice" autoport="yes"/>
+  </devices>
+</domain>

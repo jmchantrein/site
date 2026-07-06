@@ -1,0 +1,124 @@
+---
+title: "Lab: a first VM from the CLI"
+description: "Default NAT network, ISO verified by checksum, virt-install commented option by option: your first virtual machine, entirely from the command line."
+order: 26
+serie: kvm
+topics: [linux]
+badge: "TP"
+tags: [KVM, virt-install, virsh, ISO, sha256]
+terminal: false
+---
+
+## Introduction
+
+The stack is in place ([previous module](../kvm-pile/)); this lab creates your first VM, entirely from the command line — because it is reproducible, scriptable, and because that is how headless servers are administered. Three preparations (network, installation image, verification), one commented command, and the installation.
+
+## The default network
+
+To communicate, VMs must join a network. libvirt defines one out of the box — `default`, in **NAT** mode: VMs reach the outside through the host's address, the outside cannot see them. The right setting to start with ([module 4](../kvm-reseau-stockage/) will explore the other modes).
+
+<Exercise id="kvm-net-default" level={1}>
+  List the libvirt networks (active, then all), start `default` if it is not, make it persistent across host reboots, and observe what appeared on the network-interface side.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo virsh net-list --all
+     Nom       État      Démarrage automatique   Persistant
+    ------------------------------------------------------------
+     default   inactif   non                     oui
+
+    ada@laptop ~ $ sudo virsh net-start default
+    ada@laptop ~ $ sudo virsh net-autostart default
+    ada@laptop ~ $ ip addr show virbr0
+    4: virbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> …
+        inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0
+    ```
+
+    The `default` network created a **bridge** `virbr0` carried by the host (192.168.122.1): that is what the VMs will join, and the host does NAT + DHCP for them. Its XML definition is this one — found under `/usr/share/libvirt/networks/default.xml` on Debian:
+
+    <CodeFile path="kvm/reseau-default.xml" lang="xml" />
+  </Fragment>
+</Exercise>
+
+## The installation image — verified
+
+<Exercise id="kvm-iso" level={1}>
+  Download the latest **Debian stable amd64 netinstall** image, and verify its SHA-256 checksum before any use. Why is this verification not optional?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~/Téléchargements $ sha256sum -c --ignore-missing SHA256SUMS
+    debian-13.1.0-amd64-netinst.iso: Réussi
+    ```
+
+    (The image at [debian.org/CD/netinst](https://www.debian.org/CD/netinst/), the [SHA256SUMS](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS) file next to it.) The **checksum** guarantees two things: that the download is not corrupted, and that the image is the published one — you are about to hand this file total control of a machine, so the "is it the right one?" question comes *before*. A systematic reflex, ISO or not.
+  </Fragment>
+</Exercise>
+
+## Creation: virt-install, option by option
+
+The lab's script (a real file, verified by the site's harness):
+
+<CodeFile path="kvm/premiere-vm.sh" lang="bash" />
+
+Every option counts:
+
+- `--osinfo debian12`: tunes the virtual hardware for the announced guest (`virt-install --osinfo list` for the catalogue);
+- `--memory 2048 --vcpus 1`: 2 GiB of RAM, one virtual processor — revisable afterwards;
+- `--disk …,bus=virtio,size=20`: creates a 20 GiB **qcow2** volume in `/var/lib/libvirt/images/`, attached on the **virtio** bus (the paravirtualized bus: the guest knows it is virtualized and cooperates, instead of being served an emulated legacy IDE controller — incomparable performance);
+- `--network bridge=virbr0`: the VM joins the `default` network's bridge;
+- `--location …`: extracts kernel and initrd from the ISO and launches the installer.
+
+<Exercise id="kvm-installation" level={2}>
+  Launch the creation. In the `virt-viewer` window that opens, run through the Debian installation with two rules: **no graphical environment**, and **an SSH server**. Why these two choices?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ ./premiere-vm.sh ma-premiere-vm
+    Début d'installation…
+    Retrieving 'vmlinuz'
+    Retrieving 'initrd.gz'
+    Allocating 'ma-premiere-vm.qcow2'
+    Création du domaine…
+    ```
+
+    An infrastructure VM is administered **remotely, in text**: a graphical environment would burn RAM and disk for a screen nobody will look at — and the SSH server is precisely the normal entrance (SSH module!). The `virt-viewer` graphical console remains the recourse when the network is broken — the equivalent of the screen plugged in the machine room.
+  </Fragment>
+</Exercise>
+
+<Exercise id="kvm-premiere-connexion" level={2}>
+  Once the installation is done: start the VM if needed, find its IP address, connect over SSH, and prove you are indeed *inside* the VM (processor, memory, disk).
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo virsh start ma-premiere-vm
+    ada@laptop ~ $ sudo virsh domifaddr ma-premiere-vm
+     Nom        Adresse MAC         Protocol     Adresse
+    -------------------------------------------------------------
+     vnet0      52:54:00:8a:2c:1e   ipv4         192.168.122.53/24
+
+    ada@laptop ~ $ ssh ada@192.168.122.53
+    ada@ma-premiere-vm:~$ nproc && free -h | head -2 && df -h / | tail -1
+    1
+                   total        utilisé      libre
+    Mem:           1,9Gi        180Mi        1,6Gi
+    /dev/vda1        19G        1,2G         17G   7% /
+    ```
+
+    One CPU, ~2 GiB of RAM, ~20 GiB of disk on `/dev/vda` (the `v` of **virtio**): these are not your machine's resources, you are in the guest. `virsh domifaddr` queries the `default` network's DHCP lease — no need to go read the VM's screen.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- `default` network: NAT + DHCP through the `virbr0` bridge; `net-start`, `net-autostart`.
+- ISO **verified** (`sha256sum -c`) — never optional.
+- `virt-install`: `--osinfo`, memory/vCPU, **qcow2** disk on the **virtio** bus, network, `--location` — one command, reproducible.
+- Installation without GUI, with SSH: the graphical console is a recourse, not a working mode.
+- `virsh start`, `virsh domifaddr`, then SSH: the VM is administered like any server.
+
+## Further resources
+
+- `man virt-install` — all the options, including `--cloud-init` to go further;
+- [Debian netinstall](https://www.debian.org/CD/netinst/) — the image and its checksums;
+- the [SSH module](../ssh/) — keys and hardening apply to your VM right now.

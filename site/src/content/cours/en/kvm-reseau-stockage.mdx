@@ -1,0 +1,116 @@
+---
+title: "libvirt networking and storage"
+description: "NAT, bridge, isolated network: where to plug your VMs depending on use; storage pools and volumes, and what qcow2 can really do — thin provisioning, snapshots, backing files."
+order: 28
+serie: kvm
+topics: [linux, reseau]
+duration: 20
+badge: "Virtualization"
+tags: [libvirt, network, bridge, qcow2, storage]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+The labs used the `default` network and the standard image directory without questions — that was the point. This module opens both hoods: **where to plug a VM** (and why), and **where its disks live** (and what the qcow2 format offers beyond a raw disk). Goals:
+
+- choose between NAT, bridge and isolated network depending on use;
+- understand pools and volumes, libvirt storage's two notions;
+- exploit qcow2: thin provisioning, snapshots, backing files.
+
+## Three ways to plug a VM
+
+A libvirt network is defined — like everything in libvirt — in XML (`virsh net-define`, then `net-start`/`net-autostart`). Three modes cover most needs:
+
+**NAT** (the labs' `default`): VMs reach the outside *via* the host's address, the outside cannot reach them. Perfect for working VMs — which is why it is the default.
+
+**Bridge**: the VM is plugged **directly into the host's local network** — it gets its own address there (the LAN's DHCP), and everyone sees it as one more machine. The "server" mode: your VM must host a reachable service? This is it. In return, it is exposed like any machine — firewall and SSH hardening stop being optional.
+
+**Isolated**: a virtual switch with no exit at all — the VMs see each other, and nothing else. Ideal for a lab (testing a cluster, an attack, a network configuration) with no risk of leakage.
+
+<Note type="info" title="Reread default.xml">
+  Reread the `default` network definition shown in the [first-VM lab](../tp-kvm-premiere-vm/): `<forward mode="nat"/>`, a `virbr0` bridge, a DHCP range. An isolated network is exactly the same file **without** the `<forward>` element; a bridge to the LAN replaces it all with `<forward mode="bridge"/>` and an existing system bridge. The XML is no obstacle: three lines change.
+</Note>
+
+<Exercise id="kvm-reseau-isole" level={2}>
+  Create an isolated `labo` network (192.168.100.0/24, DHCP), plug your first two VMs into it in addition to their `default` network, and check they reach each other on it. Why "in addition" rather than "instead"?
+
+  <Fragment slot="solution">
+    The XML: `default`'s, without `<forward>`, with `<name>labo</name>`, `virbr1` and the range in 192.168.100.x. Then:
+
+    ```console
+    ada@laptop ~ $ sudo virsh net-define labo.xml && sudo virsh net-start labo
+    ada@laptop ~ $ sudo virsh attach-interface ma-premiere-vm network labo --model virtio --config --live
+    ada@laptop ~ $ sudo virsh attach-interface deuxieme-vm network labo --model virtio --config --live
+    ada@laptop ~ $ sudo virsh domifaddr ma-premiere-vm
+     vnet0   52:54:00:8a:2c:1e   ipv4   192.168.122.53/24
+     vnet2   52:54:00:3f:91:07   ipv4   192.168.100.11/24
+    ```
+
+    Each VM now has two interfaces — like a real server (one administration leg, one service leg). "In addition", because an isolated network has **no exit**: switching the only interface onto it would cut your SSH and the updates. `--config --live` applies both hot *and* in the definition.
+  </Fragment>
+</Exercise>
+
+## Pools and volumes
+
+libvirt storage has two storeys: the **pool** (a space to file disks: a directory, an LVM, an NFS…) and the **volume** (a disk in a pool). The labs used the `default` pool without saying so — the `/var/lib/libvirt/images/` directory:
+
+```console
+ada@laptop ~ $ sudo virsh pool-list
+ Nom       État    Démarrage automatique
+------------------------------------------
+ default   actif   oui
+
+ada@laptop ~ $ sudo virsh vol-list default
+ Nom                      Chemin
+------------------------------------------------------------------
+ ma-premiere-vm.qcow2     /var/lib/libvirt/images/ma-premiere-vm.qcow2
+ deuxieme-vm.qcow2        /var/lib/libvirt/images/deuxieme-vm.qcow2
+```
+
+The abstraction's benefit is the same as for networks: the commands (`vol-create-as`, `vol-delete`, `vol-clone`…) are identical whether the pool is a local directory, an LVM volume or a network share — and a VM describes its disk by pool/volume, not by a hard-coded path.
+
+## qcow2: much more than a disk
+
+The **qcow2** format (*QEMU copy-on-write*, version 2) is QEMU's "smart" disk. Three superpowers:
+
+- **thin provisioning**: the 20 GiB announced in the lab only occupy on the host what is actually written — `qemu-img info` shows both sizes (virtual and real);
+- **internal snapshots**: those of `virsh snapshot-create-as` ([previous lab](../tp-kvm-administrer/)) live *inside* the qcow2 file;
+- **backing files**: a qcow2 can lean on a read-only base image and only record its **differences** — the *copy-on-write* of the name.
+
+```console
+ada@laptop ~ $ sudo qemu-img info /var/lib/libvirt/images/ma-premiere-vm.qcow2
+image: /var/lib/libvirt/images/ma-premiere-vm.qcow2
+file format: qcow2
+virtual size: 20 GiB (21474836480 bytes)
+disk size: 1.34 GiB
+```
+
+<Exercise id="kvm-backing-file" level={3}>
+  In the previous lab, the second VM copied the first one's disk in full. Redo it *copy-on-write*: one shared base image, and one difference disk per VM. What is the gain — and the new constraint?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo qemu-img create -f qcow2 -b /var/lib/libvirt/images/base-debian.qcow2 \
+                     -F qcow2 /var/lib/libvirt/images/troisieme-vm.qcow2
+    ada@laptop ~ $ sudo qemu-img info /var/lib/libvirt/images/troisieme-vm.qcow2 | tail -2
+    backing file: /var/lib/libvirt/images/base-debian.qcow2
+    backing file format: qcow2
+    ```
+
+    Gain: creation is **instant** and the new disk weighs a few kilobytes — ten lab VMs share a single base Debian installation. Constraint: the base image has become **untouchable** — modifying it would corrupt every disk leaning on it (serious hypervisors set it read-only). It is exactly the image-layer mechanism you will meet again in the [Docker series](../conteneurs-vs-vm/) — copy-on-write is an idea that travels.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- libvirt networks: **NAT** (default, hidden VMs), **bridge** (VM = LAN machine, to harden), **isolated** (exitless lab) — three lines of XML apart; a VM can carry several interfaces.
+- Storage: **pools** (where) and **volumes** (what) — same commands whatever the backend.
+- **qcow2**: virtual size ≠ real size (thin provisioning), internal snapshots, copy-on-write **backing files** to clone without copying — at the price of an untouchable base.
+
+## Further resources
+
+- [libvirt network format](https://libvirt.org/formatnetwork.html) and [storage format](https://libvirt.org/formatstorage.html);
+- `man qemu-img` — create, info, convert, snapshot;
+- [Xavki's KVM playlist](https://www.youtube.com/playlist?list=PLn6POgpklwWovnqec6vXcGqZbWgdlxuNC) — the network and storage episodes.

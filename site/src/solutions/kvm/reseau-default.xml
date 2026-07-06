@@ -1,0 +1,14 @@
+<!-- The libvirt "default" network: NAT through the virbr0 bridge.
+     Guests get a 192.168.122.0/24 address by DHCP and reach the outside
+     through the host's address; the outside cannot reach them (NAT).
+     Shipped by libvirt (Debian: /usr/share/libvirt/networks/default.xml). -->
+<network>
+  <name>default</name>
+  <forward mode="nat"/>
+  <bridge name="virbr0"/>
+  <ip address="192.168.122.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.122.2" end="192.168.122.254"/>
+    </dhcp>
+  </ip>
+</network>

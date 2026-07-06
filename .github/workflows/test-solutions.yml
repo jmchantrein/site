@@ -20,6 +20,7 @@ on:
       - "site/scripts/test-solutions-bash.sh"
       - "site/scripts/test-solutions-wireguard.sh"
       - "site/scripts/test-solutions-ansible.sh"
+      - "site/scripts/test-solutions-kvm.sh"
       - ".github/workflows/test-solutions.yml"
 
 jobs:
@@ -37,14 +38,19 @@ jobs:
         working-directory: site
         run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
       # Corrigés YAML et Bash/sed-awk (série Outils) — rapides, sans Docker.
-      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats)
-        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats
+      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats, xmllint)
+        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats libxml2-utils
       - name: Corrigés YAML (module YAML & JSON)
         working-directory: site
         run: bash scripts/test-solutions-yaml.sh --up
       - name: Corrigés Bash, sed/awk et Git (série Outils)
         working-directory: site
         run: bash scripts/test-solutions-bash.sh --up
+      # Série KVM : les VM exigeraient la virtualisation imbriquée (hors de
+      # portée ici) — on valide scripts (shellcheck) et XML libvirt (xmllint).
+      - name: Corrigés KVM (scripts hôte + XML libvirt)
+        working-directory: site
+        run: bash scripts/test-solutions-kvm.sh
       # Mini-labo WireGuard (module WireGuard) — tunnel chiffré entre deux
       # conteneurs, vérifié par un ping à travers le tunnel.
       - name: Mini-labo WireGuard (tunnel Docker)

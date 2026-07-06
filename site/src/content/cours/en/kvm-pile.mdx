@@ -1,0 +1,98 @@
+---
+title: "The Linux virtualization stack"
+description: "KVM turns the Linux kernel into a hypervisor; QEMU emulates, libvirt abstracts, virsh drives: who does what in the stack, and how to check your machine is ready."
+order: 25
+serie: kvm
+topics: [linux]
+duration: 20
+badge: "Virtualization"
+tags: [KVM, QEMU, libvirt, virsh, virtualization]
+terminal: false
+---
+
+## Introduction
+
+You have met virtualization through its concept ([container or virtual machine?](../conteneurs-vs-vm/) — type 1 and 2 hypervisors, VMs vs containers: we will not redo it here) and through its uses (the labs' VPS is a VM). This series crosses to the other side: **turning your Linux machine into a hypervisor**, and administering VMs like a professional — command line first. This module's goals:
+
+- know who does what in the stack: KVM, QEMU, libvirt, virsh;
+- distinguish **emulation** from **hardware-assisted virtualization**;
+- check a machine is ready, and install the tooling.
+
+## The stack, top to bottom
+
+<Duo>
+  When you type `virsh start ma-vm`, four layers work: **virsh** (or virt-manager, its graphical sibling) is a mere *client*; it talks to the **libvirtd** daemon, which translates the request for the hypervisor concerned; **QEMU** provides the VM's virtual hardware (disks, network cards, display…) in userspace; and **KVM**, a kernel module, has the guest's code executed directly by the processor. Each layer only talks to its neighbour — and the userspace / kernel boundary sits between QEMU and KVM.
+
+  <Fragment slot="media">
+    <VirtStack />
+  </Fragment>
+</Duo>
+
+### KVM: the kernel becomes a hypervisor
+
+**KVM** (*Kernel-based Virtual Machine*) is a Linux kernel module (created by Qumranet, merged into the kernel in 2007). Once loaded, it exposes `/dev/kvm` and gives access to the processors' **hardware virtualization** instructions (Intel VT-x, AMD-V): the VM's code runs *directly* on the CPU at near-native speed, the kernel only taking over on sensitive operations. That is what makes KVM a **type 1** hypervisor despite appearances: the hypervisor *is* the kernel.
+
+### QEMU: the virtual hardware — and emulation when needed
+
+A fast CPU is not enough: a VM needs a disk, a network card, a BIOS/UEFI, a display… **QEMU** (*Quick EMUlator*) provides all that virtual hardware, in userspace. QEMU can also **emulate a complete processor** — running ARM code on your x86_64, instruction by instruction: indispensable to test a system from another architecture, but slow. When host and guest share the same architecture, QEMU bypasses its CPU emulation and goes through KVM: the **accelerated** mode, used throughout this series.
+
+<Note type="info" title="KVM, a fork of QEMU? No — the other way round">
+  This course's original notes stated that "KVM is based on a fork of the QEMU project". History goes the other way: KVM was born a kernel module, and it is the *userspace* program `qemu-kvm` that was a QEMU fork, adapted to exploit that module — a fork since merged back into QEMU (version 1.3). The notes' conclusion remains accurate, though: the two projects are interdependent, and the consecrated usage is indeed to speak of **QEMU/KVM**.
+</Note>
+
+### libvirt: the abstraction — and virsh, its client
+
+Driving QEMU by hand is possible (a three-hundred-character command line); nobody does it in administration. **libvirt** — a library and daemon (`libvirtd`) initially developed by Red Hat — offers a unified interface on top of QEMU/KVM but also Xen, LXC, VMware or OpenVZ: VMs, networks and storage volumes are described in **XML**, and the same commands work whatever hypervisor sits below. Its clients: **virsh** on the CLI (the whole series), **virt-manager** graphically, **virt-install** for creation.
+
+## Is your machine ready?
+
+Three checks, in dependency order — the script is a real file, verified by the site's harness:
+
+<CodeFile path="kvm/verifier-hote.sh" lang="bash" />
+
+```console
+ada@laptop ~ $ ./verifier-hote.sh
+✔ CPU : virtualisation matérielle présente (8 threads vmx/svm)
+✔ noyau : /dev/kvm présent (module kvm chargé)
+✔ libvirtd : actif
+```
+
+`vmx` signs an Intel processor (VT-x), `svm` an AMD one (AMD-V). If the flag is missing on a recent processor, virtualization is probably **disabled in the firmware** (BIOS/UEFI) — a setting, not a fatality.
+
+## Installation
+
+```console
+ada@laptop ~ $ sudo apt update && sudo apt install virt-manager
+ada@laptop ~ $ sudo systemctl enable --now libvirtd
+ada@laptop ~ $ sudo systemctl status libvirtd
+● libvirtd.service - libvirt legacy monolithic daemon
+     Active: active (running)
+```
+
+Installing `virt-manager` pulls in everything needed through dependencies — the `qemu-*` packages, libvirt and its tools. `systemctl enable --now` activates the daemon **and** its automatic start with the host.
+
+<Note type="warning" title="Two worlds: session and system">
+  libvirt offers two "buses": `qemu:///system` (VMs managed by root, data under `/var/lib/libvirt/`) and `qemu:///session` (your user's VMs, data under `~/.local/share/libvirt/`). This series' labs work in **system** (hence the `sudo`s): the servers' mode. If `virsh list` shows you an empty world while your VMs exist, first check which bus you are talking to (`virsh uri`).
+</Note>
+
+<Exercise id="kvm-pile-quiz" level={1}>
+  Without rereading: in the chain `virsh` → `libvirtd` → `QEMU` → `KVM` → hardware, which layer provides the VM's virtual disk? Which one executes the guest's code? And what happens if the guest is ARM while the host is x86_64?
+
+  <Fragment slot="solution">
+    The virtual disk (like all virtual hardware) is provided by **QEMU**; the guest's code runs **directly on the processor** thanks to **KVM** (hardware-assisted). If the architectures differ, KVM can no longer serve: QEMU **emulates** the ARM processor instruction by instruction — functional, but performance-wise not in the same league. libvirt "does" none of this: it describes, orchestrates and exposes — which is precisely its value.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- **KVM**: kernel module, access to VT-x/AMD-V — the Linux kernel *is* the hypervisor (type 1).
+- **QEMU**: virtual hardware in userspace; full emulation if architectures differ, KVM acceleration otherwise.
+- **libvirt(d)**: the abstraction (XML, unified API); **virsh**/virt-manager/virt-install, its clients.
+- Ready? `vmx|svm` in `/proc/cpuinfo`, `/dev/kvm` present, `libvirtd` active — `apt install virt-manager` installs everything.
+- Two buses: `qemu:///system` (root, this series) and `qemu:///session` (user).
+
+## Further resources
+
+- [libvirt documentation](https://libvirt.org/docs.html) — XML formats, drivers;
+- [Xavki's KVM playlist](https://www.youtube.com/playlist?list=PLn6POgpklwWovnqec6vXcGqZbWgdlxuNC) — in French, this series' inspiration;
+- `man virsh` — the next three modules' companion.
