@@ -1,0 +1,98 @@
+---
+title: "La pile de virtualisation Linux"
+description: "KVM fait du noyau Linux un hyperviseur ; QEMU émule, libvirt abstrait, virsh pilote : qui fait quoi dans la pile, et comment vérifier que votre machine est prête."
+order: 25
+serie: kvm
+topics: [linux]
+duration: 20
+badge: "Virtualisation"
+tags: [KVM, QEMU, libvirt, virsh, virtualisation]
+terminal: false
+---
+
+## Introduction
+
+Vous avez rencontré la virtualisation par son concept ([conteneur ou machine virtuelle ?](../conteneurs-vs-vm/) — hyperviseurs de type 1 et 2, VM contre conteneurs : on ne le refait pas ici) et par ses usages (le VPS des TP est une VM). Cette série passe de l'autre côté : **faire de votre machine Linux un hyperviseur**, et administrer des VM comme un professionnel — en ligne de commande d'abord. Objectifs de ce module :
+
+- savoir qui fait quoi dans la pile : KVM, QEMU, libvirt, virsh ;
+- distinguer **émulation** et **virtualisation assistée par le matériel** ;
+- vérifier qu'une machine est prête, et installer l'outillage.
+
+## La pile, de haut en bas
+
+<Duo>
+  Quand vous taperez `virsh start ma-vm`, quatre couches travailleront : **virsh** (ou virt-manager, son équivalent graphique) est un simple *client* ; il parle au démon **libvirtd**, qui traduit la demande pour l'hyperviseur concerné ; **QEMU** fournit à la VM son matériel virtuel (disques, cartes réseau, écran…) en espace utilisateur ; et **KVM**, module du noyau, fait exécuter le code de l'invité directement par le processeur. Chaque couche ne parle qu'à sa voisine — et la frontière espace utilisateur / noyau passe entre QEMU et KVM.
+
+  <Fragment slot="media">
+    <VirtStack />
+  </Fragment>
+</Duo>
+
+### KVM : le noyau devient hyperviseur
+
+**KVM** (*Kernel-based Virtual Machine*) est un module du noyau Linux (créé par Qumranet, intégré au noyau en 2007). Chargé, il expose `/dev/kvm` et donne accès aux instructions de **virtualisation matérielle** des processeurs (Intel VT-x, AMD-V) : le code de la VM s'exécute *directement* sur le CPU, à vitesse quasi native, le noyau ne reprenant la main que sur les opérations sensibles. C'est ce qui fait de KVM un hyperviseur de **type 1** malgré les apparences : l'hyperviseur *est* le noyau.
+
+### QEMU : le matériel virtuel — et l'émulation quand il le faut
+
+Un CPU rapide ne suffit pas : une VM a besoin d'un disque, d'une carte réseau, d'un BIOS/UEFI, d'un écran… C'est **QEMU** (*Quick EMUlator*) qui fournit tout ce matériel virtuel, en espace utilisateur. QEMU sait aussi **émuler un processeur complet** — exécuter du code ARM sur votre x86_64, instruction par instruction : indispensable pour tester un système d'une autre architecture, mais lent. Quand hôte et invité partagent la même architecture, QEMU court-circuite son émulation CPU et passe par KVM : c'est le mode **accéléré**, celui de toute la série.
+
+<Note type="info" title="KVM, un fork de QEMU ? Non — l'inverse">
+  Les notes d'origine de ce cours affirmaient que « KVM est basé sur un fork du projet QEMU ». C'est l'histoire inverse : KVM est né module noyau, et c'est le programme *espace utilisateur* `qemu-kvm` qui était un fork de QEMU, adapté pour exploiter ce module — fork refusionné depuis dans QEMU (version 1.3). La conclusion des notes reste, elle, exacte : les deux projets sont interdépendants, et l'usage consacré est bien de parler de **QEMU/KVM**.
+</Note>
+
+### libvirt : l'abstraction — et virsh, son client
+
+Piloter QEMU à la main est possible (une ligne de commande de trois cents caractères) ; personne ne le fait en administration. **libvirt** — bibliothèque et démon (`libvirtd`) développés initialement par Red Hat — offre une interface unifiée au-dessus de QEMU/KVM mais aussi de Xen, LXC, VMware ou OpenVZ : les VM, réseaux et volumes de stockage y sont décrits en **XML**, et les mêmes commandes fonctionnent quel que soit l'hyperviseur dessous. Ses clients : **virsh** en CLI (toute la série), **virt-manager** en graphique, **virt-install** pour créer.
+
+## Votre machine est-elle prête ?
+
+Trois vérifications, dans l'ordre des dépendances — le script est un fichier réel, vérifié par le harnais du site :
+
+<CodeFile path="kvm/verifier-hote.sh" lang="bash" />
+
+```console
+ada@laptop ~ $ ./verifier-hote.sh
+✔ CPU : virtualisation matérielle présente (8 threads vmx/svm)
+✔ noyau : /dev/kvm présent (module kvm chargé)
+✔ libvirtd : actif
+```
+
+`vmx` signe un processeur Intel (VT-x), `svm` un AMD (AMD-V). Si le drapeau manque alors que le processeur est récent, la virtualisation est probablement **désactivée dans le firmware** (BIOS/UEFI) — c'est un réglage, pas une fatalité.
+
+## Installation
+
+```console
+ada@laptop ~ $ sudo apt update && sudo apt install virt-manager
+ada@laptop ~ $ sudo systemctl enable --now libvirtd
+ada@laptop ~ $ sudo systemctl status libvirtd
+● libvirtd.service - libvirt legacy monolithic daemon
+     Active: active (running)
+```
+
+Installer `virt-manager` tire par dépendances tout le nécessaire — les paquets `qemu-*`, libvirt et ses outils. `systemctl enable --now` active le démon **et** son démarrage automatique avec l'hôte.
+
+<Note type="warning" title="Deux mondes : session et système">
+  libvirt offre deux « bus » : `qemu:///system` (VM gérées par root, données sous `/var/lib/libvirt/`) et `qemu:///session` (VM de votre utilisateur, données sous `~/.local/share/libvirt/`). Les TP de la série travaillent en **system** (d'où les `sudo`) : c'est le mode des serveurs. Si `virsh list` vous montre un monde vide alors que vos VM existent, vérifiez d'abord à quel bus vous parlez (`virsh uri`).
+</Note>
+
+<Exercise id="kvm-pile-quiz" level={1}>
+  Sans relire : dans la chaîne `virsh` → `libvirtd` → `QEMU` → `KVM` → matériel, quelle couche fournit le disque virtuel de la VM ? Laquelle exécute le code de l'invité ? Et que se passe-t-il si l'invité est ARM alors que l'hôte est x86_64 ?
+
+  <Fragment slot="solution">
+    Le disque virtuel (comme tout le matériel virtuel) est fourni par **QEMU** ; le code de l'invité s'exécute **directement sur le processeur** grâce à **KVM** (virtualisation assistée). Si les architectures diffèrent, KVM ne peut plus servir : QEMU **émule** le processeur ARM instruction par instruction — fonctionnel, mais sans commune mesure côté performance. libvirt, lui, ne « fait » rien de tout cela : il décrit, orchestre et expose — c'est précisément sa valeur.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- **KVM** : module du noyau, accès à VT-x/AMD-V — le noyau Linux *est* l'hyperviseur (type 1).
+- **QEMU** : le matériel virtuel en espace utilisateur ; émulation complète si les architectures diffèrent, accélération KVM sinon.
+- **libvirt(d)** : l'abstraction (XML, API unifiée) ; **virsh**/virt-manager/virt-install, ses clients.
+- Prêt ? `vmx|svm` dans `/proc/cpuinfo`, `/dev/kvm` présent, `libvirtd` actif — `apt install virt-manager` installe tout.
+- Deux bus : `qemu:///system` (root, la série) et `qemu:///session` (utilisateur).
+
+## Ressources supplémentaires
+
+- [Documentation libvirt](https://libvirt.org/docs.html) — les formats XML, les pilotes ;
+- [Playlist KVM de Xavki](https://www.youtube.com/playlist?list=PLn6POgpklwWovnqec6vXcGqZbWgdlxuNC) — en français, l'inspiration de cette série ;
+- `man virsh` — le compagnon des trois prochains modules.

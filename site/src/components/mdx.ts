@@ -18,6 +18,7 @@ import CodeFile from "./CodeFile.astro";
 import Duo from "./Duo.astro";
 import MachineMap from "./MachineMap.astro";
 import AnsibleMap from "./AnsibleMap.astro";
+import VirtStack from "./VirtStack.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
@@ -40,6 +41,7 @@ export const mdxComponents = {
   Duo,
   MachineMap,
   AnsibleMap,
+  VirtStack,
   G,
   WikiImage,
   Artefact,

@@ -53,6 +53,20 @@ export const SERIES = {
       en: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 70 },
     },
   },
+  kvm: {
+    fr: "Virtualisation avec KVM",
+    en: "Virtualization with KVM",
+    desc: {
+      fr: "L'hyperviseur du noyau Linux, de la pile (virsh, libvirt, QEMU, KVM) à la pratique : créer, définir et administrer des machines virtuelles en ligne de commande.",
+      en: "The Linux kernel's hypervisor, from the stack (virsh, libvirt, QEMU, KVM) to practice: creating, defining and administering virtual machines from the command line.",
+    },
+    /** Trame de l'auteur (sources/virtualisation, inspiration xavki) ;
+        développement et rédaction IA — relecture auteur indispensable. */
+    prov: {
+      fr: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", aiShare: 60 },
+      en: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 80 },
+    },
+  },
   docker: {
     fr: "Fondements de Docker",
     en: "Docker fundamentals",

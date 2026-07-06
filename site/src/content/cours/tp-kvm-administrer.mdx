@@ -1,0 +1,135 @@
+---
+title: "TP : définir et administrer"
+description: "dumpxml, define, autostart, snapshots, cycle de vie : administrer ses VM avec virsh, créer la deuxième depuis le XML de la première — et la troisième en trois clics avec virt-manager."
+order: 27
+serie: kvm
+topics: [linux]
+badge: "TP"
+tags: [virsh, XML, snapshot, autostart, virt-manager]
+terminal: false
+---
+
+## Introduction
+
+Vous avez une VM ([TP précédent](../tp-kvm-premiere-vm/)) ; ce TP vous donne la boîte à outils pour en administrer dix : l'anatomie XML d'une VM, le cycle de vie complet (et la distinction cruciale entre *éteindre*, *détruire* et *effacer*), les instantanés, et la création en série — par XML, puis par l'interface graphique.
+
+## Une VM est un fichier XML
+
+Pour libvirt, votre VM est un **domaine** : une définition XML (matériel, disques, réseau) rangée sous `/etc/libvirt/qemu/`. Tout ce que `virt-install` a construit se relit :
+
+```console
+ada@laptop ~ $ sudo virsh dumpxml ma-premiere-vm | head -8
+<domain type='kvm'>
+  <name>ma-premiere-vm</name>
+  <uuid>7c3e1e2a-9f41-4d6b-b8a3-52540c8a2c1e</uuid>
+  <memory unit='KiB'>2097152</memory>
+  <vcpus placement='static'>1</vcpus>
+  …
+```
+
+Voici la même chose réduite à l'essentiel — le squelette qu'il faut savoir lire (fichier réel, validé par le harnais) :
+
+<CodeFile path="kvm/vm-exemple.xml" lang="xml" />
+
+<Exercise id="kvm-deuxieme-vm" level={3}>
+  Créez une **deuxième VM** à partir du XML de la première : exportez la définition, adaptez-la, définissez le nouveau domaine, donnez-lui un disque, démarrez. Quels champs faut-il impérativement changer ou retirer, et pourquoi ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo virsh dumpxml ma-premiere-vm > deuxieme-vm.xml
+    ada@laptop ~ $ vim deuxieme-vm.xml    # name, uuid, mac, source file
+    ada@laptop ~ $ sudo cp /var/lib/libvirt/images/ma-premiere-vm.qcow2 \
+                           /var/lib/libvirt/images/deuxieme-vm.qcow2
+    ada@laptop ~ $ sudo virsh define deuxieme-vm.xml
+    Domaine « deuxieme-vm » défini depuis deuxieme-vm.xml
+    ada@laptop ~ $ sudo virsh start deuxieme-vm
+    ```
+
+    Quatre retouches : `<name>` (unique), **supprimer** `<uuid>` et la `<mac>` de l'interface (libvirt en régénère — deux machines ne peuvent pas partager ces identités, la MAC dupliquée casserait le réseau), et pointer `<source file>` vers le **nouveau** disque. Copier le qcow2 clone le système entier — utilisable, mais les deux VM partagent alors hostname et clés SSH d'hôte : en production on préfère des images préparées (cloud-init) ou les *backing files* qcow2 du [module suivant](../kvm-reseau-stockage/).
+  </Fragment>
+</Exercise>
+
+## Le cycle de vie — et les trois façons d'« arrêter »
+
+```console
+ada@laptop ~ $ sudo virsh list --all
+ Id   Nom               État
+----------------------------------
+ 3    ma-premiere-vm    en cours d'exécution
+ -    deuxieme-vm       fermé
+
+ada@laptop ~ $ sudo virsh dominfo ma-premiere-vm | head -5
+Id:             3
+Nom:            ma-premiere-vm
+UUID:           7c3e1e2a-9f41-4d6b-b8a3-52540c8a2c1e
+Type de SE:     hvm
+État:           en cours d'exécution
+```
+
+Le vocabulaire qui évite les catastrophes :
+
+- `virsh shutdown` : extinction **propre** (l'invité reçoit l'événement ACPI et s'éteint comme si l'on pressait le bouton) ;
+- `virsh destroy` : **débranche la prise** — l'instance s'arrête net, mais la *définition* et le disque restent : la VM peut redémarrer (nom trompeur, rien n'est « détruit » définitivement) ;
+- `virsh undefine --remove-all-storage` : **efface** la définition *et* le stockage — là, c'est définitif ;
+- `virsh autostart` (et `--disable`) : démarrage automatique avec l'hôte ;
+- `virsh nodeinfo` : les ressources de l'**hôte** (à connaître avant de surallouer).
+
+<Note type="warning" title="destroy ne détruit pas ; undefine, si">
+  La commande la plus mal nommée de virsh : `destroy` = couper le courant (récupérable), `undefine` = faire disparaître (irréversible avec `--remove-all-storage`). Les notes d'origine de ce cours écrivaient d'ailleurs `virsh undefined` — la commande est bien **`undefine`**, sans « d » final. Avant un `undefine`, un réflexe : `dumpxml > sauvegarde.xml`.
+</Note>
+
+## Les instantanés
+
+<Exercise id="kvm-snapshot" level={2}>
+  Prenez un instantané de votre VM, cassez quelque chose *dans* l'invité (supprimez un paquet, sabotez une configuration), puis revenez à l'instantané. Que faut-il comme format de disque ? Et que devient ce qui s'est passé entre les deux ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo virsh snapshot-create-as ma-premiere-vm avant-tp "état sain avant manipulation"
+    Instantané de domaine avant-tp créé
+    ada@laptop ~ $ sudo virsh snapshot-list ma-premiere-vm
+     Nom        Heure de création           État
+    ---------------------------------------------------
+     avant-tp   2026-07-06 11:02:14 +0200   running
+
+    # … sabotage dans l'invité …
+    ada@laptop ~ $ sudo virsh snapshot-revert ma-premiere-vm avant-tp
+    ```
+
+    Les instantanés internes exigent le format **qcow2** (raison de plus de l'avoir choisi). Le retour est total : disque **et** état de la machine (RAM comprise si la VM tournait) reviennent au moment de la photo — tout ce qui s'est passé depuis est perdu, c'est le principe. Le réflexe professionnel : un instantané **avant** toute opération risquée (c'était le prérequis du TP Ansible — `kvm.snapshot` —, vous savez maintenant ce qu'il y avait derrière).
+  </Fragment>
+</Exercise>
+
+## La troisième VM : virt-manager
+
+La même pile, en graphique : **virt-manager** parle à libvirtd exactement comme virsh — tout ce que vous faites dans l'interface se retrouve dans le XML, et réciproquement.
+
+<Exercise id="kvm-virt-manager" level={1}>
+  Créez une troisième VM avec virt-manager (Fichier → Nouvelle machine virtuelle, votre ISO, mêmes réglages qu'au TP précédent). Puis vérifiez-la… en CLI. Que conclure sur la place de l'outil graphique ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo virsh list --all
+     Id   Nom               État
+    ----------------------------------
+     3    ma-premiere-vm    en cours d'exécution
+     5    troisieme-vm      en cours d'exécution
+     -    deuxieme-vm       fermé
+    ```
+
+    virt-manager est un excellent outil de *découverte* (l'anatomie d'une VM y est visuelle) et de *dépannage* (console graphique intégrée). Mais tout ce qu'il fait passe par libvirt : la CLI voit ses VM, et inversement. Pour dix machines, un script `virsh`/`virt-install` sera toujours plus rapide, reproductible et documentable que dix passages d'assistant — le graphique explore, la CLI industrialise.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Une VM libvirt = un **domaine XML** : `dumpxml` pour lire, `define` pour créer — en changeant nom, UUID, MAC et disque.
+- Cycle de vie : `shutdown` (propre) ≠ `destroy` (prise débranchée, récupérable) ≠ `undefine --remove-all-storage` (définitif) ; `autostart` pour suivre l'hôte ; `list --all`, `dominfo`, `nodeinfo` pour l'état des lieux.
+- **Instantanés** (qcow2) : `snapshot-create-as` avant toute opération risquée, `snapshot-revert` pour rembobiner.
+- virt-manager : même pile, en graphique — découvrir et dépanner ; la CLI pour industrialiser.
+
+## Ressources supplémentaires
+
+- `man virsh` — sections *Domain Commands* et *Snapshot Commands* ;
+- [Format des domaines libvirt](https://libvirt.org/formatdomain.html) — le XML de référence ;
+- [Playlist KVM de Xavki](https://www.youtube.com/playlist?list=PLn6POgpklwWovnqec6vXcGqZbWgdlxuNC) — démonstrations en vidéo.

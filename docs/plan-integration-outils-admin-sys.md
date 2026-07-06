@@ -417,7 +417,22 @@ attente de relecture auteur) :
 
 ⬥ Rédaction complète sur la trame de `sources/virtualisation/notes.md`
 (+ inspiration playlist xavki, en lien). C'est le cours annoncé par
-l'introduction du cours Outils. `order` 25-28 :
+l'introduction du cours Outils. `order` 25-28 —
+**réalisés** (juillet 2026, FR/EN, série `kvm`, status construction :
+figure thémable VirtStack (pile virsh→libvirtd→QEMU→KVM→matériel) en
+Duo ; corrections § 11 n° 21-22 intégrées avec encarts (sens du fork
+KVM/qemu-kvm, `undefine` sans « d », virt-manager, OpenVZ/VMware) ;
+corrigés solutions/kvm/ (verifier-hote.sh, premiere-vm.sh commenté,
+reseau-default.xml, vm-exemple.xml) validés par
+scripts/test-solutions-kvm.sh — shellcheck + xmllint, 6 OK, câblé en
+CI (limite virtualisation imbriquée documentée) ; module 4 cadré :
+NAT/pont/isolé, pools/volumes, qcow2 (allocation fine, backing files
+— pont vers les couches Docker), reste en construction pour
+validation du cadrage ; glossaire : virsh, virt-manager, qcow2,
+virtio, pont, pool, somme de contrôle + liens cours sur
+kvm/qemu/libvirt/hyperviseur/émulation/snapshot).
+→ *jalon : relecture auteur (développement majoritairement IA sur
+votre trame) ; le cadrage du module 4 est une proposition.*
 
 | # | Titre de travail | Contenu |
 |---|---|---|

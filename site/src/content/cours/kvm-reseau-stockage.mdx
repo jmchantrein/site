@@ -1,0 +1,116 @@
+---
+title: "Réseau et stockage libvirt"
+description: "NAT, pont, réseau isolé : où brancher ses VM selon l'usage ; pools et volumes de stockage, et ce que qcow2 sait vraiment faire — allocation fine, instantanés, images de base."
+order: 28
+serie: kvm
+topics: [linux, reseau]
+duration: 20
+badge: "Virtualisation"
+tags: [libvirt, réseau, pont, qcow2, stockage]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Les TP ont utilisé le réseau `default` et le répertoire d'images standard sans se poser de questions — c'était le but. Ce module ouvre les deux capots : **où brancher une VM** (et pourquoi), et **où vivent ses disques** (et ce que le format qcow2 offre de plus qu'un disque brut). Objectifs :
+
+- choisir entre NAT, pont et réseau isolé selon l'usage ;
+- comprendre pools et volumes, les deux notions du stockage libvirt ;
+- exploiter qcow2 : allocation fine, instantanés, images de base.
+
+## Trois façons de brancher une VM
+
+Un réseau libvirt se définit — comme tout chez libvirt — en XML (`virsh net-define`, puis `net-start`/`net-autostart`). Trois modes couvrent l'essentiel des besoins :
+
+**NAT** (le `default` des TP) : les VM sortent vers l'extérieur *via* l'adresse de l'hôte, l'extérieur ne peut pas les joindre. Parfait pour des VM de travail — et c'est pour cela que c'est le défaut.
+
+**Pont** (*bridge*) : la VM est branchée **directement sur le réseau local** de l'hôte — elle y obtient sa propre adresse (DHCP du LAN), et tout le monde la voit comme une machine de plus. C'est le mode « serveur » : votre VM doit héberger un service accessible ? C'est ici. En contrepartie, elle est exposée comme n'importe quelle machine — pare-feu et durcissement SSH ne sont plus optionnels.
+
+**Isolé** : un commutateur virtuel sans aucune sortie — les VM se voient entre elles, et rien d'autre. Idéal pour un labo (tester un cluster, une attaque, une configuration réseau) sans risque de fuite.
+
+<Note type="info" title="Relire le default.xml">
+  Relisez la définition du réseau `default` affichée au [TP première VM](../tp-kvm-premiere-vm/) : `<forward mode="nat"/>`, un pont `virbr0`, une plage DHCP. Un réseau isolé, c'est exactement le même fichier **sans** l'élément `<forward>` ; un pont vers le LAN remplace le tout par `<forward mode="bridge"/>` et un pont système existant. Le XML n'est pas un obstacle : c'est trois lignes qui changent.
+</Note>
+
+<Exercise id="kvm-reseau-isole" level={2}>
+  Créez un réseau isolé `labo` (192.168.100.0/24, DHCP), branchez-y vos deux premières VM en plus de leur réseau `default`, et vérifiez qu'elles se joignent sur ce réseau. Pourquoi « en plus » plutôt qu'« à la place » ?
+
+  <Fragment slot="solution">
+    Le XML : celui de `default`, sans `<forward>`, avec `<name>labo</name>`, `virbr1` et la plage en 192.168.100.x. Puis :
+
+    ```console
+    ada@laptop ~ $ sudo virsh net-define labo.xml && sudo virsh net-start labo
+    ada@laptop ~ $ sudo virsh attach-interface ma-premiere-vm network labo --model virtio --config --live
+    ada@laptop ~ $ sudo virsh attach-interface deuxieme-vm network labo --model virtio --config --live
+    ada@laptop ~ $ sudo virsh domifaddr ma-premiere-vm
+     vnet0   52:54:00:8a:2c:1e   ipv4   192.168.122.53/24
+     vnet2   52:54:00:3f:91:07   ipv4   192.168.100.11/24
+    ```
+
+    Chaque VM a maintenant deux interfaces — comme un vrai serveur (une patte d'administration, une patte de service). « En plus », parce qu'un réseau isolé n'a **pas de sortie** : basculer la seule interface dessus vous couperait SSH et les mises à jour. `--config --live` applique à chaud *et* dans la définition.
+  </Fragment>
+</Exercise>
+
+## Pools et volumes
+
+Le stockage libvirt a deux étages : le **pool** (un espace où ranger des disques : un répertoire, un LVM, un NFS…) et le **volume** (un disque dans un pool). Les TP ont utilisé sans le dire le pool `default` — le répertoire `/var/lib/libvirt/images/` :
+
+```console
+ada@laptop ~ $ sudo virsh pool-list
+ Nom       État    Démarrage automatique
+------------------------------------------
+ default   actif   oui
+
+ada@laptop ~ $ sudo virsh vol-list default
+ Nom                      Chemin
+------------------------------------------------------------------
+ ma-premiere-vm.qcow2     /var/lib/libvirt/images/ma-premiere-vm.qcow2
+ deuxieme-vm.qcow2        /var/lib/libvirt/images/deuxieme-vm.qcow2
+```
+
+L'intérêt de l'abstraction est le même que pour les réseaux : les commandes (`vol-create-as`, `vol-delete`, `vol-clone`…) sont identiques que le pool soit un répertoire local, un volume LVM ou un partage réseau — et une VM décrit son disque par pool/volume, pas par un chemin en dur.
+
+## qcow2 : bien plus qu'un disque
+
+Le format **qcow2** (*QEMU copy-on-write*, version 2) est le disque « intelligent » de QEMU. Trois superpouvoirs :
+
+- **allocation fine** (*thin provisioning*) : les 20 Gio annoncés au TP n'occupent sur l'hôte que ce qui est réellement écrit — `qemu-img info` montre les deux tailles (virtuelle et réelle) ;
+- **instantanés internes** : ceux de `virsh snapshot-create-as` ([TP précédent](../tp-kvm-administrer/)) vivent *dans* le fichier qcow2 ;
+- **images de base** (*backing files*) : un qcow2 peut s'appuyer sur une image en lecture seule et n'enregistrer que ses **différences** — c'est le *copy-on-write* du nom.
+
+```console
+ada@laptop ~ $ sudo qemu-img info /var/lib/libvirt/images/ma-premiere-vm.qcow2
+image: /var/lib/libvirt/images/ma-premiere-vm.qcow2
+file format: qcow2
+virtual size: 20 GiB (21474836480 bytes)
+disk size: 1.34 GiB
+```
+
+<Exercise id="kvm-backing-file" level={3}>
+  Au TP précédent, la deuxième VM copiait intégralement le disque de la première. Refaites-le en *copy-on-write* : une image de base commune, et un disque de différences par VM. Quel gain — et quelle nouvelle contrainte ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ sudo qemu-img create -f qcow2 -b /var/lib/libvirt/images/base-debian.qcow2 \
+                     -F qcow2 /var/lib/libvirt/images/troisieme-vm.qcow2
+    ada@laptop ~ $ sudo qemu-img info /var/lib/libvirt/images/troisieme-vm.qcow2 | tail -2
+    backing file: /var/lib/libvirt/images/base-debian.qcow2
+    backing file format: qcow2
+    ```
+
+    Gain : la création est **instantanée** et le nouveau disque ne pèse que quelques kilo-octets — dix VM de TP partagent une seule installation Debian de base. Contrainte : l'image de base est devenue **intouchable** — la modifier corromprait tous les disques qui s'appuient dessus (les hyperviseurs sérieux la passent en lecture seule). C'est exactement le mécanisme des couches d'images que vous retrouverez dans la [série Docker](../conteneurs-vs-vm/) — le copy-on-write est une idée qui voyage.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Réseaux libvirt : **NAT** (défaut, VM cachées), **pont** (VM = machine du LAN, à durcir), **isolé** (labo sans sortie) — trois lignes de XML d'écart ; une VM peut avoir plusieurs interfaces.
+- Stockage : **pools** (où) et **volumes** (quoi) — mêmes commandes quel que soit le support.
+- **qcow2** : taille virtuelle ≠ taille réelle (allocation fine), instantanés internes, **images de base** copy-on-write pour cloner sans copier — en rendant la base intouchable.
+
+## Ressources supplémentaires
+
+- [Format des réseaux libvirt](https://libvirt.org/formatnetwork.html) et [des volumes](https://libvirt.org/formatstorage.html) ;
+- `man qemu-img` — create, info, convert, snapshot ;
+- [Playlist KVM de Xavki](https://www.youtube.com/playlist?list=PLn6POgpklwWovnqec6vXcGqZbWgdlxuNC) — épisodes réseau et stockage.
