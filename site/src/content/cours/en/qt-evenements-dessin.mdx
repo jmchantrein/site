@@ -1,0 +1,100 @@
+---
+title: "Events, drawing and files"
+description: "Under the signals: events (event, handlers, filters), drawing your widget with QPainter, reading and writing with QFile and streams — and the opening towards Qt Quick/QML."
+order: 44
+serie: qt
+topics: [dev, gui]
+duration: 30
+badge: "Qt"
+tags: [QEvent, QPainter, QFile, paintEvent, QML]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Signals/slots suffice while you **assemble** existing widgets; to **create** one — redefining keyboard behaviour, drawing yourself — you must go down one floor: **events**. This module closes the series by going under the hood, then opening two side doors (files, QML). Goals:
+
+- understand an event's journey, redefine *handlers*, filter;
+- draw a widget with **QPainter**;
+- handle files and streams — Qt without a window;
+- know what **Qt Quick/QML** is, and when to think of it.
+
+## An event's journey
+
+When you press a key, the system hands it to `QApplication`, which builds a **`QEvent`** object (here a `QKeyEvent`) and routes it to the destination widget through its **`event()`** method. That method does not process it: it **dispatches** to the specialized *handler* — `keyPressEvent()`, `mousePressEvent()`, `resizeEvent()`, `paintEvent()`… Each event carries its data (`QResizeEvent::size()` and `oldSize()`, for instance); some come from the system (mouse, keyboard), others from elsewhere (`QTimerEvent`).
+
+Redefining a behaviour = **overriding the matching handler**. And the textbook case where the handler is not enough: the **Tab** key, consumed by focus handling *before* it ever reaches `keyPressEvent` — you must then override `event()` itself (a real file, compiled and executed by the harness):
+
+<CodeFile path="qt/evenements/evenements.cpp" lang="cpp" />
+
+Two rules of etiquette: return `true` when the event is handled (it stops there), and **always pass the rest to the base class** (`QWidget::event(...)`, `QWidget::keyPressEvent(...)`) — breaking the chain breaks focus, shortcuts, closing…
+
+Complements worth knowing:
+
+- **filtering**: `object->installEventFilter(filter)` routes an object's events through another's `eventFilter()` — up to spying on the whole application by filtering `qApp`; returning `true` stops the event;
+- **emitting**: `QCoreApplication::sendEvent()` (immediate) and `postEvent()` (dropped into the **event queue**, processed on the next loop turn — which lets Qt optimize: several repaint requests get **compressed** into one); your own event types are created by subclassing `QEvent` beyond `QEvent::User`.
+
+## Drawing: QPainter
+
+<Duo>
+  Everything Qt displays goes through **QPainter**: primitives (lines, ellipses, polygons, curves, text), transformations (translate, rotate, scale), clipping. The coordinate system: (0,0) at the **top left**. The absolute rule: painting happens only in **`paintEvent()`**, on a painter built on `this` — and to repaint, you do not call `paintEvent` yourself: **`update()`** posts a request into the queue (automatic repaint compression). QPainter can also paint off-widget: a `QImage` (off-screen work), a printer (`QPrinter`)…
+
+  <Fragment slot="media">
+    <Img src="images/qt/dessin.png" alt="Window showing a blue circular badge with the text Qt centred in white" caption="dessin.cpp — paintEvent + QPainter, antialiasing." width={220} />
+  </Fragment>
+</Duo>
+
+<CodeFile path="qt/dessin/dessin.cpp" lang="cpp" />
+
+<Exercise id="qt-dessin-clic" level={3}>
+  Make the badge change colour on each click (palette of your choice). Two handlers and one line of state suffice — which ones, and why `update()` rather than calling `paintEvent()` directly?
+
+  <Fragment slot="solution">
+    A member `int m_indice = 0;` and a `static const QList<QColor>` palette; in `mousePressEvent(QMouseEvent *)`: increment the index modulo the size, then **`update()`**; in `paintEvent`, replace the fixed colour with `palette.at(m_indice)`.
+
+    `update()` does not repaint: it **posts** a `QPaintEvent` into the queue. The event loop will call `paintEvent`, once even if ten `update()` were posted back to back — and always at the "right time" for the graphics system. Calling `paintEvent` by hand bypasses all that (and does not even compile cleanly: no valid QPaintEvent to give it).
+  </Fragment>
+</Exercise>
+
+## Files and streams: Qt without a window
+
+Qt also lives happily without a screen. **`QFile`** represents the file (existence, opening — `QIODevice::ReadOnly`, `WriteOnly`, `Append`… —, deletion); **streams** work on top: **`QTextStream`** for text (encodings handled), **`QDataStream`** for binary (and Qt object serialization). The beauty of the arrangement: these streams accept any **`QIODevice`** — file, memory buffer (`QBuffer`), network socket (`QTcpSocket`): the same code reads a local file or a network connection.
+
+<CodeFile path="qt/fichiers/fichiers.cpp" lang="cpp" />
+
+```console
+ada@laptop build $ ./fichiers
+1 : Ada Lovelace
+2 : Grace Hopper
+3 : Hedy Lamarr
+```
+
+For large surfaces, one last display tool: **`QScrollArea`** wraps any widget in scroll bars (appearing on demand or permanently, your choice) — no need to redevelop it.
+
+## The other world: Qt Quick and QML
+
+This course followed the **QtWidgets** path — that of classic desktop applications. Since Qt 5 a second path exists: **Qt Quick**, where the interface is described in **QML**, a *declarative* language (you describe what you want to see, with JavaScript for the small logic, and C++ underneath when power is needed):
+
+```qml
+Rectangle {
+    width: 220; height: 90; color: "whitesmoke"
+    Text { anchors.centerIn: parent; text: "Hello world!"; color: "steelblue" }
+}
+```
+
+Both paths are alive and official. The rough split: **Widgets** for dense desktop applications (forms, tables, professional tooling — the native *look and feel*), **Qt Quick** for mobile, embedded, touch and animated interfaces. What you learned here — QObject, signals/slots, the event loop, the tooling — carries **both** worlds: QML rests on the same base.
+
+## Recap
+
+- An event travels: system → `QApplication` → the widget's `event()` → specialized *handler*; you override the handler (or `event()` for Tab), return `true` when handled, and **pass the rest to the base class**.
+- Filters (`installEventFilter`) to intercept; `sendEvent`/`postEvent` to emit — the queue compresses (several `update()` → one `paintEvent`).
+- **QPainter**, only in `paintEvent()`; origin top-left; `update()` to request a repaint.
+- **QFile** + streams (`QTextStream`/`QDataStream`) over any `QIODevice` — file, buffer or socket; `QScrollArea` for scrolling.
+- **Qt Quick/QML**: the declarative path (mobile, embedded, animated) — same base, different skin.
+
+## Further resources
+
+- [The Event System](https://doc.qt.io/qt-6/eventsandfilters.html) — journeys, filters, custom events;
+- [Paint System](https://doc.qt.io/qt-6/paintsystem.html) — QPainter and beyond;
+- [Qt Quick](https://doc.qt.io/qt-6/qtquick-index.html) — to explore the second path.

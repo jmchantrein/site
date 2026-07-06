@@ -21,6 +21,7 @@ on:
       - "site/scripts/test-solutions-wireguard.sh"
       - "site/scripts/test-solutions-ansible.sh"
       - "site/scripts/test-solutions-kvm.sh"
+      - "site/scripts/test-solutions-qt.sh"
       - ".github/workflows/test-solutions.yml"
 
 jobs:
@@ -51,6 +52,13 @@ jobs:
       - name: Corrigés KVM (scripts hôte + XML libvirt)
         working-directory: site
         run: bash scripts/test-solutions-kvm.sh
+      # Série Qt 6 : compilation CMake/AUTOMOC des 8 exemples, exécution des
+      # exemples console (sorties vérifiées) et des interfaces en offscreen.
+      - name: Corrigés Qt 6 (compilation + exécution offscreen)
+        working-directory: site
+        run: |
+          sudo apt-get install -y -q qt6-base-dev
+          bash scripts/test-solutions-qt.sh --up
       # Mini-labo WireGuard (module WireGuard) — tunnel chiffré entre deux
       # conteneurs, vérifié par un ping à travers le tunnel.
       - name: Mini-labo WireGuard (tunnel Docker)

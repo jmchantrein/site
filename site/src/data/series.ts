@@ -67,6 +67,20 @@ export const SERIES = {
       en: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 80 },
     },
   },
+  qt: {
+    fr: "Interfaces graphiques avec Qt 6",
+    en: "Graphical interfaces with Qt 6",
+    desc: {
+      fr: "Le framework C++ des interfaces natives : modèle objet, signaux et slots, widgets et layouts, outillage et évènements — modernisé pour Qt 6, chaque exemple compilé et exécuté par la CI.",
+      en: "The C++ framework for native interfaces: object model, signals and slots, widgets and layouts, tooling and events — modernized for Qt 6, every example compiled and run by CI.",
+    },
+    /** Cours de Vincent Barichard (LERIA), repris par l'auteur ; modernisation
+        Qt 6 et exercices par l'IA — relecture auteur indispensable. */
+    prov: {
+      fr: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", aiShare: 55 },
+      en: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 75 },
+    },
+  },
   docker: {
     fr: "Fondements de Docker",
     en: "Docker fundamentals",

@@ -1,0 +1,120 @@
+---
+title: "Le modèle objet : QObject, mémoire, signaux et slots"
+description: "L'arbre des QObject et la destruction en cascade, la frontière widget/layout, et la communication par signaux et slots — syntaxe moderne vérifiée à la compilation, moc démystifié."
+order: 41
+serie: qt
+topics: [dev, gui]
+duration: 30
+badge: "Qt"
+tags: [QObject, mémoire, signaux, slots, moc]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Tout Qt repose sur une seule classe — **QObject** — et sur un outil — **moc**. Ce module pose les trois piliers hérités par toute classe dérivée de QObject : la gestion « facile » de la mémoire, les **signaux et slots**, et ce que moc fabrique en coulisses. Objectifs :
+
+- comprendre l'arbre parent/enfant et la **destruction en cascade** (et ses deux règles d'or) ;
+- ne plus jamais confondre **widget** et **layout** ;
+- écrire et connecter ses propres **signaux et slots**, en syntaxe moderne.
+
+## L'arbre des QObject
+
+Les QObject s'organisent en **arbre** : tout QObject peut recevoir un **parent** à la construction — il s'ajoute alors à la liste `children()` de ce parent. Chez les widgets, l'arbre est aussi *visuel* : un widget enfant s'affiche **dans** les limites de son parent (imbrication). Et la classe `QApplication` (fille de `QCoreApplication`) trône à part : une par application, elle porte la boucle d'évènements.
+
+La conséquence de l'arbre est la **gestion de la mémoire** : *quand un parent est détruit, il détruit tous ses enfants*, récursivement. La démonstration, audible (fichier réel, exécuté et vérifié par le harnais — la sortie est la vraie) :
+
+<CodeFile path="qt/objets/objet-verbeux.cpp" lang="cpp" />
+
+```console
+ada@laptop build $ ./objet-verbeux
+Créé    : racine
+Créé    : x
+Créé    : y
+Créé    : z
+— fin de main : destruction en cascade —
+Détruit : racine
+Détruit : x
+Détruit : z
+Détruit : y
+```
+
+Personne n'a écrit `delete` : `racine` meurt en sortant de `main` (elle vit sur la pile), et la cascade emporte `x`, puis `z` (l'enfant de `x` — la récursion), puis `y`. Deux règles d'or en découlent :
+
+- **ne détruisez jamais un enfant à la main** (son parent le fera : double destruction sinon) ;
+- **le widget top-level vit sur la pile, pas dans un `new`** — c'est lui la racine, quelque chose doit le détruire, et ce quelque chose est la fin de `main`.
+
+<Note type="warning" title="Le revers : l'orphelin fuit">
+  Ce confort a sa contrepartie : un QObject créé par `new` **sans parent** (et jamais adopté ensuite) n'est détruit par personne — fuite de mémoire classique. `QObject::dumpObjectTree()` aide à auditer l'arbre au débogage.
+</Note>
+
+## Widget n'est pas layout
+
+Dans la hiérarchie, `QWidget` (tout ce qui s'affiche) et `QLayout` (ce qui **place** les widgets) sont deux branches **distinctes** sous QObject. Un layout n'est pas un widget : il ne s'affiche pas, il calcule des positions. Venir d'Android — où tout layout est une vue — rend la confusion tentante ; en Qt, elle ne compile généralement pas, et c'est tant mieux. Le [module 3](../qt-widgets-layouts/) leur est consacré.
+
+## Signaux et slots : la communication
+
+Comment le clic d'un bouton déclenche-t-il votre code ? La solution historique des boîtes à outils graphiques — le ***callback*** (un pointeur de fonction confié au bouton) — n'offre **aucune vérification de type** à la compilation. Qt a inventé mieux, et indépendant de la GUI :
+
+- un **signal** est émis quand l'état d'un objet change (`clicked()`, `valueChanged(int)`…) ;
+- un **slot** est une méthode (ou n'importe quelle fonction, en syntaxe moderne) appelée en réponse ;
+- `QObject::connect()` relie les deux — un signal vers plusieurs slots, plusieurs signaux vers un slot, connexions posées et défaites à tout moment.
+
+La classe qui définit son propre signal (fichier réel du harnais) :
+
+<CodeFile path="qt/signaux/ma-classe.h" lang="cpp" />
+
+Et les connexions, en **syntaxe moderne** (pointeurs de membres) :
+
+<CodeFile path="qt/signaux/signaux.cpp" lang="cpp" />
+
+```console
+ada@laptop build $ ./signaux
+Lambda (int)            : 3
+Fonction libre (double) : 3.14
+```
+
+Lisez bien la sortie : le signal transporte un `float` (3.14), la lambda reçoit un `int` (3), la fonction libre un `double` (3.14) — les **conversions implicites** fonctionnent, parce que le compilateur voit les types. Erreur de nom ou d'arguments ? **Échec de compilation**, message explicite.
+
+<Note type="warning" title="SIGNAL()/SLOT() : l'ancienne syntaxe, encore partout">
+  Le cours d'origine (et un océan de code existant) écrivait `connect(sender, SIGNAL(valueChanged(QString)), receiver, SLOT(update(QString)))`. Ces macros comparent des **chaînes de caractères à l'exécution** : faute de frappe = connexion silencieusement ratée, découverte en production. La syntaxe reste acceptée par Qt 6 — sachez la lire, ne l'écrivez plus. La forme moderne apporte : vérification à la compilation, lambdas, fonctions libres, conversions implicites.
+</Note>
+
+Trois contraintes à connaître pour définir ses signaux : la classe **hérite de QObject**, porte la macro **`Q_OBJECT`**, et les signaux sont *déclarés mais jamais implémentés* — c'est le rôle de moc. Un slot déclaré dans une section `slots:` reste une méthode ordinaire (droits d'accès, virtuel possible) ; `emit` déclenche ; les slots connectés s'exécutent immédiatement, dans l'ordre des connexions.
+
+## moc : la magie, expliquée
+
+`signals:`, `slots:`, `emit`, `Q_OBJECT` ne sont **pas** du C++ : c'est le vocabulaire du **système de méta-objets**. Le **Meta Object Compiler (moc)** lit vos en-têtes marqués `Q_OBJECT` et **génère** le C++ standard correspondant (l'implémentation des signaux, l'introspection, les propriétés) dans un fichier `moc_maclasse.cpp`, compilé avec le reste. Qt n'est donc *que* du C++ standard plus un générateur de code — d'où sa portabilité totale.
+
+À l'époque du cours d'origine, on invoquait moc à la main (`moc maclasse.h -o moc_maclasse.cpp`) ou via qmake. Aujourd'hui : `qt_standard_project_setup()` active **AUTOMOC**, et CMake s'occupe de tout — si vous avez compilé le module 1, moc a déjà tourné sans que vous le sachiez. Le prix du système : **pas d'héritage multiple** de deux QObject.
+
+<Exercise id="qt-signal-perso" level={2}>
+  Ajoutez à `MaClasse` un second signal `seuilDepasse()` (sans argument), émis par `changerValeur` seulement quand la valeur dépasse 100. Dans le `main`, connectez-le à une lambda qui affiche une alerte, et vérifiez avec 3.14 puis 128. Que se passe-t-il si vous vous trompez dans le nom du signal au `connect` ?
+
+  <Fragment slot="solution">
+    Dans `ma-classe.h` : déclarer `void seuilDepasse();` dans la section `signals:`, et dans `changerValeur` : `if (valeur > 100) emit seuilDepasse();`. Dans le main :
+
+    ```cpp
+    QObject::connect(&source, &MaClasse::seuilDepasse,
+                     [] { qDebug() << "Seuil dépassé !"; });
+    source.changerValeur(3.14F);   // rien
+    source.changerValeur(128.0F);  // Lambda, fonction… et l'alerte
+    ```
+
+    Un nom erroné (`&MaClasse::seuilDepase`) est une **erreur de compilation** (« no member named… ») — précisément ce que l'ancienne syntaxe ne détectait qu'à l'exécution, par un simple avertissement sur la console. C'est toute la valeur du changement.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Les QObject forment un **arbre** ; un parent détruit **récursivement** ses enfants — jamais de `delete` sur un enfant, jamais de `new` pour le top-level, et l'orphelin sans parent fuit.
+- **Widget ≠ layout** : deux branches distinctes de la hiérarchie.
+- **Signaux et slots** remplacent les callbacks : typés, multi-connexions, indépendants de la GUI. Syntaxe **moderne** (`&Classe::signal`) : vérifiée à la compilation, lambdas et conversions — l'ancienne (`SIGNAL()`/`SLOT()`) se lit encore, ne s'écrit plus.
+- **moc** génère le C++ des signaux (`Q_OBJECT` obligatoire) ; **AUTOMOC** (CMake) l'invoque pour vous ; en échange : pas d'héritage multiple de QObject.
+
+## Ressources supplémentaires
+
+- [Object Trees & Ownership](https://doc.qt.io/qt-6/objecttrees.html) — la référence sur l'arbre ;
+- [Signals & Slots](https://doc.qt.io/qt-6/signalsandslots.html) — le mécanisme en détail ;
+- [The Meta-Object System](https://doc.qt.io/qt-6/metaobjects.html) — ce que moc fabrique.

@@ -1,0 +1,110 @@
+---
+title: "Widgets et layouts"
+description: "Le catalogue des widgets courants, les gestionnaires de placement (boîtes, grille, imbrication, élastiques) — et le TP compteur : trois widgets synchronisés sans une ligne de glu."
+order: 42
+serie: qt
+topics: [dev, gui]
+duration: 30
+badge: "Qt"
+tags: [QWidget, QLayout, QGridLayout, stretch, TP]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Une interface est un assemblage de **widgets**, placés par des **layouts**. Ce module donne le catalogue minimal, les règles de placement — et fait construire une vraie petite application. Objectifs :
+
+- connaître les widgets courants (et savoir chercher les autres) ;
+- placer avec `QVBoxLayout`, `QHBoxLayout`, `QGridLayout` ; imbriquer ; doser avec les élastiques ;
+- câbler plusieurs widgets par signaux/slots — le TP compteur.
+
+## Le catalogue des widgets courants
+
+Concevoir une interface, c'est d'abord connaître ses briques. Les indispensables :
+
+| Widget | Rôle |
+|---|---|
+| `QLabel` | Texte ou image (HTML simple accepté) |
+| `QPushButton` | Le bouton à cliquer |
+| `QLineEdit` / `QTextEdit` | Saisie d'une ligne / de texte riche multiligne |
+| `QCheckBox` / `QRadioButton` | Case à cocher / bouton radio |
+| `QComboBox` | Liste déroulante |
+| `QSpinBox` / `QSlider` | Nombre à flèches / curseur |
+| `QLCDNumber` | Afficheur « digital » |
+| `QProgressBar` | Barre de progression |
+| `QListView` / `QTableView` | Listes et tableaux (modèle/vue) |
+
+Et pour structurer : `QGroupBox` (cadre titré), `QFrame`, `QMainWindow` (fenêtre principale : menus `QMenuBar`, barres d'outils `QToolBar`, barre d'état), `QDialog` (boîtes de dialogue). Tout widget personnalisé se crée **par héritage** d'un widget existant — ou de `QWidget` pour partir de zéro ([module 5](../qt-evenements-dessin/)).
+
+Trois comportements à retenir : un widget **sans parent** est une fenêtre (*top-level*) ; un enfant ne peut pas s'afficher **hors** de son parent ; cacher, désactiver ou détruire un widget s'applique récursivement à ses enfants.
+
+## Les layouts : placer sans calculer
+
+Positionner au pixel est une impasse : que devient votre interface quand la fenêtre s'agrandit, quand la police change, quand le texte est traduit en allemand (+30 % de largeur) ? Les **gestionnaires de placement** résolvent le problème : on décrit une *structure*, ils calculent les géométries — au départ comme à chaque redimensionnement.
+
+- **`QHBoxLayout` / `QVBoxLayout`** : en ligne / en colonne, dans l'ordre d'ajout (`addWidget`) ;
+- **`QGridLayout`** : en tableau — `addWidget(w, ligne, colonne)` (départ à 0), avec fusion de cellules (`addWidget(w, l, c, nLignes, nColonnes)`) et cases vides admises ;
+- l'**imbrication** est libre : `addLayout` place un layout dans un autre.
+
+<Duo>
+  Le formulaire type tient en quelques lignes (fichier réel, compilé et exécuté par le harnais) : une grille pour les paires étiquette/champ, et une boîte horizontale imbriquée — fusionnée sur deux colonnes — pour les boutons. L'**élastique** (`addStretch`) placé avant eux absorbe l'espace excédentaire : quand la fenêtre s'élargit, ce sont les espacements qui grandissent, pas les boutons, et ils restent collés au bord droit. Les marges se règlent au besoin (`setContentsMargins`, `setSpacing`).
+
+  <Fragment slot="media">
+    <Img src="images/qt/layouts.png" alt="Formulaire à deux champs (Nom, Domaine) avec deux boutons Annuler et Valider alignés en bas à droite" caption="layouts.cpp — grille, boîte imbriquée, élastique." width={230} />
+  </Fragment>
+</Duo>
+
+<CodeFile path="qt/layouts/layouts.cpp" lang="cpp" />
+
+Dernier acteur du placement : chaque widget publie ses préférences (`sizeHint()`, politique `QSizePolicy` — un bouton refuse de s'étirer en hauteur, un champ de texte accepte tout) ; le layout arbitre entre elles. On personnalise la politique quand le comportement par défaut ne convient pas.
+
+## TP : le compteur
+
+<Duo>
+  Trois widgets, deux sens de synchronisation, zéro code de glu : c'est l'application témoin des signaux/slots appliqués aux widgets. Le curseur et la boîte de saisie **se miroitent** (chacun `valueChanged` → `setValue` de l'autre — pas de boucle infinie : `setValue` n'émet pas si la valeur ne change pas réellement), et l'afficheur LCD suit.
+
+  <Fragment slot="media">
+    <Img src="images/qt/compteur.png" alt="Fenêtre avec un grand afficheur LCD montrant 42, un curseur horizontal et une boîte de saisie numérique à 42" caption="compteur.cpp — le TP, à l'exécution." width={240} />
+  </Fragment>
+</Duo>
+
+<Exercise id="qt-compteur" level={2}>
+  Construisez le compteur : un `QLCDNumber`, un `QSlider` horizontal et un `QSpinBox` empilés verticalement (plage 0–130) ; curseur et boîte synchronisés dans les deux sens ; l'écran suit ; valeur initiale 42. Pourquoi la double connexion ne boucle-t-elle pas à l'infini ? Et pourquoi `qOverload<int>` sur la connexion vers l'écran ?
+
+  <Fragment slot="solution">
+    <CodeFile path="qt/compteur/compteur.cpp" lang="cpp" />
+
+    Pas de boucle : `setValue` **n'émet `valueChanged` que si la valeur change réellement** — le second `setValue` (42 → 42) s'arrête net. C'est un patron général chez Qt : les mutateurs sont silencieux à valeur égale, précisément pour autoriser ces câblages croisés. Quant à `qOverload<int>` : `QLCDNumber::display` existe en plusieurs surcharges (`int`, `double`, `QString`) — le pointeur de membre est ambigu, on précise laquelle. C'est l'un des rares péages de la syntaxe moderne.
+  </Fragment>
+</Exercise>
+
+<Exercise id="qt-compteur-bouton" level={2}>
+  Ajoutez un bouton « Remise à zéro » sous la boîte de saisie, actif seulement quand la valeur n'est pas déjà zéro. Indice : `QPushButton::clicked`, `QWidget::setEnabled`, et une lambda.
+
+  <Fragment slot="solution">
+    ```cpp
+    auto *raz = new QPushButton("Remise à zéro");
+    colonne->addWidget(raz);
+    QObject::connect(raz, &QPushButton::clicked,
+                     [boite] { boite->setValue(0); });
+    QObject::connect(boite, &QSpinBox::valueChanged,
+                     [raz](int v) { raz->setEnabled(v != 0); });
+    raz->setEnabled(boite->value() != 0); // état initial cohérent
+    ```
+
+    Le clic remet la boîte à zéro — et la synchronisation existante propage au curseur et à l'écran : on ne câble que ce qui est nouveau. La seconde connexion tient l'état du bouton à jour ; la dernière ligne évite le faux état au démarrage (le signal ne raconte que les *changements*, pas l'état initial).
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- Un socle de widgets couvre 90 % des interfaces — le reste se **cherche dans la documentation** et se crée **par héritage**.
+- Layouts : `QVBox`/`QHBox` (file), `QGridLayout` (tableau, fusion de cellules), **imbrication** libre, **élastiques** (`addStretch`) pour diriger l'espace excédentaire ; les widgets négocient via `sizeHint`/`QSizePolicy`.
+- Le compteur : les mutateurs silencieux à valeur égale rendent les synchronisations croisées sûres ; `qOverload` désambiguïse les surcharges.
+
+## Ressources supplémentaires
+
+- [Qt Widgets Gallery](https://doc.qt.io/qt-6/gallery.html) — tous les widgets, en images ;
+- [Layout Management](https://doc.qt.io/qt-6/layout.html) — le guide officiel du placement ;
+- le [module Designer](../qt-outils/) — dessiner ces mêmes interfaces à la souris.
