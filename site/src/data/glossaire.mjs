@@ -29,7 +29,7 @@
  * de fiche affiche le bref.
  */
 
-/** @typedef {{slug:string,type:"terme"|"personnage",fr:string,en:string,angl?:boolean,brefFr:string,brefEn:string,aliasFr?:string[],aliasEn?:string[],cours?:string,only?:string[]}} GlossEntry */
+/** @typedef {{slug:string,type:"terme"|"personnage",fr:string,en:string,angl?:boolean,brefFr:string,brefEn:string,aliasFr?:string[],aliasEn?:string[],cours?:string|string[],only?:string[]}} GlossEntry */
 
 /** @type {GlossEntry[]} */
 export const GLOSSAIRE = [

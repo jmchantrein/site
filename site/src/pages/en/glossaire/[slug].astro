@@ -16,9 +16,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const fiches = await getCollection("glossaire", ({ id, data }) => id === `en/${entry.slug}` && !data.draft);
 const fiche = fiches[0];
 const Content = fiche ? (await render(fiche)).Content : null;
-const cours = entry.cours
-  ? (await getCollection("cours", ({ id }) => id === `en/${entry.cours}`))[0]
-  : undefined;
+const coursIds = (Array.isArray(entry.cours) ? entry.cours : entry.cours ? [entry.cours] : []).map((c) => `en/${c}`);
+const cours = await getCollection("cours", ({ id }) => coursIds.includes(id));
 const badges = [
   entry.type === "personnage" ? "Figure" : "Term",
   ...(entry.angl ? ["Borrowed term"] : []),
@@ -46,8 +45,10 @@ const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
   )}
   {Content ? <Content components={mdxComponents} /> : null}
   <p class="gloss-fiche__liens">
-    {cours && (
-      <span>Concept taught in the module <a href={`${base}/en/cours/${entry.cours}/`}>{cours.data.title}</a>.{" "}</span>
+    {cours.length > 0 && (
+      <span>Concept taught in: {cours.map((c, i) => (
+        <>{i > 0 && " · "}<a href={`${base}/en/cours/${c.id.slice(3)}/`}>{c.data.title}</a></>
+      ))}.{" "}</span>
     )}
     {wiki && <a href={wiki} rel="external noopener">Read on Wikipedia ↗</a>}
   </p>

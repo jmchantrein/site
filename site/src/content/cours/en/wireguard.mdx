@@ -1,0 +1,115 @@
+---
+title: "WireGuard: the modern VPN"
+description: "A minimalist encrypted tunnel, built into the Linux kernel: principles, keys, configuration — and a Docker mini-lab to bring up a real tunnel with no public IP at all."
+order: 16
+serie: outils-admin
+topics: [linux, reseau]
+duration: 25
+badge: "Tools"
+tags: [WireGuard, VPN, tunnel, encryption]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+SSH carries *one session* to *one machine*. A **VPN** (*Virtual Private Network*) goes further: it links remote machines as if they shared a local network — all traffic flows through an encrypted **tunnel**. **WireGuard** is modern system administration's reference VPN. Goals:
+
+- understand WireGuard's model (peers, keys, AllowedIPs);
+- know why it displaced OpenVPN and IPsec in many uses;
+- bring up a **real tunnel** between two containers — the module's mini-lab.
+
+## Why WireGuard?
+
+- **Minimalist**: ~4,000 lines of code (against hundreds of thousands for its predecessors) — auditable, and audited;
+- **modern**: recent, non-negotiable cryptography (no cipher "suites" to configure, hence no misconfiguration possible);
+- **fast**: built into the **Linux kernel** (since 5.6), excellent latency and throughput;
+- **simple**: one network interface, one key pair per peer, a handful of configuration lines;
+- **cross-platform**: Linux, macOS, Windows, Android, iOS.
+
+Its limits are just as structural: no dynamic address assignment (each peer is configured statically), no built-in identity or certificate management — minimalism is paid for in infrastructure features, which other tools layer on top.
+
+## The model: peers and keys
+
+WireGuard knows neither "server" nor "client" — only **peers**. Each peer has:
+
+- a **key pair** (private/public — the SSH key mechanism, again);
+- an **address inside the tunnel** (e.g. `10.9.9.1/24`);
+- the list of its peers: their public key, their **endpoint** (real address) when known, and their **AllowedIPs**.
+
+`AllowedIPs` is the key notion, in both directions: *what I accept to receive from this peer* and *what I route towards it*. `10.9.9.2/32` = only that address; `0.0.0.0/0` = all my traffic (the "full VPN").
+
+The tunnel's IP packets are **encapsulated** in encrypted UDP: whatever travels between the two machines reveals nothing of the content.
+
+```text
+# /etc/wireguard/wg0.conf — a typical peer
+[Interface]
+PrivateKey = <this peer's private key>
+Address    = 10.9.9.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey  = <the other peer's public key>
+AllowedIPs = 10.9.9.2/32
+Endpoint   = 203.0.113.7:51820
+```
+
+`wg-quick up wg0` brings the interface up from this file; `wg show` displays the tunnel's state (last handshake, traffic).
+
+<Note type="warning" title="Good practice">
+  Private keys are protected like SSH ones: restrictive permissions, encrypted storage. `AllowedIPs` is set **as narrow as possible** (least privilege, again). And the UDP port (51820 by default) is firewalled like any other service.
+</Note>
+
+## The mini-lab: a tunnel with no public IP at all
+
+This course's original material concluded "we won't do it: each student would need a public IP". True for a VPN *across the Internet* — but a WireGuard tunnel does not care whether the network carrying it is public: **two Docker containers are enough**. The lab brings up an encrypted tunnel between two peers on an ordinary Docker network, verified with a ping.
+
+The lab's three files (tested by the site's harness, Docker required):
+
+<CodeFile path="outils-admin/wireguard/Dockerfile" lang="dockerfile" />
+
+<CodeFile path="outils-admin/wireguard/docker-compose.yml" lang="yaml" />
+
+<CodeFile path="outils-admin/wireguard/lab.sh" lang="bash" />
+
+<Exercise id="wg-lab" level={2}>
+  Grab the lab's three files, run `./lab.sh --keep`, then explore: `docker exec wg-lab-a wg show`, `ping 10.9.9.2` from peer A, and observe the difference between the *underlay* address (Docker network) and the *tunnel* address (10.9.9.x). What does an eavesdropper capturing traffic between the two containers see?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop wireguard $ ./lab.sh --keep
+    — build + up
+    — key pairs (private keys never leave their peer)
+    — wg0 on pair-a (10.9.9.1) with pair-b as peer
+    — wg0 on pair-b (10.9.9.2) with pair-a as peer
+    — ping THROUGH the tunnel (10.9.9.x, not the Docker network)
+    3 packets transmitted, 3 packets received, 0% packet loss
+    OK — encrypted tunnel up between two containers, no public IP involved.
+    ```
+
+    The eavesdropper (a `tcpdump` on the Docker network) only sees **encrypted UDP packets** between the two underlay addresses — no ping, no 10.9.9.x addresses, no content. That is exactly the tunnel's promise: the carrying network knows nothing of what it carries. (`docker compose down` to tidy up.)
+  </Fragment>
+</Exercise>
+
+<Exercise id="wg-allowedips" level={3}>
+  In the lab, peer A's configuration says `allowed-ips 10.9.9.2/32`. What would happen with `0.0.0.0/0` instead? And why can the `Endpoint` field be configured on one side only?
+
+  <Fragment slot="solution">
+    `0.0.0.0/0` would route **all** of peer A's traffic into the tunnel — the "full VPN" use (and peer B would then need to forward it: NAT or routing). Narrowest is safest: here only `10.9.9.2` has any business in the tunnel.
+
+    `Endpoint` can be missing on one side: the peer that *receives* the first packet learns the sender's real address and remembers it (*roaming* — this is how a phone changing networks keeps its tunnel). It is only required that **at least one** of the two knows where to reach the other initially.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- WireGuard: equal **peers**, one key pair each, `AllowedIPs` as both a routing **and** filtering rule, encrypted UDP.
+- Minimal, modern, in-kernel — at the price of no DHCP and no identity management.
+- A tunnel needs no public IP: the module's Docker lab brings one up in thirty seconds, verified in CI.
+- Private keys protected, `AllowedIPs` narrow, port firewalled: SSH's reflexes apply as they are.
+
+## Further resources
+
+- [wireguard.com/quickstart](https://www.wireguard.com/quickstart/) — the official start;
+- [The design paper](https://www.wireguard.com/papers/wireguard.pdf) — short and readable, a rarity;
+- `man wg`, `man wg-quick`.

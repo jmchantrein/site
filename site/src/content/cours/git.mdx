@@ -1,0 +1,203 @@
+---
+title: "Git : versionner et collaborer"
+description: "Dépôt, commits, branches, revert et reset : l'historique complet de vos fichiers, en local comme à plusieurs — l'outil de travail de toute l'administration système."
+order: 17
+serie: outils-admin
+topics: [linux]
+duration: 30
+badge: "Outils"
+tags: [git, versionnage, commit, branche, revert]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Git est un système de **gestion de versions distribué** : il suit les modifications de vos fichiers, conserve l'historique complet, et permet de travailler à plusieurs sur les mêmes projets sans s'écraser. Objectifs :
+
+- comprendre les concepts : dépôt, commit, branche, index ;
+- dérouler le cycle de base — modifier, indexer, committer ;
+- savoir revenir en arrière, de la bonne façon (`restore`, `revert`, `reset`) ;
+- travailler avec un dépôt distant (GitHub, GitLab).
+
+<Note title="Pourquoi Git en administration système ?">
+  Versionner les **scripts** (l'historique de vos automatisations), versionner les **configurations** (revenir à un état fonctionnel en cas d'erreur), collaborer avec les équipes (revue avant fusion), déclencher l'**intégration continue** à chaque changement. Le TP Ansible à venir versionne tout son travail dans Git — c'est le réflexe professionnel de base. Git est d'ailleurs né de l'administration d'un projet : Linus Torvalds l'a créé en 2005 pour gérer les sources du noyau Linux.
+</Note>
+
+## Les concepts
+
+- **Dépôt** (*repository*) : le projet complet — fichiers **et** tout l'historique — dans le répertoire caché `.git`. Chaque clone est un dépôt entier : c'est le sens de « distribué ».
+- **Commit** : un instantané du projet, identifié par un hash, avec un message et une date. L'historique est une chaîne de commits.
+- **Index** (*staging area*) : la zone de préparation — on y **ajoute** (`git add`) ce que le prochain commit enregistrera. Ce sas permet de committer une partie seulement de ses modifications.
+- **Branche** : une ligne de développement parallèle (la branche par défaut s'appelle `main`, historiquement `master`). On développe sur une branche, on **fusionne** quand c'est prêt.
+
+Le cycle de base tient en trois gestes :
+
+```console
+ada@laptop mon_projet $ vim script.sh          # 1. modifier
+ada@laptop mon_projet $ git add script.sh      # 2. indexer
+ada@laptop mon_projet $ git commit -m "..."    # 3. committer
+```
+
+Et deux boussoles à consulter sans modération : `git status` (où en suis-je ?) et `git log` (que s'est-il passé ?).
+
+## TP guidé : Git en local
+
+Chaque étape est un exercice ; les sorties des solutions sont **réelles** — elles sont générées et vérifiées par le script de rejeu du harnais du site (dates fixées, d'où des hash reproductibles).
+
+<Exercise id="git-init" level={1}>
+  Créez un répertoire `mon_projet` et faites-en un dépôt Git. Comment vérifier que c'est bien un dépôt ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ mkdir mon_projet && cd mon_projet
+    ada@laptop mon_projet $ git init
+    Initialized empty Git repository in /home/ada/mon_projet/.git/
+    ```
+
+    Le répertoire caché `.git` (visible avec `ls -a`) **est** le dépôt : historique, index, configuration. Le supprimer, c'est dé-versionner le projet — les fichiers, eux, restent.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-premier-commit" level={1}>
+  Avec Vim, créez `index.html` contenant `<h1>Bienvenue sur mon site</h1>`, ajoutez-le à l'index, vérifiez l'état du dépôt, puis committez.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ vim index.html
+    ada@laptop mon_projet $ git add index.html
+    ada@laptop mon_projet $ git status --short
+    A  index.html
+    ada@laptop mon_projet $ git commit -m "Ajout de la page d'accueil"
+    [main (root-commit) 5cf4033] Ajout de la page d'accueil
+     1 file changed, 1 insertion(+)
+     create mode 100644 index.html
+    ```
+
+    `A` = *added* : le fichier est dans l'index, prêt à être committé. Le commit reçoit son hash (`5cf4033…`) — l'identité de cet instantané.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-second-commit" level={1}>
+  Ajoutez un paragraphe à `index.html` et faites un nouveau commit. Faut-il refaire `git add` ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ echo "<p>Ceci est un paragraphe.</p>" >> index.html
+    ada@laptop mon_projet $ git add index.html
+    ada@laptop mon_projet $ git commit -m "Ajout d'un paragraphe"
+    [main 523dba7] Ajout d'un paragraphe
+     1 file changed, 1 insertion(+)
+    ```
+
+    **Oui** : `git add` s'applique aux *modifications*, pas au fichier une fois pour toutes — c'est ce qui permet de choisir ce qui entre dans chaque commit. (Le raccourci `git commit -a -m "…"` indexe automatiquement les fichiers déjà suivis ; pratique, mais on perd la maîtrise du sas.)
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-log" level={1}>
+  Affichez l'historique, en version complète puis compacte.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git log --oneline
+    523dba7 Ajout d'un paragraphe
+    5cf4033 Ajout de la page d'accueil
+    ```
+
+    Le plus récent en haut. `git log` sans option détaille auteur, date et message complet de chaque commit.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-restore" level={2}>
+  Ajoutez « une erreur » à la fin d'`index.html`, constatez-la, puis annulez cette modification **non committée**.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ echo "<p>une erreur" >> index.html
+    ada@laptop mon_projet $ git status --short
+     M index.html
+    ada@laptop mon_projet $ git restore index.html
+    ada@laptop mon_projet $ git status --short
+    ada@laptop mon_projet $
+    ```
+
+    `git restore fichier` (Git ≥ 2.23) ramène le fichier à son dernier état committé — vous croiserez aussi la forme historique `git checkout -- fichier`, équivalente. Attention : la modification non committée est **perdue**, sans corbeille.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-revert" level={2}>
+  Annulez le **dernier commit** (« Ajout d'un paragraphe ») avec `git revert`, puis observez l'historique. Que constatez-vous ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git revert --no-edit HEAD
+    [main 1761f1a] Revert "Ajout d'un paragraphe"
+     1 file changed, 1 deletion(-)
+    ada@laptop mon_projet $ git log --oneline
+    1761f1a Revert "Ajout d'un paragraphe"
+    523dba7 Ajout d'un paragraphe
+    5cf4033 Ajout de la page d'accueil
+    ```
+
+    Rien n'a été supprimé : le revert **ajoute** un commit (son propre hash, `1761f1a`) qui défait les changements du commit visé. Le fichier est revenu à l'état du premier commit, et l'historique garde la trace du retour en arrière — précieux quand cette information compte.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-reset" level={2}>
+  Revenez maintenant au premier commit avec `git reset --hard`, et observez l'historique. Quelle différence avec `revert` ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git reset --hard 5cf4033
+    HEAD is now at 5cf4033 Ajout de la page d'accueil
+    ada@laptop mon_projet $ git log --oneline
+    5cf4033 Ajout de la page d'accueil
+    ada@laptop mon_projet $ cat index.html
+    <h1>Bienvenue sur mon site</h1>
+    ```
+
+    Cette fois les commits suivants ont **disparu** : `reset` réécrit l'historique. `revert` = annuler **en ajoutant** (trace conservée, sûr en partagé) ; `reset` = annuler **en supprimant** (historique propre, mais destructeur — à réserver aux commits non poussés).
+  </Fragment>
+</Exercise>
+
+<Note type="warning" title="revert et reset agissent sur des commits entiers">
+  Notre exemple ne manipule qu'un fichier, mais un commit peut en toucher plusieurs : `revert` comme `reset` défont alors les changements de **tous les fichiers** du commit. Et ne réécrivez jamais (`reset`, `rebase`) un historique déjà **poussé** : vos collègues l'ont déjà.
+</Note>
+
+## Travailler avec un dépôt distant
+
+<Exercise id="git-distant" level={2}>
+  Créez un compte sur GitHub ou GitLab si besoin, puis : 1) créez-y un dépôt avec un `README.md` ; 2) clonez-le localement ; 3) modifiez le `README.md` **via l'interface web** (commit en ligne) ; 4) rapatriez ce changement en local ; 5) modifiez le fichier localement ; 6) poussez votre commit.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ git clone git@github.com:ada/mon-depot.git
+    ada@laptop ~ $ cd mon-depot
+    # (modification du README via l'interface web du site)
+    ada@laptop mon-depot $ git pull
+    ada@laptop mon-depot $ vim README.md
+    ada@laptop mon-depot $ git add README.md && git commit -m "Précision d'installation"
+    ada@laptop mon-depot $ git push
+    ```
+
+    Le trio du travail distant : `clone` (une fois), `pull` (récupérer — à faire **avant** de commencer à travailler, pour minimiser les conflits), `push` (publier). L'authentification passe idéalement par vos **clés SSH** — celles du module précédent.
+  </Fragment>
+</Exercise>
+
+<Note type="info" title="Branches, fusions, pull requests">
+  À plusieurs, on ne travaille pas sur `main` : chaque fonctionnalité vit sur sa **branche** (`git switch -c ma-branche`), proposée à la relecture par une **pull request** (GitLab : *merge request*), puis **fusionnée**. Si deux personnes ont modifié les mêmes lignes, Git marque un **conflit** dans le fichier : on arbitre à la main, `git add`, et la fusion se termine par un commit. Ce flux — brancher, relire, fusionner, tester en CI — structure le développement moderne ; vous le vivrez de l'intérieur dans le TP Ansible (hooks de pre-commit compris).
+</Note>
+
+## Récapitulatif
+
+- Un **dépôt** = fichiers + historique (`.git`) ; un **commit** = un instantané identifié ; l'**index** = le sas du prochain commit.
+- Le cycle : modifier → `git add` → `git commit -m` ; les boussoles : `git status`, `git log`.
+- Revenir en arrière : `restore` (modif non committée), `revert` (annule **en ajoutant** — sûr), `reset` (annule **en supprimant** — jamais sur du poussé).
+- À distance : `clone`, `pull` avant de travailler, `push` pour publier — par clé SSH.
+- Les sorties de ce module sont rejouées et vérifiées par le harnais du site : ce que vous lisez est ce que Git fait.
+
+## Ressources supplémentaires
+
+- [Pro Git](https://git-scm.com/book/fr/v2) — le livre de référence, gratuit, en français ;
+- [Learn Git Branching](https://learngitbranching.js.org/?locale=fr_FR) — visualiser branches et fusions en s'exerçant ;
+- `man git-revert`, `man git-reset` — les nuances complètes.

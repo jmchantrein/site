@@ -5,6 +5,7 @@
 # SOURCE UNIQUE : ce script valide les fichiers de
 #   site/src/solutions/outils-admin/bash/    (scripts + suites Bats)
 #   site/src/solutions/outils-admin/sed-awk/ (exercices sur data/)
+#   site/src/solutions/outils-admin/git/     (rejeu du TP Git)
 # c'est-à-dire EXACTEMENT ceux que les cours affichent via <CodeFile>.
 #
 # Usage : scripts/test-solutions-bash.sh [--lint|--up]
@@ -16,6 +17,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bash_sol="$here/../src/solutions/outils-admin/bash"
 sedawk_sol="$here/../src/solutions/outils-admin/sed-awk"
+git_sol="$here/../src/solutions/outils-admin/git"
 mode="${1:---lint}"
 
 pass=0; fail=0; declare -a failed=()
@@ -23,7 +25,7 @@ ok(){ echo "✅ $*"; pass=$((pass+1)); }
 ko(){ echo "❌ $*"; fail=$((fail+1)); failed+=("$*"); }
 
 # ——— 1. Lint : syntaxe bash + shellcheck ———
-for f in "$bash_sol"/*.bash "$sedawk_sol"/*.sh; do
+for f in "$bash_sol"/*.bash "$sedawk_sol"/*.sh "$git_sol"/*.sh; do
   if bash -n "$f"; then ok "bash -n $(basename "$f")"; else ko "bash -n $(basename "$f")"; fi
   if command -v shellcheck >/dev/null; then
     if shellcheck "$f"; then ok "shellcheck $(basename "$f")"; else ko "shellcheck $(basename "$f")"; fi
@@ -60,6 +62,14 @@ if [ "$mode" = "--up" ]; then
     && ok "awk : regroupement par domaine" || ko "awk : regroupement"
   [[ "$out_awk" == *"Total : 15618"* ]] \
     && ok "awk : somme de colonne (15618)" || ko "awk : somme (attendu 15618)"
+
+  # ——— 4. TP Git : rejeu complet, états vérifiés par le script lui-même ———
+  if out_git="$(bash "$git_sol/tp-git.sh" 2>&1)"; then
+    [[ "$out_git" == *"OK — revert ajoute"* ]] \
+      && ok "git : rejeu du TP (revert ajoute, reset supprime)" || ko "git : sortie inattendue"
+  else
+    ko "git : le rejeu du TP a échoué"
+  fi
 fi
 
 echo; echo "Bilan : $pass OK, $fail KO"

@@ -1,0 +1,115 @@
+---
+title: "WireGuard : le VPN moderne"
+description: "Un tunnel chiffré minimaliste, intégré au noyau Linux : principes, clés, configuration — et un mini-labo Docker pour monter un vrai tunnel sans aucune IP publique."
+order: 16
+serie: outils-admin
+topics: [linux, reseau]
+duration: 25
+badge: "Outils"
+tags: [WireGuard, VPN, tunnel, chiffrement]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+SSH transporte *une session* vers *une machine*. Un **VPN** (*Virtual Private Network*) va plus loin : il relie des machines distantes comme si elles partageaient un réseau local — tout le trafic passe dans un **tunnel** chiffré. **WireGuard** est le VPN de référence de l'administration système moderne. Objectifs :
+
+- comprendre le modèle de WireGuard (pairs, clés, AllowedIPs) ;
+- savoir pourquoi il a supplanté OpenVPN et IPsec dans beaucoup d'usages ;
+- monter un **vrai tunnel** entre deux conteneurs — le mini-labo du module.
+
+## Pourquoi WireGuard ?
+
+- **Minimaliste** : ~4 000 lignes de code (contre des centaines de milliers pour ses prédécesseurs) — auditable, et audité ;
+- **moderne** : cryptographie récente et non négociable (pas de « suites » à configurer, donc pas de mauvaise configuration possible) ;
+- **rapide** : intégré au **noyau Linux** (depuis 5.6), latence et débit excellents ;
+- **simple** : une interface réseau, une paire de clés par pair, une poignée de lignes de configuration ;
+- **multiplateforme** : Linux, macOS, Windows, Android, iOS.
+
+Ses limites, tout aussi structurantes : pas d'attribution dynamique d'adresses (chaque pair est configuré statiquement), pas de gestion d'identités ou de certificats intégrée — le minimalisme se paie en fonctionnalités d'infrastructure, que d'autres outils apportent par-dessus.
+
+## Le modèle : des pairs et des clés
+
+WireGuard ne connaît ni « serveur » ni « client » — seulement des **pairs**. Chaque pair a :
+
+- une **paire de clés** (privée/publique — le mécanisme des clés SSH, à nouveau) ;
+- une **adresse dans le tunnel** (ex. `10.9.9.1/24`) ;
+- la liste de ses pairs : leur clé publique, leur **endpoint** (adresse réelle) s'il est connu, et leurs **AllowedIPs**.
+
+`AllowedIPs` est la notion clé, dans les deux sens : *ce que j'accepte de recevoir de ce pair* et *ce que je route vers lui*. `10.9.9.2/32` = seulement cette adresse ; `0.0.0.0/0` = tout mon trafic (le « VPN complet »).
+
+Les paquets IP du tunnel sont **encapsulés** dans de l'UDP chiffré : ce qui circule entre les deux machines ne laisse rien voir du contenu.
+
+```text
+# /etc/wireguard/wg0.conf — un pair typique
+[Interface]
+PrivateKey = <clé privée du pair>
+Address    = 10.9.9.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey  = <clé publique de l'autre pair>
+AllowedIPs = 10.9.9.2/32
+Endpoint   = 203.0.113.7:51820
+```
+
+`wg-quick up wg0` monte l'interface depuis ce fichier ; `wg show` montre l'état du tunnel (dernier échange, trafic).
+
+<Note type="warning" title="Bonnes pratiques">
+  Les clés privées se protègent comme celles de SSH : droits restrictifs, stockage chiffré. `AllowedIPs` se règle **au plus étroit** (le moindre privilège, encore). Et le port UDP (51820 par défaut) se filtre au pare-feu comme n'importe quel service.
+</Note>
+
+## Le mini-labo : un tunnel sans aucune IP publique
+
+La version d'origine de ce cours concluait « on ne le fera pas : il faudrait une IP publique par personne ». C'est vrai pour un VPN *sur Internet* — mais un tunnel WireGuard se moque de savoir si le réseau qui le porte est public : **deux conteneurs Docker suffisent**. Le labo monte un tunnel chiffré entre deux pairs sur un réseau Docker ordinaire, et se vérifie d'un ping.
+
+Les trois fichiers du labo (testés par le harnais du site, Docker requis) :
+
+<CodeFile path="outils-admin/wireguard/Dockerfile" lang="dockerfile" />
+
+<CodeFile path="outils-admin/wireguard/docker-compose.yml" lang="yaml" />
+
+<CodeFile path="outils-admin/wireguard/lab.sh" lang="bash" />
+
+<Exercise id="wg-lab" level={2}>
+  Récupérez les trois fichiers du labo, lancez `./lab.sh --keep`, puis explorez : `docker exec wg-lab-a wg show`, `ping 10.9.9.2` depuis le pair A, et observez la différence entre l'adresse *underlay* (réseau Docker) et l'adresse *du tunnel* (10.9.9.x). Que voit un espion qui capture le trafic entre les deux conteneurs ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop wireguard $ ./lab.sh --keep
+    — build + up
+    — key pairs (private keys never leave their peer)
+    — wg0 on pair-a (10.9.9.1) with pair-b as peer
+    — wg0 on pair-b (10.9.9.2) with pair-a as peer
+    — ping THROUGH the tunnel (10.9.9.x, not the Docker network)
+    3 packets transmitted, 3 packets received, 0% packet loss
+    OK — encrypted tunnel up between two containers, no public IP involved.
+    ```
+
+    L'espion (un `tcpdump` sur le réseau Docker) ne voit que des **paquets UDP chiffrés** entre les deux adresses underlay — ni ping, ni adresses 10.9.9.x, ni contenu. C'est exactement la promesse du tunnel : le réseau porteur ne sait rien de ce qu'il transporte. (`docker compose down` pour ranger.)
+  </Fragment>
+</Exercise>
+
+<Exercise id="wg-allowedips" level={3}>
+  Dans le labo, la configuration du pair A dit `allowed-ips 10.9.9.2/32`. Que se passerait-il avec `0.0.0.0/0` à la place ? Et pourquoi le champ `Endpoint` peut-il n'être configuré que d'un seul côté ?
+
+  <Fragment slot="solution">
+    `0.0.0.0/0` routerait **tout** le trafic du pair A dans le tunnel — l'usage « VPN complet » (et il faudrait alors que le pair B sache faire suivre, NAT ou routage). Au plus étroit, au plus sûr : ici seul `10.9.9.2` a une raison d'y passer.
+
+    `Endpoint` peut manquer d'un côté : le pair qui *reçoit* le premier paquet apprend l'adresse réelle de l'émetteur et s'en souvient (*roaming* — c'est ainsi qu'un téléphone qui change de réseau garde son tunnel). Il faut juste qu'**au moins un** des deux sache où joindre l'autre au départ.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- WireGuard : des **pairs** égaux, une paire de clés chacun, `AllowedIPs` comme règle de routage **et** de filtrage, de l'UDP chiffré.
+- Minimal, moderne, dans le noyau — au prix de l'absence de DHCP et de gestion d'identités.
+- Un tunnel n'a pas besoin d'IP publique : le labo Docker du module en monte un en trente secondes, vérifié en CI.
+- Clés privées protégées, `AllowedIPs` au plus étroit, port filtré : les réflexes de SSH s'appliquent tels quels.
+
+## Ressources supplémentaires
+
+- [wireguard.com/quickstart](https://www.wireguard.com/quickstart/) — le démarrage officiel ;
+- [Le papier de conception](https://www.wireguard.com/papers/wireguard.pdf) — court et lisible, une rareté ;
+- `man wg`, `man wg-quick`.

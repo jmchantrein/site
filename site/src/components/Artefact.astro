@@ -1,0 +1,74 @@
+---
+/**
+ * ARTEFACT — intègre une création interactive de l'AUTEUR, fabriquée
+ * ailleurs (Claude Design/artifacts, D3, three.js, export HTML…), dans
+ * le cadre standard des îlots du site.
+ *
+ * Workflow auteur :
+ *   1. produire un fichier HTML AUTONOME (styles et scripts inlinés —
+ *      idéalement sans CDN, pour respecter « tout statique et local ») ;
+ *   2. le déposer sous  site/public/artefacts/<nom>/index.html
+ *      (+ ses éventuels assets à côté) ;
+ *   3. l'intégrer d'une ligne dans le MDX :
+ *      <Artefact file="vue-eclatee-pc/index.html"
+ *                title="Vue éclatée d'un PC" height={480} />
+ *
+ * L'artefact tourne dans une iframe SANDBOXÉE (allow-scripts) : il ne
+ * peut pas toucher au reste de la page ni au localStorage du site.
+ */
+interface Props {
+  /** Chemin sous public/artefacts/ (ex. « vue-eclatee-pc/index.html »). */
+  file: string;
+  /** Titre affiché dans le cadre — et title de l'iframe (accessibilité). */
+  title: string;
+  /** Hauteur de la zone, en pixels (défaut 480). */
+  height?: number;
+}
+const { file, title, height = 480 } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const src = `${base}/artefacts/${file}`;
+---
+<figure class="artefact">
+  <figcaption class="artefact__bar">
+    <span class="artefact__tag"><span data-lang="fr">artefact</span><span data-lang="en">artifact</span></span>
+    <strong class="artefact__title">{title}</strong>
+    <a class="artefact__open" href={src} target="_blank" rel="noopener">
+      <span data-lang="fr">Plein écran ↗</span><span data-lang="en">Full screen ↗</span>
+    </a>
+  </figcaption>
+  <iframe src={src} title={title} loading="lazy" sandbox="allow-scripts" style={`height: ${height}px`}></iframe>
+</figure>
+
+<style>
+  .artefact {
+    margin: var(--space-5) 0;
+    max-width: var(--measure-wide);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .artefact__bar {
+    display: flex; align-items: center; gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+  .artefact__tag {
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted, inherit);
+  }
+  .artefact__title { color: var(--color-text-strong); }
+  .artefact__open { margin-left: auto; font-size: var(--text-xs); }
+  .artefact iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: #fff;
+  }
+  @media print { .artefact iframe { display: none; } }
+</style>
