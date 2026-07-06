@@ -85,7 +85,7 @@ Le dépôt du TP est monté dans `/etc/ansible` du nœud de contrôle : vos fich
 ## L'environnement de travail : tmux et tmuxp
 
 <Exercise id="ansible-tmux" level={2}>
-  Construisez votre environnement de travail tmux (revoyez la section tmux du module SSH) : une fenêtre `CONTROL_NODE` coupée en deux panneaux placés dans `/etc/ansible`, une fenêtre `MANAGED_NODE` avec un panneau par nœud géré, une fenêtre `NOTES.MD` avec Vim sur vos notes. Puis **pérennisez-le** : déclarez cet environnement avec `tmuxp`, tuez la session, et vérifiez que `tmuxp load` la reconstruit à l'identique.
+  Construisez votre environnement de travail tmux (revoyez le [module tmux](../tmux/)) : une fenêtre `CONTROL_NODE` coupée en deux panneaux placés dans `/etc/ansible`, une fenêtre `MANAGED_NODE` avec un panneau par nœud géré, une fenêtre `NOTES.MD` avec Vim sur vos notes. Puis **pérennisez-le** : déclarez cet environnement avec `tmuxp`, tuez la session, et vérifiez que `tmuxp load` la reconstruit à l'identique.
 
   <Fragment slot="solution">
     <CodeFile path="ansible/tmuxp-admin.yaml" lang="yaml" />

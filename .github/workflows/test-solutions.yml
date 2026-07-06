@@ -39,8 +39,8 @@ jobs:
         working-directory: site
         run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
       # Corrigés YAML et Bash/sed-awk (série Outils) — rapides, sans Docker.
-      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats, xmllint)
-        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats libxml2-utils
+      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats, xmllint, tmux)
+        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats libxml2-utils tmux
       - name: Corrigés YAML (module YAML & JSON)
         working-directory: site
         run: bash scripts/test-solutions-yaml.sh --up

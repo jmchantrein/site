@@ -29,8 +29,8 @@ export const SERIES = {
     fr: "Outils de l'administration système",
     en: "System administration tools",
     desc: {
-      fr: "Vim, Markdown, Bash, sed & awk, SSH, WireGuard, Git, YAML & JSON : les outils fondamentaux de l'admin sys, jusqu'aux portes d'Ansible.",
-      en: "Vim, Markdown, Bash, sed & awk, SSH, WireGuard, Git, YAML & JSON: the sysadmin's fundamental tools, up to Ansible's doorstep.",
+      fr: "Vim, Markdown, Bash, sed & awk, SSH, tmux, WireGuard, Git, YAML & JSON : les outils fondamentaux de l'admin sys, jusqu'aux portes d'Ansible.",
+      en: "Vim, Markdown, Bash, sed & awk, SSH, tmux, WireGuard, Git, YAML & JSON: the sysadmin's fundamental tools, up to Ansible's doorstep.",
     },
     /** Cours de l'auteur (Beamer + dépôts, sources/) converti en manuel ;
         l'IA reformule la prose et régénère les exercices. */

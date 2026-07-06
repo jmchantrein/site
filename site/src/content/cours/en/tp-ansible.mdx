@@ -85,7 +85,7 @@ The lab's repository is mounted at `/etc/ansible` on the control node: your file
 ## The working environment: tmux and tmuxp
 
 <Exercise id="ansible-tmux" level={2}>
-  Build your tmux working environment (revisit the SSH module's tmux section): a `CONTROL_NODE` window split into two panes sitting in `/etc/ansible`, a `MANAGED_NODE` window with one pane per managed node, a `NOTES.MD` window with Vim on your notes. Then **make it durable**: declare this environment with `tmuxp`, kill the session, and check that `tmuxp load` rebuilds it identically.
+  Build your tmux working environment (revisit the [tmux module](../tmux/)): a `CONTROL_NODE` window split into two panes sitting in `/etc/ansible`, a `MANAGED_NODE` window with one pane per managed node, a `NOTES.MD` window with Vim on your notes. Then **make it durable**: declare this environment with `tmuxp`, kill the session, and check that `tmuxp load` rebuilds it identically.
 
   <Fragment slot="solution">
     <CodeFile path="ansible/tmuxp-admin.yaml" lang="yaml" />
