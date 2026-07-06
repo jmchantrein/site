@@ -37,8 +37,8 @@ jobs:
         working-directory: site
         run: bash scripts/test-solutions.sh "--${{ github.event.inputs.mode || (github.ref == 'refs/heads/main' && 'up' || 'build') }}"
       # Corrigés YAML et Bash/sed-awk (série Outils) — rapides, sans Docker.
-      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats, ansible-lint)
-        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats ansible-lint
+      - name: Outils des harnais frères (yamllint, yq, shellcheck, bats)
+        run: sudo apt-get update -q && sudo apt-get install -y -q yamllint yq shellcheck bats
       - name: Corrigés YAML (module YAML & JSON)
         working-directory: site
         run: bash scripts/test-solutions-yaml.sh --up
@@ -53,6 +53,13 @@ jobs:
       # Labo Ansible (série Ansible) — lint + syntax-check, puis labo Docker
       # complet : les playbooks passent DEUX fois, le second doit dire
       # changed=0 — la CI incarne l'idempotence enseignée.
+      # ansible-lint vient d'un venv dédié : le paquet apt (ansible-core
+      # 2.16) entre en conflit avec l'ansible préinstallé du runner
+      # (« Ansible CLI and python module versions do not match »).
       - name: Labo Ansible (lint + idempotence)
         working-directory: site
-        run: bash scripts/test-solutions-ansible.sh --up
+        run: |
+          python3 -m venv /tmp/ansible-venv
+          /tmp/ansible-venv/bin/pip install -q ansible-core ansible-lint
+          export PATH="/tmp/ansible-venv/bin:$PATH"
+          bash scripts/test-solutions-ansible.sh --up
