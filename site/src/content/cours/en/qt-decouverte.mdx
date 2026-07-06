@@ -1,0 +1,98 @@
+---
+title: "Qt: the framework and the first program"
+description: "A C++ framework for native, portable interfaces: what Qt is, what it can do, and your first program — built with CMake, as Qt 6 intends."
+order: 40
+serie: qt
+topics: [dev, gui]
+duration: 20
+badge: "Qt"
+tags: [Qt, C++, GUI, CMake, framework]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+A new theme on this site: **development**, entering through **graphical interfaces**. This course takes up and modernizes Vincent Barichard's Qt course (LERIA, University of Angers): the substance is his, the target is **Qt 6** — and, true to this site's habits, every example shown is a real file, **compiled and executed by CI**. This module's goals:
+
+- know what Qt is, where it comes from, under which licences it lives;
+- measure what it covers (much more than the GUI);
+- build and run your first program, with CMake.
+
+## What is Qt?
+
+**Qt** (pronounced *cute*) is a C++ **framework**: a set of libraries *and* a way to structure your application — fully object-oriented, whose historical QtWidgets module builds **native** graphical interfaces (the application looks like it belongs on its host system). Development started in 1994 at Trolltech; it is carried today by **The Qt Company** and a community (the *Qt Project*), after a stint at Nokia (2008-2012) then Digia — the eventful history never interrupted development.
+
+**Portability** is the founding argument: the same code recompiles for Linux/X11/Wayland, Windows, macOS, Android, iOS and embedded targets. KDE (the desktop environment), VLC, OBS Studio and plenty of in-vehicle software are written with Qt. *Bindings* exist for other languages — Python first (PySide, the official binding).
+
+<Note type="info" title="Licences: read before you undertake">
+  Qt ships under **free licences** (LGPL v3 for most modules, GPL for some) and under a **commercial licence**. For a lab, free software or internal use, the LGPL covers everything; it is when distributing a *statically linked* proprietary product that the question turns serious. A professional reflex you know by now: the licence is read **before** the first line of code.
+</Note>
+
+## What Qt can do
+
+The GUI is the tree hiding the forest. Qt also provides: **containers and strings** (QString is natively Unicode), files and streams, **networking** (HTTP, TCP/UDP, WebSockets), **databases** (PostgreSQL, SQLite, MySQL…), XML and JSON, threads, 3D, full **internationalization** (Qt Linguist) — all portable. A Qt application may have no window at all: half of this course's examples are console programs.
+
+Two mechanisms set Qt apart in the C++ landscape:
+
+- the **meta-object system** (and its compiler **moc**): it gives Qt objects introspection, properties and **signals and slots** — the communication mechanism replacing *callbacks*, the heart of [module 2](../qt-objets-signaux/);
+- complete **tooling**: Designer (draw interfaces), Linguist (translate), and the **CMake** integration — [module 4](../qt-outils/) reviews them.
+
+## The first program
+
+The ritual, Qt flavour (a real file, compiled by the site's harness):
+
+<CodeFile path="qt/hello/hello.cpp" lang="cpp" />
+
+<Duo>
+  Three lines carry the whole model. `QApplication app`: **every graphical application owns exactly one** — it talks to the system and runs the **event loop**. `QLabel hello(…)`: the widget — here *top-level*, parentless: it is a window — lives **on the stack**, not behind a `new` (module 2 explains why). `app.exec()`: the event loop starts — the program no longer "finishes", it **reacts** (clicks, keys, resizes) until closed. Note in passing that the label renders a subset of HTML.
+
+  <Fragment slot="media">
+    <Img src="images/qt/hello.png" alt="Minimal grey window showing the text “Hello world!” in blue italics" caption="hello.cpp, running — this screenshot is generated from this very code (captures.sh)." width={220} />
+  </Fragment>
+</Duo>
+
+<Note type="info" title="The little harnais.h header">
+  The course's examples include `../harnais.h`, two utility flags: `--smoke` (quit as soon as the loop starts — how CI *executes* every interface, screenless) and `--capture` (save a screenshot of the window — **every image in this course is regenerated from the displayed code**, by `solutions/qt/captures.sh`). A graphical program is testable; it just needs to be taught how to stop.
+</Note>
+
+## Building: CMake, Qt 6's standard
+
+<Exercise id="qt-hello-build" level={1}>
+  Install the tooling (`sudo apt install cmake g++ qt6-base-dev`), grab `hello.cpp`, `harnais.h` and the course's `CMakeLists.txt`, then configure, build and run. What does each command do?
+
+  <Fragment slot="solution">
+    <CodeFile path="qt/CMakeLists.txt" lang="cmake" />
+
+    ```console
+    ada@laptop solutions-qt $ cmake -S . -B build
+    -- The CXX compiler identification is GNU 13.2.0
+    -- Found Qt6: /usr/lib/x86_64-linux-gnu/cmake/Qt6
+    -- Configuring done
+    ada@laptop solutions-qt $ cmake --build build -j4
+    [ 12%] Building CXX object CMakeFiles/hello.dir/hello/hello.cpp.o
+    …
+    ada@laptop solutions-qt $ ./build/hello
+    ```
+
+    `cmake -S . -B build` **configures**: it reads `CMakeLists.txt`, finds Qt (`find_package(Qt6…)`) and generates the build files into `build/` (the source directory stays clean). `cmake --build build` **compiles**. The file lists all of the course's examples — each module adds its own. And `qt_standard_project_setup()` notably enables **AUTOMOC**, whose role module 2 will explain.
+  </Fragment>
+</Exercise>
+
+<Note type="warning" title="qmake, .pro: the old world">
+  The original course (Qt 4 era) built with **qmake** and its `.pro` files (`SOURCES = hello.cpp`, `CONFIG += qt warn_on release`…). qmake still exists, and you will meet `.pro` files in many projects — but since Qt 6, **CMake is the official tool**: it is what the documentation, the IDEs and this course use. Another period piece: `#include <Qt/QtGui>` then "the include that includes everything" — today one includes **one class = one header** (`#include <QLabel>`), and widgets live in the **QtWidgets** module (split from QtGui since Qt 5).
+</Note>
+
+## Recap
+
+- **Qt**: an object-oriented, portable C++ framework (desktop, mobile, embedded), LGPL/GPL/commercial licences — to read before undertaking.
+- Much more than GUI: containers, networking, SQL, i18n… — and two singularities: the **meta-object system** (signals/slots, moc) and the tooling.
+- The skeleton: one **QApplication**, widgets (the top-level **on the stack**), and `app.exec()` — the event loop.
+- **CMake** is Qt 6's build system (qmake/`.pro`: the old world, still visible in the wild).
+- The course's examples are compiled **and executed** by CI (`--smoke`), and the screenshots regenerated from the code (`--capture`).
+
+## Further resources
+
+- [doc.qt.io](https://doc.qt.io/) — the official (Qt 6) documentation, excellent;
+- [Qt Examples](https://doc.qt.io/qt-6/qtexamples.html) — dozens of commented applications;
+- Vincent Barichard's original course (LERIA) — this course is its Qt 6 modernization.

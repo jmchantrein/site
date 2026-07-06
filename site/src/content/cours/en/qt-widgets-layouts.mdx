@@ -1,0 +1,110 @@
+---
+title: "Widgets and layouts"
+description: "The catalogue of common widgets, the layout managers (boxes, grid, nesting, stretches) — and the counter lab: three synchronized widgets without a line of glue."
+order: 42
+serie: qt
+topics: [dev, gui]
+duration: 30
+badge: "Qt"
+tags: [QWidget, QLayout, QGridLayout, stretch, lab]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+An interface is an assembly of **widgets**, placed by **layouts**. This module gives the minimal catalogue, the placement rules — and has you build a real little application. Goals:
+
+- know the common widgets (and how to look up the others);
+- place with `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`; nest; dose with stretches;
+- wire several widgets through signals/slots — the counter lab.
+
+## The catalogue of common widgets
+
+Designing an interface starts with knowing your bricks. The indispensables:
+
+| Widget | Role |
+|---|---|
+| `QLabel` | Text or image (simple HTML accepted) |
+| `QPushButton` | The clickable button |
+| `QLineEdit` / `QTextEdit` | One-line input / multi-line rich text |
+| `QCheckBox` / `QRadioButton` | Check box / radio button |
+| `QComboBox` | Drop-down list |
+| `QSpinBox` / `QSlider` | Number with arrows / slider |
+| `QLCDNumber` | "Digital" display |
+| `QProgressBar` | Progress bar |
+| `QListView` / `QTableView` | Lists and tables (model/view) |
+
+And for structure: `QGroupBox` (titled frame), `QFrame`, `QMainWindow` (main window: `QMenuBar` menus, `QToolBar` toolbars, status bar), `QDialog` (dialog boxes). Any custom widget is created **by inheritance** from an existing one — or from `QWidget` to start from scratch ([module 5](../qt-evenements-dessin/)).
+
+Three behaviours to remember: a **parentless** widget is a window (*top-level*); a child cannot display **outside** its parent; hiding, disabling or destroying a widget applies recursively to its children.
+
+## Layouts: placing without computing
+
+Pixel positioning is a dead end: what becomes of your interface when the window grows, when the font changes, when the text is translated into German (+30% width)? **Layout managers** solve the problem: you describe a *structure*, they compute geometries — at startup and on every resize.
+
+- **`QHBoxLayout` / `QVBoxLayout`**: in a row / in a column, in insertion order (`addWidget`);
+- **`QGridLayout`**: as a table — `addWidget(w, row, column)` (starting at 0), with cell spanning (`addWidget(w, r, c, nRows, nCols)`) and empty cells allowed;
+- **nesting** is free: `addLayout` places a layout inside another.
+
+<Duo>
+  The typical form fits in a few lines (a real file, compiled and executed by the harness): a grid for the label/field pairs, and a nested horizontal box — spanning both columns — for the buttons. The **stretch** (`addStretch`) placed before them absorbs the excess space: when the window widens, the spacings grow, not the buttons, and they stay hugged to the right edge. Margins adjust when needed (`setContentsMargins`, `setSpacing`).
+
+  <Fragment slot="media">
+    <Img src="images/qt/layouts.png" alt="Two-field form (Nom, Domaine) with Annuler and Valider buttons aligned bottom right" caption="layouts.cpp — grid, nested box, stretch." width={230} />
+  </Fragment>
+</Duo>
+
+<CodeFile path="qt/layouts/layouts.cpp" lang="cpp" />
+
+Last actor of placement: every widget publishes its preferences (`sizeHint()`, `QSizePolicy` — a button refuses to stretch vertically, a text field accepts everything); the layout arbitrates. You customize the policy when the default behaviour does not fit.
+
+## Lab: the counter
+
+<Duo>
+  Three widgets, two directions of synchronization, zero glue code: the witness application for signals/slots applied to widgets. The slider and the spin box **mirror each other** (each `valueChanged` → the other's `setValue` — no infinite loop: `setValue` does not emit when the value does not actually change), and the LCD display follows.
+
+  <Fragment slot="media">
+    <Img src="images/qt/compteur.png" alt="Window with a large LCD display showing 42, a horizontal slider and a numeric spin box at 42" caption="compteur.cpp — the lab, running." width={240} />
+  </Fragment>
+</Duo>
+
+<Exercise id="qt-compteur" level={2}>
+  Build the counter: a `QLCDNumber`, a horizontal `QSlider` and a `QSpinBox` stacked vertically (range 0–130); slider and box synchronized both ways; the display follows; initial value 42. Why doesn't the double connection loop forever? And why `qOverload<int>` on the display connection?
+
+  <Fragment slot="solution">
+    <CodeFile path="qt/compteur/compteur.cpp" lang="cpp" />
+
+    No loop: `setValue` **only emits `valueChanged` when the value actually changes** — the second `setValue` (42 → 42) stops dead. It is a general Qt pattern: mutators are silent on equal values, precisely to allow these cross-wirings. As for `qOverload<int>`: `QLCDNumber::display` exists in several overloads (`int`, `double`, `QString`) — the member pointer is ambiguous, you state which one. One of the modern syntax's few tolls.
+  </Fragment>
+</Exercise>
+
+<Exercise id="qt-compteur-bouton" level={2}>
+  Add a "Reset" button under the spin box, enabled only when the value is not already zero. Hint: `QPushButton::clicked`, `QWidget::setEnabled`, and a lambda.
+
+  <Fragment slot="solution">
+    ```cpp
+    auto *raz = new QPushButton("Remise à zéro");
+    colonne->addWidget(raz);
+    QObject::connect(raz, &QPushButton::clicked,
+                     [boite] { boite->setValue(0); });
+    QObject::connect(boite, &QSpinBox::valueChanged,
+                     [raz](int v) { raz->setEnabled(v != 0); });
+    raz->setEnabled(boite->value() != 0); // coherent initial state
+    ```
+
+    The click resets the box — and the existing synchronization propagates to the slider and display: you only wire what is new. The second connection keeps the button's state current; the last line avoids a wrong state at startup (signals only tell of *changes*, not of the initial state).
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- A core of widgets covers 90% of interfaces — the rest is **looked up in the documentation** and created **by inheritance**.
+- Layouts: `QVBox`/`QHBox` (file), `QGridLayout` (table, cell spanning), free **nesting**, **stretches** (`addStretch`) to steer excess space; widgets negotiate via `sizeHint`/`QSizePolicy`.
+- The counter: mutators silent on equal values make cross-synchronization safe; `qOverload` disambiguates overloads.
+
+## Further resources
+
+- [Qt Widgets Gallery](https://doc.qt.io/qt-6/gallery.html) — every widget, in pictures;
+- [Layout Management](https://doc.qt.io/qt-6/layout.html) — the official placement guide;
+- the [Designer module](../qt-outils/) — drawing these same interfaces with the mouse.

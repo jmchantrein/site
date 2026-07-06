@@ -1,0 +1,46 @@
+---
+/**
+ * IMAGE LOCALE — figure servie depuis public/ (aucune ressource externe),
+ * avec légende. Pour les captures Qt : les fichiers sont RÉGÉNÉRÉS depuis
+ * le code des corrigés (solutions/qt/captures.sh) — l'image montrée est le
+ * programme montré.
+ *
+ * Usage MDX :
+ *   <Img src="images/qt/hello.png" alt="…" caption="…" width={220} />
+ */
+interface Props {
+  /** Chemin relatif à public/ (sans « / » initial). */
+  src: string;
+  /** Alternative textuelle (obligatoire). */
+  alt: string;
+  /** Légende affichée sous l'image (optionnelle). */
+  caption?: string;
+  /** Largeur d'affichage en px (l'image garde son ratio). */
+  width?: number;
+}
+const { src, alt, caption, width } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<figure class="img-locale">
+  <img src={`${base}/${src}`} alt={alt} width={width} loading="lazy" />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .img-locale {
+    margin: var(--space-4) 0;
+    text-align: center;
+  }
+  .img-locale img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: white; /* les captures Qt sont sur fond clair, thème ou pas */
+  }
+  .img-locale figcaption {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+</style>

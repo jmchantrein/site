@@ -484,26 +484,41 @@ glossaire portée dynamique + word splitting) :
   mise en récit IA), déclarée par article (mécanisme existant pour
   les contenus hors série).
 
-### 10.4 Cours Qt — reçu, décisions en attente
+### 10.4 Cours Qt — réalisé (juillet 2026)
 
 Archive reçue (juillet 2026), déposée sous `sources/qt/` (Beamer
 1 384 l. + code C++ + figures) : modèle objet QObject, QWidgets,
 QLayouts, signaux/slots, outils (qmake, moc, Designer, Assistant,
 Linguist), widgets et évènements personnalisés, images/QPainter, et un
-chapitre « De Qt4 à Qt5 ». Reste à trancher **avant conversion**
-(`order` 40+) :
+chapitre « De Qt4 à Qt5 ». Décisions et réalisation :
 
-1. **Actualité — ⬥ tranché (juillet 2026)** : modernisation vers
-   **Qt 6**, avec des **encarts** `<Note>` aux endroits des gros
-   changements (qmake→CMake comme build officiel, réorganisation des
-   modules/includes, syntaxe des connexions…) ; le chapitre de portage
-   devient « de Qt5 à Qt6 ». Provenance mixte déclarée.
-2. **Thématique** : `divers`, ou création d'un topic « dev » (premier
-   contenu développement du site) — **encore à trancher**.
-3. Les captures d'écran (`Figures/`) devront être refaites ou
-   remplacées par des figures thémables — les bitmaps d'époque
-   cadrent mal avec le design (cf. ArchiStack qui a remplacé les PNG
-   du cours Docker).
+1. **Actualité — ⬥ tranché** : modernisation vers **Qt 6**, encarts
+   aux gros changements (qmake/.pro → CMake, includes/QtWidgets,
+   SIGNAL()/SLOT() → syntaxe moderne, qInstallMsgHandler →
+   QLoggingCategory, Assistant → Qt Creator/doc.qt.io) ; le chapitre
+   de portage est absorbé par ces encarts + une ouverture Qt Quick/QML.
+2. **Thématique — ⬥ tranché** : deux nouveaux topics `dev`
+   (« Développement ») et `gui` (« Interfaces graphiques »), portés
+   par les 5 modules.
+3. **Captures — réalisé au-delà du prévu** : les captures sont
+   RÉGÉNÉRÉES depuis le code des corrigés (harnais.h --capture +
+   solutions/qt/captures.sh, rendu offscreen) — l'image montrée est
+   littéralement le programme montré ; composant <Img> (public/,
+   base-aware, légende) pour les afficher en <Duo>.
+
+**Livré** : série `qt`, 5 modules FR/EN orders 40-44 (découverte/CMake,
+QObject-mémoire-signaux, widgets-layouts + TP compteur, outils
+CMake/Designer/Linguist/débogage, évènements-dessin-fichiers + QML),
+status construction ; crédit Vincent Barichard en intro et série
+(prov by: mixed, aiShare 55) ; corrigés solutions/qt/ (8 exemples C++
+Qt 6 + CMakeLists + harnais.h + captures.sh) compilés ET exécutés par
+scripts/test-solutions-qt.sh (12 OK en local : AUTOMOC, sorties
+console vérifiées — cascade de destruction, conversions implicites —,
+smoke offscreen des 5 GUI), câblé en CI (apt qt6-base-dev) ;
+glossaire : 11 entrées (Qt, framework, GUI, widget, layout,
+signaux/slots, callback, moc, CMake, boucle d'évènements, QML).
+→ *jalon : relecture auteur (modernisation majoritairement IA sur le
+fond Barichard/Chantrein).*
 
 ### 10.5 Glossaire — maillage systématique (demande auteur, juillet 2026)
 

@@ -4,6 +4,8 @@
 export const TOPICS = {
   linux: "Administration systèmes GNU/Linux",
   reseau: "Réseau",
+  dev: "Développement",
+  gui: "Interfaces graphiques",
   sciences: "Sciences & calcul",
   divers: "Divers",
 } as const;

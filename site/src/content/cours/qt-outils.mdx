@@ -1,0 +1,101 @@
+---
+title: "Les outils : CMake, Designer, Linguist, débogage"
+description: "L'atelier autour du code : CMake et AUTOMOC, Designer et ses fichiers .ui, l'internationalisation avec tr() et Linguist, et le débogage à la Qt (qDebug, catégories, Q_ASSERT)."
+order: 43
+serie: qt
+topics: [dev, gui]
+duration: 25
+badge: "Qt"
+tags: [CMake, Designer, Linguist, qDebug, uic]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Qt n'est pas qu'une bibliothèque : c'est un atelier. Ce module fait le tour des outils qui entourent le code — la chaîne de construction, le dessin d'interfaces, la traduction, le débogage. Objectifs :
+
+- comprendre ce que CMake orchestre (moc, uic, rcc) ;
+- savoir ce qu'est un fichier `.ui` et quand utiliser **Designer** ;
+- internationaliser avec `tr()` et **Linguist** ;
+- déboguer à la Qt : `qDebug` et ses sœurs, les assertions.
+
+## La chaîne de construction : trois générateurs sous CMake
+
+Le [module 1](../qt-decouverte/) a montré le `CMakeLists.txt` ; voici ce qu'il déclenche. Trois **générateurs de code** travaillent avant le compilateur C++ :
+
+- **moc** (Meta Object Compiler) : lit les classes `Q_OBJECT`, génère l'implémentation des signaux et l'introspection ([module 2](../qt-objets-signaux/)) — piloté par **AUTOMOC** ;
+- **uic** (User Interface Compiler) : transforme les fichiers `.ui` de Designer en en-têtes C++ — piloté par **AUTOUIC** ;
+- **rcc** (Resource Compiler) : incorpore des ressources (icônes, images, traductions…) **dans** l'exécutable, via un fichier `.qrc` — piloté par **AUTORCC**. Fini le « l'icône ne s'affiche pas car le chemin est relatif au mauvais répertoire » : la ressource voyage dans le binaire (`":/icones/chercher.png"`).
+
+`qt_standard_project_setup()` active les trois AUTO* : vous écrivez du C++, des `.ui` et des `.qrc` — CMake s'occupe des générateurs. (À l'époque qmake, chacun s'invoquait à la main ou via le `.pro` ; l'encart du module 1 raconte cet ancien monde.)
+
+## Qt Designer : dessiner les interfaces
+
+**Designer** permet de dessiner une interface à la souris : glisser les widgets, poser les layouts, régler les propriétés. Le résultat est un fichier **`.ui`** — du **XML**, pas du code : la description de l'interface, que `uic` compile en en-tête C++ (`ui_mafenetre.h`) utilisé par votre classe.
+
+```console
+ada@laptop projet $ designer mafenetre.ui    # dessiner
+ada@laptop projet $ head -4 mafenetre.ui     # le résultat : du XML
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MaFenetre</class>
+ <widget class="QWidget" name="MaFenetre">
+```
+
+Où placer le curseur entre Designer et le code ? Le formulaire figé (boîte de dialogue, écran de préférences) gagne à être **dessiné** — visualisation immédiate, layouts posés sans se tromper ; l'interface **dynamique** (widgets créés selon les données) reste du code. Les deux se mélangent sans friction : une classe peut charger son `.ui` et câbler ses signaux en C++. Designer est aujourd'hui intégré à **Qt Creator**, l'IDE de Qt — qui embarque aussi l'aide (l'héritier de Qt Assistant : la même documentation, servie dans l'IDE et sur [doc.qt.io](https://doc.qt.io/)).
+
+## Traduire : tr(), lupdate, Linguist, lrelease
+
+L'internationalisation est native chez Qt — ce site étant bilingue, le sujet nous parle. La chaîne en quatre temps :
+
+1. **dans le code**, chaque chaîne visible passe par **`tr()`** : `setText(tr("Fermer"))` — la méthode vient de QObject, marquer coûte trois lettres ;
+2. **`lupdate`** balaie les sources et extrait les chaînes dans un fichier **`.ts`** (XML) par langue cible ;
+3. la personne qui traduit ouvre le `.ts` dans **Qt Linguist** — un vrai poste de travail de traduction : contexte, suggestions, validation, pas besoin de savoir coder ;
+4. **`lrelease`** compile le `.ts` en **`.qm`** binaire, que l'application charge au démarrage (`QTranslator`).
+
+```console
+ada@laptop projet $ lupdate compteur.cpp -ts compteur_en.ts
+Updating 'compteur_en.ts'... Found 4 source text(s)
+ada@laptop projet $ linguist compteur_en.ts      # traduire, humainement
+ada@laptop projet $ lrelease compteur_en.ts      # → compteur_en.qm
+```
+
+<Note type="info" title="La leçon dépasse Qt">
+  Le motif — *marquer* les chaînes, *extraire* vers un format d'échange, *traduire* dans un outil dédié, *compiler* pour l'exécution — est celui de toute l'industrie (gettext chez GNU, i18next sur le web…). Retenez le motif, les noms d'outils changent.
+</Note>
+
+## Déboguer à la Qt
+
+Les fonctions de sortie, par gravité croissante : **`qDebug()`** (mise au point), **`qInfo()`**, **`qWarning()`**, **`qCritical()`**, et **`qFatal()`** — qui termine le programme. Toutes s'utilisent en flux (`qDebug() << "valeur :" << v;`) et savent afficher les types Qt (QString, listes, géométries…) sans conversion.
+
+Deux mécanismes de contrôle :
+
+- les **catégories** (`QLoggingCategory`) : chaque sous-système journalise dans sa catégorie, et l'on active/coupe à l'exécution (`QT_LOGGING_RULES="monapp.reseau.debug=true"`) — le successeur moderne du `qInstallMessageHandler` global du cours d'origine (qui reste utile pour *rediriger* : vers un fichier, le journal système…) ;
+- les **assertions** : `Q_ASSERT(condition)` (vérifiée en mode debug seulement) et `Q_CHECK_PTR(pointeur)` — documenter ses invariants et échouer tôt.
+
+```cpp
+Q_ASSERT(index >= 0 && index < liste.size()); // invariant : échoue tôt, en debug
+qDebug() << "géométrie :" << widget.geometry(); // QRect(0,0 220x90) — lisible
+```
+
+<Exercise id="qt-outils-quiz" level={1}>
+  Sans relire : qui transforme quoi ? Reliez moc, uic, rcc et lrelease à leurs entrées/sorties (`.h` avec Q_OBJECT, `.ui`, `.qrc`, `.ts`). Et lequel de ces quatre n'est **pas** piloté par un AUTO* de CMake ?
+
+  <Fragment slot="solution">
+    **moc** : en-tête `Q_OBJECT` → `moc_*.cpp` (signaux, introspection) — AUTOMOC. **uic** : `.ui` (XML Designer) → `ui_*.h` — AUTOUIC. **rcc** : `.qrc` (+ fichiers listés) → ressources dans le binaire — AUTORCC. **lrelease** : `.ts` (traductions) → `.qm` chargé par QTranslator — pas d'AUTO* : il s'intègre par les fonctions CMake dédiées (`qt_add_translations`), la traduction étant un flux de travail à part (elle implique des humains entre lupdate et lrelease).
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- CMake orchestre **trois générateurs** : moc (`Q_OBJECT`), uic (`.ui`), rcc (`.qrc`) — AUTO* fait tout, `qt_standard_project_setup()` les active.
+- **Designer** dessine des `.ui` (XML) : idéal pour les formulaires figés ; le dynamique reste du code ; le tout vit dans **Qt Creator**.
+- i18n : `tr()` → `lupdate` → **Linguist** (`.ts`) → `lrelease` (`.qm`) — un motif universel au-delà de Qt.
+- Débogage : `qDebug`…`qFatal` en flux, **catégories** activables à l'exécution, `Q_ASSERT` pour les invariants.
+
+## Ressources supplémentaires
+
+- [Qt Creator Manual](https://doc.qt.io/qtcreator/) — l'IDE, Designer intégré compris ;
+- [Internationalization with Qt](https://doc.qt.io/qt-6/internationalization.html) — la chaîne complète ;
+- [Debugging Techniques](https://doc.qt.io/qt-6/debug.html) — journalisation et outils.

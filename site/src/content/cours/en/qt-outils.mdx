@@ -1,0 +1,101 @@
+---
+title: "The tools: CMake, Designer, Linguist, debugging"
+description: "The workshop around the code: CMake and AUTOMOC, Designer and its .ui files, internationalization with tr() and Linguist, and Qt-style debugging (qDebug, categories, Q_ASSERT)."
+order: 43
+serie: qt
+topics: [dev, gui]
+duration: 25
+badge: "Qt"
+tags: [CMake, Designer, Linguist, qDebug, uic]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Qt is not just a library: it is a workshop. This module tours the tools surrounding the code — the build chain, interface drawing, translation, debugging. Goals:
+
+- understand what CMake orchestrates (moc, uic, rcc);
+- know what a `.ui` file is and when to use **Designer**;
+- internationalize with `tr()` and **Linguist**;
+- debug Qt-style: `qDebug` and its sisters, assertions.
+
+## The build chain: three generators under CMake
+
+[Module 1](../qt-decouverte/) showed the `CMakeLists.txt`; here is what it triggers. Three **code generators** work before the C++ compiler:
+
+- **moc** (Meta Object Compiler): reads `Q_OBJECT` classes, generates the signals' implementation and introspection ([module 2](../qt-objets-signaux/)) — driven by **AUTOMOC**;
+- **uic** (User Interface Compiler): turns Designer's `.ui` files into C++ headers — driven by **AUTOUIC**;
+- **rcc** (Resource Compiler): embeds resources (icons, images, translations…) **inside** the executable, through a `.qrc` file — driven by **AUTORCC**. No more "the icon does not show because the path is relative to the wrong directory": the resource travels in the binary (`":/icons/search.png"`).
+
+`qt_standard_project_setup()` enables all three AUTO*: you write C++, `.ui` and `.qrc` files — CMake handles the generators. (In the qmake era, each was invoked by hand or through the `.pro`; module 1's aside tells of that old world.)
+
+## Qt Designer: drawing interfaces
+
+**Designer** lets you draw an interface with the mouse: drag widgets, lay layouts, set properties. The result is a **`.ui`** file — **XML**, not code: the interface's description, which `uic` compiles into a C++ header (`ui_mywindow.h`) used by your class.
+
+```console
+ada@laptop projet $ designer mafenetre.ui    # draw
+ada@laptop projet $ head -4 mafenetre.ui     # the result: XML
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MaFenetre</class>
+ <widget class="QWidget" name="MaFenetre">
+```
+
+Where to put the cursor between Designer and code? The frozen form (dialog box, preferences screen) benefits from being **drawn** — immediate visualization, layouts laid without mistakes; the **dynamic** interface (widgets created from data) remains code. The two mix without friction: a class can load its `.ui` and wire its signals in C++. Designer is nowadays integrated into **Qt Creator**, Qt's IDE — which also embeds help (Qt Assistant's heir: the same documentation, served in the IDE and at [doc.qt.io](https://doc.qt.io/)).
+
+## Translating: tr(), lupdate, Linguist, lrelease
+
+Internationalization is native to Qt — and this being a bilingual site, the topic speaks to us. The chain in four steps:
+
+1. **in the code**, every visible string goes through **`tr()`**: `setText(tr("Fermer"))` — the method comes from QObject, marking costs three letters;
+2. **`lupdate`** sweeps the sources and extracts strings into one **`.ts`** file (XML) per target language;
+3. the person translating opens the `.ts` in **Qt Linguist** — a real translation workstation: context, suggestions, validation, no coding required;
+4. **`lrelease`** compiles the `.ts` into a binary **`.qm`**, loaded by the application at startup (`QTranslator`).
+
+```console
+ada@laptop projet $ lupdate compteur.cpp -ts compteur_en.ts
+Updating 'compteur_en.ts'... Found 4 source text(s)
+ada@laptop projet $ linguist compteur_en.ts      # translate, humanly
+ada@laptop projet $ lrelease compteur_en.ts      # → compteur_en.qm
+```
+
+<Note type="info" title="The lesson outlives Qt">
+  The pattern — *mark* the strings, *extract* to an exchange format, *translate* in a dedicated tool, *compile* for runtime — is the whole industry's (gettext at GNU, i18next on the web…). Remember the pattern; tool names change.
+</Note>
+
+## Debugging, Qt-style
+
+The output functions, by rising gravity: **`qDebug()`** (tuning), **`qInfo()`**, **`qWarning()`**, **`qCritical()`**, and **`qFatal()`** — which terminates the program. All are used as streams (`qDebug() << "value:" << v;`) and print Qt types (QString, lists, geometries…) without conversion.
+
+Two control mechanisms:
+
+- **categories** (`QLoggingCategory`): each subsystem logs into its category, switched on/off at runtime (`QT_LOGGING_RULES="myapp.network.debug=true"`) — the modern successor of the original course's global `qInstallMessageHandler` (still useful for *redirecting*: to a file, the system journal…);
+- **assertions**: `Q_ASSERT(condition)` (checked in debug builds only) and `Q_CHECK_PTR(pointer)` — document your invariants and fail early.
+
+```cpp
+Q_ASSERT(index >= 0 && index < liste.size()); // invariant: fails early, in debug
+qDebug() << "geometry:" << widget.geometry(); // QRect(0,0 220x90) — readable
+```
+
+<Exercise id="qt-outils-quiz" level={1}>
+  Without rereading: who transforms what? Match moc, uic, rcc and lrelease with their inputs/outputs (`.h` with Q_OBJECT, `.ui`, `.qrc`, `.ts`). And which of the four is **not** driven by a CMake AUTO*?
+
+  <Fragment slot="solution">
+    **moc**: `Q_OBJECT` header → `moc_*.cpp` (signals, introspection) — AUTOMOC. **uic**: `.ui` (Designer XML) → `ui_*.h` — AUTOUIC. **rcc**: `.qrc` (+ listed files) → resources in the binary — AUTORCC. **lrelease**: `.ts` (translations) → `.qm` loaded by QTranslator — no AUTO*: it integrates through dedicated CMake functions (`qt_add_translations`), translation being a workflow of its own (humans sit between lupdate and lrelease).
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- CMake orchestrates **three generators**: moc (`Q_OBJECT`), uic (`.ui`), rcc (`.qrc`) — AUTO* does it all, `qt_standard_project_setup()` enables them.
+- **Designer** draws `.ui` files (XML): ideal for frozen forms; dynamic stays code; everything lives in **Qt Creator**.
+- i18n: `tr()` → `lupdate` → **Linguist** (`.ts`) → `lrelease` (`.qm`) — a universal pattern beyond Qt.
+- Debugging: `qDebug`…`qFatal` as streams, runtime-switchable **categories**, `Q_ASSERT` for invariants.
+
+## Further resources
+
+- [Qt Creator Manual](https://doc.qt.io/qtcreator/) — the IDE, integrated Designer included;
+- [Internationalization with Qt](https://doc.qt.io/qt-6/internationalization.html) — the complete chain;
+- [Debugging Techniques](https://doc.qt.io/qt-6/debug.html) — logging and tools.
