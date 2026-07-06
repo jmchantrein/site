@@ -431,9 +431,12 @@ export const GLOSSAIRE = [
   { slug: "hachage", type: "terme", fr: "hachage", en: "hash", angl: true, aliasFr: ["somme de contrôle", "hash"], aliasEn: ["checksum", "hash function"],
     brefFr: "Fonction qui condense des données en une empreinte de taille fixe (sha256…) : vérifier une intégrité, identifier un contenu.",
     brefEn: "A function condensing data into a fixed-size fingerprint (sha256…): verifying integrity, identifying content." },
-  { slug: "tmux", type: "terme", fr: "tmux", en: "tmux",
+  { slug: "tmux", type: "terme", fr: "tmux", en: "tmux", cours: "tmux",
     brefFr: "Multiplexeur de terminaux : sessions persistantes (survivent à la coupure SSH), fenêtres et panneaux multiples.",
     brefEn: "A terminal multiplexer: persistent sessions (surviving SSH drops), multiple windows and panes." },
+  { slug: "tmuxp", type: "terme", fr: "tmuxp", en: "tmuxp", cours: "tmux",
+    brefFr: "Déclarer une session tmux complète (fenêtres, panneaux, commandes) en YAML : tmuxp load la reconstruit à l'identique — l'IaC du terminal.",
+    brefEn: "Declaring a complete tmux session (windows, panes, commands) in YAML: tmuxp load rebuilds it identically — the terminal's IaC." },
 
   // ——————————————————— Données, versionnage, IaC ———————————————————
   { slug: "markdown", type: "terme", fr: "Markdown", en: "Markdown",

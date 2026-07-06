@@ -1,0 +1,17 @@
+# tmuxp: a whole working environment declared in YAML — `tmuxp load atelier`
+# rebuilds it identically, after a reboot or a killed session.
+# (The Ansible lab uses the same mechanism with its own windows.)
+session_name: atelier
+windows:
+  - window_name: edition
+    layout: main-vertical
+    panes:
+      - focus: true
+        shell_command:
+          - vim
+      - shell_command:
+          - clear
+  - window_name: surveillance
+    panes:
+      - shell_command:
+          - htop

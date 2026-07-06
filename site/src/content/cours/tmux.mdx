@@ -1,0 +1,133 @@
+---
+title: "tmux : le terminal qui survit"
+description: "Sessions persistantes, fenêtres et panneaux, mode copie, partage à deux, configuration et tmuxp : le multiplexeur de terminaux qui transforme une connexion SSH fragile en poste de travail durable."
+order: 16
+serie: outils-admin
+topics: [linux]
+duration: 25
+badge: "Outils"
+tags: [tmux, tmuxp, sessions, multiplexeur, SSH]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Le [module SSH](../ssh/) a posé le problème : une session SSH meurt avec la connexion, et emporte ce qui tournait dedans. Il a aussi nommé la solution — **tmux** — en quatre commandes. Ce module lui donne la place qu'il mérite : c'est l'outil que vous ouvrirez *en premier* sur chaque serveur, pendant toute votre vie d'administration. Objectifs :
+
+- comprendre le modèle (serveur, sessions, fenêtres, panneaux — et le préfixe) ;
+- survivre à une coupure, retrouver son travail, travailler à plusieurs terminaux ;
+- naviguer dans l'historique (mode copie) et partager une session à deux ;
+- configurer tmux, puis **déclarer** son environnement avec tmuxp.
+
+## Le modèle : un serveur, des sessions, un préfixe
+
+La ruse de tmux tient en une phrase : quand vous lancez `tmux`, un **serveur** démarre en arrière-plan, et votre terminal n'est plus qu'un **client** qui l'affiche. Fermez le terminal, coupez la connexion : le serveur — et tout ce qui tourne dedans — continue. Ce serveur héberge des **sessions** (une par contexte de travail), chaque session contient des **fenêtres** (des onglets), chaque fenêtre un ou plusieurs **panneaux** (des sous-terminaux côte à côte).
+
+Toutes les commandes clavier passent par le **préfixe** — `Ctrl+b` par défaut : on presse `Ctrl+b`, on relâche, puis la touche de commande. Dans la suite, `préfixe c` signifie « Ctrl+b, puis c ».
+
+## Survivre : le cycle détacher / rattacher
+
+```console
+ada@serveur ~ $ tmux new -s admin        # créer la session « admin »
+# … travail … puis : préfixe d           # se détacher (tout continue)
+ada@serveur ~ $ tmux ls
+admin: 2 windows (created Mon Jul  6 10:12:03 2026)
+ada@serveur ~ $ tmux attach -t admin     # tout retrouver — même après une coupure
+```
+
+Le point décisif : **une coupure brutale équivaut à un détachement**. Câble réseau arraché, Wi-Fi perdu, terminal fermé par erreur — la session vit toujours sur le serveur, `tmux attach` la ramène, la compilation n'a rien vu. C'est l'assurance-vie de toute opération longue (mise à jour, migration, sauvegarde) lancée à travers SSH — l'exercice du module SSH vous l'a fait vivre, celui-ci l'outille.
+
+<Note type="warning" title="Le réflexe professionnel">
+  Sur un serveur, la **première** commande après `ssh` est `tmux new -s …` (ou `tmux attach`). Pas la deuxième : la première — *avant* de lancer quoi que ce soit de long. Le jour où l'on y pense après coup, il est trop tard : un processus déjà lancé ne se rapatrie pas proprement dans tmux.
+</Note>
+
+## Fenêtres et panneaux : le poste de travail
+
+Les commandes du quotidien, dans l'ordre où on les adopte :
+
+- **fenêtres** : `préfixe c` (créer), `préfixe n`/`p` (suivante/précédente), `préfixe 1`…`9` (aller à), `préfixe ,` (renommer — faites-le, la barre d'état devient une carte) ;
+- **panneaux** : `préfixe %` (partage vertical), `préfixe "` (horizontal), `préfixe flèches` (naviguer), `préfixe z` (**zoom** : le panneau seul en plein écran, re-`z` pour revenir), `préfixe x` (fermer) ;
+- **secours** : `préfixe ?` liste tous les raccourcis ; `préfixe :` ouvre l'invite de commandes tmux (tout raccourci a sa commande longue).
+
+Le motif de travail classique sur un serveur : un panneau pour l'édition, un pour les tests, un panneau étroit pour les journaux (`journalctl -f`) — une seule connexion SSH porte le tout.
+
+<Exercise id="tmux-atelier-panneaux" level={1}>
+  Dans une session `atelier` : créez une fenêtre renommée `edition` coupée en deux panneaux verticaux (un éditeur à gauche, un shell à droite), une seconde fenêtre `surveillance` avec `htop`. Zoomez sur l'éditeur, dézoomez, puis naviguez entre les deux fenêtres. Enfin, détachez-vous et rattachez-vous : qu'est devenu `htop` ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@serveur ~ $ tmux new -s atelier
+    # préfixe ,  → renommer en « edition »
+    # préfixe %  → deux panneaux ; vim à gauche, shell à droite
+    # préfixe z  → zoom sur vim · préfixe z → retour
+    # préfixe c  → nouvelle fenêtre · préfixe , → « surveillance » · htop
+    # préfixe n / préfixe p → circuler · préfixe d → se détacher
+    ada@serveur ~ $ tmux attach -t atelier
+    ```
+
+    `htop` tourne toujours, exactement là où vous l'aviez laissé : les programmes des panneaux appartiennent au **serveur** tmux, pas au terminal qui l'affichait. C'est tout le modèle — et c'est pour cela que la fenêtre `surveillance` d'un serveur peut rester ouverte des mois.
+  </Fragment>
+</Exercise>
+
+## Le mode copie : remonter le temps
+
+La molette ne suffit plus quand le terminal est multiplexé : tmux garde son propre historique par panneau. `préfixe [` entre en **mode copie** : on remonte (flèches ou `PgUp`), on **cherche** (`Ctrl+s`/`Ctrl+r` en mode Emacs par défaut ; `/` et `?` en mode vi), on sélectionne et copie, `q` pour sortir, `préfixe ]` pour coller. Avec la configuration ci-dessous, le mode copie parle **vi** — les réflexes du [module Vim](../vim/) resservent, jusque dans le terminal.
+
+## Partager : à deux sur la même session
+
+Deux personnes connectées au même compte peuvent s'attacher à la **même session** : chacune voit ce que l'autre tape, en direct. C'est l'outil du dépannage à quatre mains, de la passation de service et du tutorat — la personne qui apprend manipule, celle qui accompagne voit tout, sur n'importe quelle liaison SSH (`tmux attach -t admin -r` pour s'attacher en **lecture seule** : regarder sans risquer de toucher).
+
+## Configurer : ~/.tmux.conf
+
+Comme Vim et SSH, tmux se personnalise dans un fichier — chargé au démarrage du serveur, rechargeable à la volée (`préfixe :` puis `source-file ~/.tmux.conf`). Une configuration de départ sobre, une habitude par ligne (fichier réel, validé par le harnais du site — il charge réellement une session en CI) :
+
+<CodeFile path="outils-admin/tmux/tmux.conf" lang="bash" />
+
+<Exercise id="tmux-conf" level={2}>
+  Installez cette configuration, rechargez-la sans quitter tmux, puis vérifiez trois effets : la souris (cliquer pour changer de panneau), les nouveaux raccourcis de partage `|` et `-`, et la numérotation des fenêtres à partir de 1. Pourquoi préférer `|` et `-` aux `%` et `"` d'origine ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@serveur ~ $ cp tmux.conf ~/.tmux.conf
+    # dans tmux : préfixe :  puis  source-file ~/.tmux.conf
+    ```
+
+    Rien de fonctionnel : `%` et `"` restent actifs, `|` et `-` s'y ajoutent. Leur seul mérite est **mnémonique** — la touche *dessine* la coupure (`|` coupe verticalement, `-` horizontalement), là où `%` et `"` ne racontent rien. Une bonne configuration ne réinvente pas l'outil : elle aligne les commandes rares sur la mémoire visuelle. (Certains vont plus loin et déplacent le préfixe sur `Ctrl+a` ; ce cours garde `Ctrl+b`, celui de toutes les documentations.)
+  </Fragment>
+</Exercise>
+
+## tmuxp : l'environnement déclaré
+
+Reconstruire ses fenêtres et panneaux à chaque redémarrage du serveur est un travail de robot — donc un travail pour un fichier. **tmuxp** décrit une session complète en **YAML** (le [module YAML & JSON](../yaml-json/) porte ses fruits), et `tmuxp load` la reconstruit à l'identique :
+
+<CodeFile path="outils-admin/tmux/tmuxp-atelier.yaml" lang="yaml" />
+
+<Exercise id="tmux-tmuxp" level={2}>
+  Installez tmuxp (`sudo apt install tmuxp`), déclarez la session `atelier` de l'exercice précédent dans `~/.tmuxp/atelier.yaml`, tuez la session en cours (`tmux kill-session -t atelier`) et reconstruisez-la d'une commande. Qu'avez-vous gagné par rapport au rattachement simple ?
+
+  <Fragment slot="solution">
+    ```console
+    ada@serveur ~ $ mkdir -p ~/.tmuxp && cp tmuxp-atelier.yaml ~/.tmuxp/atelier.yaml
+    ada@serveur ~ $ tmux kill-session -t atelier
+    ada@serveur ~ $ tmuxp load atelier
+    ```
+
+    `attach` retrouve une session **vivante** ; tmuxp **recrée** une session disparue — serveur redémarré, session tuée par erreur, ou machine neuve à équiper. C'est le même renversement que partout dans cette série : l'état voulu vit dans un fichier versionnable, l'outil l'applique. Vous venez de faire de l'*infrastructure as code* sur votre propre terminal — le TP Ansible vous fera déclarer ainsi son environnement complet de travail.
+  </Fragment>
+</Exercise>
+
+## Récapitulatif
+
+- tmux = un **serveur** que vos terminaux ne font qu'afficher : coupure = détachement, jamais une perte — `tmux new -s`, `préfixe d`, `tmux ls`, `tmux attach -t`.
+- **Sessions** (contextes) > **fenêtres** (onglets, renommez-les) > **panneaux** (`%`, `"`, zoom `z`) ; `préfixe ?` en secours.
+- **Mode copie** (`préfixe [`) : l'historique par panneau, navigable et cherchable — en touches vi avec la configuration du cours.
+- **Partage** : plusieurs clients sur une session (`-r` pour lecture seule) — dépannage et tutorat.
+- `~/.tmux.conf` aligne l'outil sur vos réflexes ; **tmuxp** déclare l'environnement en YAML — l'état voulu dans un fichier, comme toujours.
+- Premier réflexe sur un serveur : `tmux` d'abord, le travail ensuite.
+
+## Ressources supplémentaires
+
+- `man tmux` — exhaustif et bien organisé (section *DEFAULT KEY BINDINGS*) ;
+- [tmuxp](https://tmuxp.git-pull.com/) — la documentation des fichiers de session ;
+- le [TP Ansible](../tp-ansible/) — votre environnement tmux/tmuxp en conditions réelles.

@@ -65,6 +65,26 @@ if [ "$mode" = "--up" ]; then
   [[ "$out_awk" == *"Total : 15618"* ]] \
     && ok "awk : somme de colonne (15618)" || ko "awk : somme (attendu 15618)"
 
+  # ——— 3 pré. tmux : la conf charge une vraie session, le tmuxp parse ———
+  tmux_sol="$here/../src/solutions/outils-admin/tmux"
+  if command -v tmux >/dev/null; then
+    if tmux -f "$tmux_sol/tmux.conf" -L harnais new-session -d -s smoke \
+        && tmux -L harnais kill-server; then
+      ok "tmux : tmux.conf charge une session"
+    else
+      ko "tmux : tmux.conf refusé"
+    fi
+  else
+    echo "ℹ tmux absent : conf non testée (apt install tmux)."
+  fi
+  if command -v yamllint >/dev/null; then
+    if yamllint -d relaxed "$tmux_sol/tmuxp-atelier.yaml"; then
+      ok "tmux : tmuxp-atelier.yaml valide (yamllint)"
+    else
+      ko "tmux : tmuxp-atelier.yaml invalide"
+    fi
+  fi
+
   # ——— 3 bis. Démos des articles Miscelánea (sorties montrées = réelles) ———
   out_loc="$(bash "$misc_sol/local/portee-locale.bash")"
   [[ "$out_loc" == *"de retour dans main : « modifiée par ___visiteuse »"* ]] \

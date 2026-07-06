@@ -34,7 +34,7 @@ Découverte (1+) → Outils (10+) → Ansible (20+) → Virtualisation KVM
 (25+) → Docker (30+ ; édition mécanique du frontmatter des pages
 Docker FR/EN existantes) → Qt (40+, en attente de l'archive).
 
-### Série `outils-admin` — « Outils de l'administration système » (9 modules)
+### Série `outils-admin` — « Outils de l'administration système » (10 modules)
 
 | # | Slug | Titre | `order` | Durée source | Particularités |
 |---|---|---|---|---|---|
@@ -43,10 +43,11 @@ Docker FR/EN existantes) → Qt (40+, en attente de l'archive).
 | 03 | `bash-bases` | Bash : les bases du shell | 12 | 2,5 h | terminal: true, `<Cmd>` |
 | 04 | `bash-scripts` | Bash : écrire des scripts robustes | 13 | 2,5 h | corrigés testables (shellcheck + bats) |
 | 05 | `sed-awk` | sed & awk : traiter des flux de texte | 14 | — | exercices **réécrits** (cf. § 5) |
-| 06 | `ssh` | SSH : accès distants sécurisés | 15 | 2 h | + section tmux (promue depuis « digression ») |
-| 07 | `wireguard` | WireGuard : VPN moderne | 16 | 2 h | + mini-labo Docker optionnel (cf. § 6) |
-| 08 | `git` | Git : versionner et collaborer | 17 | 3 h | correction pas-à-pas → `<Exercise>` |
-| 09 | `yaml-json` | YAML & JSON : structurer des données | 18 | 2 h | 5 exercices, corrigés yamllint/yq |
+| 06 | `ssh` | SSH : accès distants sécurisés | 15 | 2 h | + amorce tmux (renvoi vers le module dédié) |
+| 07 | `tmux` | tmux : le terminal qui survit | 16 | — | **ajout carte blanche (juillet 2026)** : module dédié — modèle serveur/sessions, panneaux, mode copie, partage, tmux.conf (corrigé chargé en vraie session par le harnais) + tmuxp ; renvois SSH et TP Ansible mis à jour |
+| 08 | `wireguard` | WireGuard : VPN moderne | 17 | 2 h | + mini-labo Docker optionnel (cf. § 6) |
+| 09 | `git` | Git : versionner et collaborer | 18 | 3 h | correction pas-à-pas → `<Exercise>` |
+| 10 | `yaml-json` | YAML & JSON : structurer des données | 19 | 2 h | 5 exercices, corrigés yamllint/yq |
 
 Frontmatter type : `serie: outils-admin`, `topics: [linux]`,
 `badge: "Fondations"` (TP-heavy : `badge: "TP"`), `duration` estimée en
