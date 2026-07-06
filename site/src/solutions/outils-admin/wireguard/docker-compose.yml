@@ -1,0 +1,11 @@
+# Two peers on an ordinary Docker network: the lab builds a WireGuard
+# tunnel (10.9.9.0/24) INSIDE it — no public IP needed anywhere.
+services:
+  pair-a:
+    build: .
+    container_name: wg-lab-a
+    cap_add: [NET_ADMIN]
+  pair-b:
+    build: .
+    container_name: wg-lab-b
+    cap_add: [NET_ADMIN]

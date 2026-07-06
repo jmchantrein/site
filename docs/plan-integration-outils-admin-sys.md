@@ -338,8 +338,16 @@ conservés aux points structurants.
    original sur data/pionnieres.csv, corrigés réels testés par
    scripts/test-solutions-bash.sh : shellcheck, suites Bats,
    sorties attendues rejouées — 25/25 en local, câblé en CI).
-4. SSH (+ tmux), WireGuard (+ mini-labo).
-5. Git (+ rejeu harnais).
+4. SSH (+ tmux), WireGuard (+ mini-labo) — **réalisés** (juillet
+   2026, FR/EN : ed25519 par défaut, note « port ≠ 22 » nuancée,
+   passerelle sed→sshd_config ; mini-labo WireGuard = 2 conteneurs
+   NET_ADMIN + tunnel pingé, testé par
+   scripts/test-solutions-wireguard.sh en CI).
+5. Git (+ rejeu harnais) — **réalisé** (juillet 2026, FR/EN :
+   sorties RÉELLES régénérées par solutions/outils-admin/git/tp-git.sh
+   — dates fixées, hash reproductibles, l'incohérence du log de la
+   source disparaît ; git restore enseigné à côté de checkout ; rejeu
+   vérifié par test-solutions-bash.sh --up).
 6. Ansible : concepts + TP labo Docker (+ CI). → *jalon : relecture
    auteur du module concepts (contenu majoritairement IA).*
 7. Traductions EN au fil de l'eau (chaque module part avec son EN,

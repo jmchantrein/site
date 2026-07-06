@@ -74,6 +74,7 @@ const refs = [
           <li><a href="#reglages"><span class="num">08</span><span data-lang="fr">Accessibilité &amp; réglages</span><span data-lang="en">Accessibility &amp; settings</span></a></li>
           <li><a href="#references"><span class="num">09</span><span data-lang="fr">Références</span><span data-lang="en">References</span></a></li>
           <li><a href="#redaction"><span class="num">10</span><span data-lang="fr">Rédaction de contenu</span><span data-lang="en">Content authoring</span></a></li>
+          <li><a href="#artefacts"><span class="num">11</span><span data-lang="fr">Artefacts</span><span data-lang="en">Artifacts</span></a></li>
         </ol>
       </nav>
 
@@ -178,6 +179,20 @@ const refs = [
             <a class="ds-prompt__link" href={`${base}/redaction-mdx-prompt.txt`} target="_blank" rel="noopener"><span data-lang="fr">le voir en entier</span><span data-lang="en">view it in full</span> <Icon name="external-link" /></a>
           </div>
           <p class="ds-prompt__help"><span data-lang="fr">À coller dans un LLM, puis décrivez le cours ou l'article voulu. Pensez à demander la <strong>version anglaise</strong> dans la foulée : tout contenu français a son pendant dans <code>en/</code>.</span><span data-lang="en">Paste it into an LLM, then describe the course or article you want. Remember to ask for the <strong>English version</strong> too: every French page has its counterpart under <code>en/</code>.</span></p>
+        </section>
+
+        <section class="ds-section" id="artefacts">
+          <h2><span data-lang="fr">11 · Artefacts</span><span data-lang="en">11 · Artifacts</span></h2>
+          <p><span data-lang="fr">Les créations interactives fabriquées <strong>ailleurs</strong> (Claude Design, artifacts, D3, export HTML…) s'intègrent aux cours via le composant <code>&lt;Artefact&gt;</code> : un fichier HTML <strong>autonome</strong> déposé sous <code>public/artefacts/&lt;nom&gt;/index.html</code>, affiché dans une iframe sandboxée au cadre standard. Ce <strong>prompt-cadre</strong> transmet à un LLM toutes les contraintes (fichier unique, aucune ressource externe, sobriété, accessibilité, reduced-motion) pour produire un artefact directement compatible.</span><span data-lang="en">Interactive creations built <strong>elsewhere</strong> (Claude Design, artifacts, D3, HTML exports…) integrate into courses through the <code>&lt;Artefact&gt;</code> component: a <strong>self-contained</strong> HTML file dropped under <code>public/artefacts/&lt;name&gt;/index.html</code>, displayed in a sandboxed iframe with the standard frame. This <strong>framing prompt</strong> hands an LLM every constraint (single file, no external resources, sobriety, accessibility, reduced-motion) to produce a directly compatible artifact.</span></p>
+          <div class="ds-prompt">
+            <button class="ds-prompt__btn" type="button" data-copy-prompt data-prompt-url={`${base}/artefact-prompt.txt`}>
+              <Icon name="clipboard-copy" class="ds-prompt__ico" />
+              <span class="idle"><span data-lang="fr">Copier le prompt d'artefact</span><span data-lang="en">Copy the artifact prompt</span></span>
+              <span class="done"><span data-lang="fr">Copié ✓</span><span data-lang="en">Copied ✓</span></span>
+            </button>
+            <a class="ds-prompt__link" href={`${base}/artefact-prompt.txt`} target="_blank" rel="noopener"><span data-lang="fr">le voir en entier</span><span data-lang="en">view it in full</span> <Icon name="external-link" /></a>
+          </div>
+          <p class="ds-prompt__help"><span data-lang="fr">Une fois le fichier produit : <code>public/artefacts/&lt;nom&gt;/index.html</code>, puis une ligne dans le cours — <code>&lt;Artefact file="&lt;nom&gt;/index.html" title="…" height=&#123;480&#125; /&gt;</code>.</span><span data-lang="en">Once the file is produced: <code>public/artefacts/&lt;name&gt;/index.html</code>, then one line in the course — <code>&lt;Artefact file="&lt;name&gt;/index.html" title="…" height=&#123;480&#125; /&gt;</code>.</span></p>
         </section>
       </div>
     </div>

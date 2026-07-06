@@ -1,0 +1,186 @@
+---
+title: "SSH: secure remote access"
+description: "Connecting to remote machines over an encrypted channel: keys instead of passwords, client configuration, scp/rsync transfers, server hardening — and tmux to survive disconnections."
+order: 15
+serie: outils-admin
+topics: [linux, reseau]
+duration: 30
+badge: "Tools"
+tags: [SSH, keys, ed25519, scp, rsync, tmux]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Everything you have learned so far is practised *on* machines — and an administrator's machines are **elsewhere**: in a rack, a cloud, another building. **SSH** (*Secure Shell*) is the protocol that takes you there, in an encrypted session. Goals:
+
+- understand why key authentication replaces passwords;
+- generate and deploy your keys, configure your client;
+- transfer files (`scp`, `rsync`);
+- harden an SSH server — and keep your grip with `tmux`.
+
+## The basic connection — and its problem
+
+```console
+ada@laptop ~ $ ssh login@serveur.mon.domaine.fr
+login@serveur.mon.domaine.fr's password:
+```
+
+It works — and that is a problem. A password:
+
+- can be **brute-forced** (bots scan port 22 across the whole Internet, continuously);
+- can be **stolen**: phishing, keyloggers, unencrypted networks elsewhere;
+- gets **reused**: compromised in one place, compromised everywhere it serves again.
+
+## SSH keys: asymmetric cryptography in practice
+
+A key pair replaces the password:
+
+- the **private key** stays on your machine — it *never* leaves it;
+- the **public key** is copied to servers — it can circulate freely.
+
+On connection, the server issues a **cryptographic challenge** that only the private key can solve: no secret travels, brute force becomes impractical (a key is incomparably larger than any password), and stealing the public key is useless.
+
+```console
+ada@laptop ~ $ ssh-keygen -t ed25519
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/ada/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+ada@laptop ~ $ ssh-copy-id login@serveur.mon.domaine.fr
+ada@laptop ~ $ ssh login@serveur.mon.domaine.fr    # no password prompt anymore
+```
+
+<Note type="info" title="ed25519, no longer RSA">
+  The current recommendation is **ed25519**: short keys, fast, modern cryptography. `ssh-keygen -t rsa -b 4096` (the old advice, present in this course's original material) remains acceptable for very old servers, but is no longer the default choice.
+</Note>
+
+<Note type="warning" title="Passphrase or encrypted storage?">
+  A **passphrase** encrypts the private key on disk: if stolen, it is unusable. But it blocks automated uses (scripts, cron). The common administration compromise: **encrypt the machine's whole storage** (LUKS) — the private key is protected at rest, and scripted connections remain possible. Failing that: passphrase + SSH agent.
+</Note>
+
+## The ~/.ssh/config file: your address book
+
+```text
+Host serveur1
+    HostName serveur1.mon.domaine.fr
+    User login1
+    Port 2222
+
+Host *.prod
+    User admin
+    IdentityFile ~/.ssh/id_ed25519_prod
+```
+
+From now on `ssh serveur1` is enough — user, port and key are resolved by the client. Each server (or server pattern) can have its own settings.
+
+## Transferring: scp and rsync
+
+```console
+ada@laptop ~ $ scp fichier.txt login@serveur:/chemin/destination/
+ada@laptop ~ $ rsync -avz --delete ~/projets/ login@serveur:/srv/projets/
+```
+
+- `scp` copies, plainly — fine for a file;
+- `rsync` **synchronizes**: only the differences travel (`-a` archive, `-v` verbose, `-z` compression). It is the tool of backups and deployments — put it in cron and you have a remote backup.
+
+## Hardening the server: /etc/ssh/sshd_config
+
+Three classic measures, in order of importance:
+
+**1. Disable password authentication** (once your keys are in place *and tested* — keep a spare session open during the operation!):
+
+```console
+root@serveur ~ # sed -i -E 's,^#?(PasswordAuthentication) .*,\1 no,' /etc/ssh/sshd_config
+root@serveur ~ # systemctl reload sshd
+```
+
+You will recognize the sed capture from the [sed & awk module](../sed-awk/) — here it is in production, with the `-i` and root privileges it was missing back then.
+
+**2. Limit who connects**: a firewall (nftables, ufw) restricting source addresses when possible, and `AllowUsers`/`AllowGroups` in the configuration.
+
+**3. Discourage the bots**: **fail2ban** bans addresses that fail in a loop; **two-factor authentication** adds a second lock for sensitive access.
+
+<Note type="info" title="Changing the port: what it does — and does not">
+  Moving SSH from port 22 to an exotic port removes the *noise* of mass scans from your logs. That is comfort, not security: a targeted attacker finds the port in seconds, and a port > 1024 can even be re-bound by an unprivileged process after a crash. Treat it as a noise filter, never as protection.
+</Note>
+
+## tmux: keeping your grip, multiplying terminals
+
+An SSH session dies with the connection — taking whatever ran in it. **tmux** (*terminal multiplexer*) decouples your work from the terminal:
+
+- **persistent sessions**: the connection drops, your tmux session lives on the server; `tmux attach` brings it back;
+- **windows and panes**: several terminals inside one SSH connection, side by side;
+- **sharing**: two people can attach to the same session (four-hands debugging).
+
+```console
+ada@serveur ~ $ tmux new -s admin      # create the "admin" session
+# Ctrl+b c: new window · Ctrl+b %: split vertically
+# Ctrl+b d: detach (the session keeps running)
+ada@serveur ~ $ tmux attach -t admin   # find it again — even after a drop
+```
+
+The Ansible lab will lean heavily on tmux (and on `tmuxp`, which describes a full working environment in YAML — how fitting).
+
+## Exercises
+
+<Exercise id="ssh-cles" level={2}>
+  On your machine: generate an ed25519 key pair, deploy the public key onto a server (or a VM, or a container running sshd), and check that the connection no longer asks for a password. What does your `~/.ssh` contain? Which file must **never** leave it?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ ssh-keygen -t ed25519
+    ada@laptop ~ $ ssh-copy-id login@serveur
+    ada@laptop ~ $ ssh login@serveur
+    ada@laptop ~ $ ls ~/.ssh
+    config  id_ed25519  id_ed25519.pub  known_hosts
+    ```
+
+    `id_ed25519` is the **private** key — it never leaves the machine (permissions 600, directory 700). `id_ed25519.pub` is copied to servers (`ssh-copy-id` appends it to their `~/.ssh/authorized_keys`); `known_hosts` memorizes the identity of servers already met.
+  </Fragment>
+</Exercise>
+
+<Exercise id="ssh-config" level={2}>
+  Write the `~/.ssh/config` entry that lets you type `ssh bastion` to reach `bastion.example.org` as `admin` on port 2222. Without this file, what would the full equivalent command be?
+
+  <Fragment slot="solution">
+    ```text
+    Host bastion
+        HostName bastion.example.org
+        User admin
+        Port 2222
+    ```
+
+    Inline equivalent: `ssh -p 2222 admin@bastion.example.org`. The configuration file is a *declarative shortcut* — a shell alias (`alias bastion='ssh -p 2222 admin@…'`) would be another, but it would not benefit `scp`/`rsync`, which also read `~/.ssh/config`.
+  </Fragment>
+</Exercise>
+
+<Exercise id="ssh-tmux" level={2}>
+  On a server (or locally): create a tmux session named `atelier`, open a second window in it, detach, check that the session survives, then reattach. Simulate a "drop" by closing the terminal: what remains?
+
+  <Fragment slot="solution">
+    ```console
+    ada@serveur ~ $ tmux new -s atelier
+    # Ctrl+b c   → second window
+    # Ctrl+b d   → detached
+    ada@serveur ~ $ tmux ls
+    atelier: 2 windows (created ...)
+    ada@serveur ~ $ tmux attach -t atelier
+    ```
+
+    After brutally closing the terminal, `tmux ls` shows the session still alive: everything running in it carried on. It is the insurance policy of any long operation over SSH — upgrade, migration, compilation.
+  </Fragment>
+</Exercise>
+
+## Recap
+
+- SSH encrypts remote access; **key** authentication (ed25519) replaces passwords — the private key never leaves, the public one deploys with `ssh-copy-id`.
+- `~/.ssh/config`: the client's address book; `scp` copies, `rsync` synchronizes.
+- Hardening: passwords disabled (spare session open!), firewall, fail2ban — and changing the port is only noise control.
+- **tmux**: sessions that survive drops, multiple terminals — indispensable before the Ansible lab.
+
+## Further resources
+
+- `man ssh_config`, `man sshd_config` — every directive;
+- [EFF Surveillance Self-Defense](https://ssd.eff.org/) — the security context;
+- `man tmux` — and the Ansible lab for hands-on practice with tmuxp.

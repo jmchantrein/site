@@ -1,0 +1,203 @@
+---
+title: "Git: versioning and collaborating"
+description: "Repository, commits, branches, revert and reset: the complete history of your files, locally and as a team — the working tool of all system administration."
+order: 17
+serie: outils-admin
+topics: [linux]
+duration: 30
+badge: "Tools"
+tags: [git, versioning, commit, branch, revert]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Git is a **distributed version control** system: it tracks your files' changes, keeps the complete history, and lets several people work on the same projects without overwriting each other. Goals:
+
+- understand the concepts: repository, commit, branch, index;
+- walk the basic cycle — modify, stage, commit;
+- know how to go back, the right way (`restore`, `revert`, `reset`);
+- work with a remote repository (GitHub, GitLab).
+
+<Note title="Why Git in system administration?">
+  Versioning **scripts** (the history of your automations), versioning **configurations** (returning to a working state after a mistake), collaborating with teams (review before merge), triggering **continuous integration** on every change. The upcoming Ansible lab versions all its work in Git — it is the basic professional reflex. Git was itself born of administering a project: Linus Torvalds created it in 2005 to manage the Linux kernel sources.
+</Note>
+
+## The concepts
+
+- **Repository**: the complete project — files **and** the whole history — inside the hidden `.git` directory. Every clone is a full repository: that is what "distributed" means.
+- **Commit**: a snapshot of the project, identified by a hash, with a message and a date. History is a chain of commits.
+- **Index** (*staging area*): the preparation zone — you **add** to it (`git add`) what the next commit will record. This airlock lets you commit only part of your changes.
+- **Branch**: a parallel line of development (the default branch is called `main`, historically `master`). You develop on a branch and **merge** when ready.
+
+The basic cycle is three moves:
+
+```console
+ada@laptop mon_projet $ vim script.sh          # 1. modify
+ada@laptop mon_projet $ git add script.sh      # 2. stage
+ada@laptop mon_projet $ git commit -m "..."    # 3. commit
+```
+
+And two compasses to consult freely: `git status` (where am I?) and `git log` (what happened?).
+
+## Guided lab: Git locally
+
+Each step is an exercise; the solutions' outputs are **real** — they are generated and verified by the site harness's replay script (fixed dates, hence reproducible hashes).
+
+<Exercise id="git-init" level={1}>
+  Create a `mon_projet` directory and make it a Git repository. How do you check it really is one?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ mkdir mon_projet && cd mon_projet
+    ada@laptop mon_projet $ git init
+    Initialized empty Git repository in /home/ada/mon_projet/.git/
+    ```
+
+    The hidden `.git` directory (visible with `ls -a`) **is** the repository: history, index, configuration. Deleting it un-versions the project — the files themselves remain.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-premier-commit" level={1}>
+  With Vim, create `index.html` containing `<h1>Bienvenue sur mon site</h1>`, add it to the index, check the repository's state, then commit.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ vim index.html
+    ada@laptop mon_projet $ git add index.html
+    ada@laptop mon_projet $ git status --short
+    A  index.html
+    ada@laptop mon_projet $ git commit -m "Ajout de la page d'accueil"
+    [main (root-commit) 5cf4033] Ajout de la page d'accueil
+     1 file changed, 1 insertion(+)
+     create mode 100644 index.html
+    ```
+
+    `A` = *added*: the file is staged, ready to be committed. The commit receives its hash (`5cf4033…`) — this snapshot's identity.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-second-commit" level={1}>
+  Add a paragraph to `index.html` and make a new commit. Do you need `git add` again?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ echo "<p>Ceci est un paragraphe.</p>" >> index.html
+    ada@laptop mon_projet $ git add index.html
+    ada@laptop mon_projet $ git commit -m "Ajout d'un paragraphe"
+    [main 523dba7] Ajout d'un paragraphe
+     1 file changed, 1 insertion(+)
+    ```
+
+    **Yes**: `git add` applies to *changes*, not to a file once and for all — that is what lets you choose what goes into each commit. (The shortcut `git commit -a -m "…"` auto-stages already-tracked files; convenient, but you lose control of the airlock.)
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-log" level={1}>
+  Display the history, full then compact.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git log --oneline
+    523dba7 Ajout d'un paragraphe
+    5cf4033 Ajout de la page d'accueil
+    ```
+
+    Most recent on top. `git log` without options details each commit's author, date and full message.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-restore" level={2}>
+  Append "une erreur" to `index.html`, observe it, then undo this **uncommitted** change.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ echo "<p>une erreur" >> index.html
+    ada@laptop mon_projet $ git status --short
+     M index.html
+    ada@laptop mon_projet $ git restore index.html
+    ada@laptop mon_projet $ git status --short
+    ada@laptop mon_projet $
+    ```
+
+    `git restore file` (Git ≥ 2.23) brings the file back to its last committed state — you will also meet the historic form `git checkout -- file`, equivalent. Careful: the uncommitted change is **lost**, no trash bin.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-revert" level={2}>
+  Undo the **last commit** ("Ajout d'un paragraphe") with `git revert`, then look at the history. What do you observe?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git revert --no-edit HEAD
+    [main 1761f1a] Revert "Ajout d'un paragraphe"
+     1 file changed, 1 deletion(-)
+    ada@laptop mon_projet $ git log --oneline
+    1761f1a Revert "Ajout d'un paragraphe"
+    523dba7 Ajout d'un paragraphe
+    5cf4033 Ajout de la page d'accueil
+    ```
+
+    Nothing was deleted: the revert **adds** a commit (with its own hash, `1761f1a`) that undoes the targeted commit's changes. The file is back to the first commit's state, and history keeps a trace of the rollback — precious when that information matters.
+  </Fragment>
+</Exercise>
+
+<Exercise id="git-reset" level={2}>
+  Now go back to the first commit with `git reset --hard`, and look at the history. What differs from `revert`?
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop mon_projet $ git reset --hard 5cf4033
+    HEAD is now at 5cf4033 Ajout de la page d'accueil
+    ada@laptop mon_projet $ git log --oneline
+    5cf4033 Ajout de la page d'accueil
+    ada@laptop mon_projet $ cat index.html
+    <h1>Bienvenue sur mon site</h1>
+    ```
+
+    This time the later commits are **gone**: `reset` rewrites history. `revert` = undo **by adding** (trace kept, safe when shared); `reset` = undo **by deleting** (clean history, but destructive — reserve it for unpushed commits).
+  </Fragment>
+</Exercise>
+
+<Note type="warning" title="revert and reset act on whole commits">
+  Our example touches a single file, but a commit may touch several: `revert` and `reset` then undo the changes of **all the commit's files**. And never rewrite (`reset`, `rebase`) history that has already been **pushed**: your colleagues already have it.
+</Note>
+
+## Working with a remote repository
+
+<Exercise id="git-distant" level={2}>
+  Create a GitHub or GitLab account if needed, then: 1) create a repository there with a `README.md`; 2) clone it locally; 3) edit the `README.md` **through the web interface** (online commit); 4) bring that change down locally; 5) edit the file locally; 6) push your commit.
+
+  <Fragment slot="solution">
+    ```console
+    ada@laptop ~ $ git clone git@github.com:ada/mon-depot.git
+    ada@laptop ~ $ cd mon-depot
+    # (README edited through the site's web interface)
+    ada@laptop mon-depot $ git pull
+    ada@laptop mon-depot $ vim README.md
+    ada@laptop mon-depot $ git add README.md && git commit -m "Install precision"
+    ada@laptop mon-depot $ git push
+    ```
+
+    The remote-work trio: `clone` (once), `pull` (fetch — do it **before** starting to work, to minimize conflicts), `push` (publish). Authentication ideally goes through your **SSH keys** — the previous module's.
+  </Fragment>
+</Exercise>
+
+<Note type="info" title="Branches, merges, pull requests">
+  As a team, you do not work on `main`: each feature lives on its **branch** (`git switch -c ma-branche`), proposed for review through a **pull request** (GitLab: *merge request*), then **merged**. If two people edited the same lines, Git marks a **conflict** in the file: you arbitrate by hand, `git add`, and the merge ends with a commit. This flow — branch, review, merge, test in CI — structures modern development; you will live it from the inside in the Ansible lab (pre-commit hooks included).
+</Note>
+
+## Recap
+
+- A **repository** = files + history (`.git`); a **commit** = an identified snapshot; the **index** = the next commit's airlock.
+- The cycle: modify → `git add` → `git commit -m`; the compasses: `git status`, `git log`.
+- Going back: `restore` (uncommitted change), `revert` (undo **by adding** — safe), `reset` (undo **by deleting** — never on pushed history).
+- Remotely: `clone`, `pull` before working, `push` to publish — over SSH keys.
+- This module's outputs are replayed and verified by the site's harness: what you read is what Git does.
+
+## Further resources
+
+- [Pro Git](https://git-scm.com/book/en/v2) — the reference book, free;
+- [Learn Git Branching](https://learngitbranching.js.org/) — visualize branches and merges hands-on;
+- `man git-revert`, `man git-reset` — the full nuances.
