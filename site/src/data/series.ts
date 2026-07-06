@@ -39,6 +39,20 @@ export const SERIES = {
       en: { by: "human", reviewedBy: "ai", model: "Claude Fable 5", translated: "ai", aiShare: 65 },
     },
   },
+  ansible: {
+    fr: "Ansible : automatiser les configurations",
+    en: "Ansible: automating configurations",
+    desc: {
+      fr: "L'aboutissement de la série Outils : décrire l'état voulu de ses machines dans des playbooks versionnés, et laisser Ansible l'appliquer — concepts, puis TP complet sur un labo Docker.",
+      en: "Where the Tools series was heading: describe your machines' desired state in versioned playbooks and let Ansible apply it — concepts, then a full lab on Docker.",
+    },
+    /** TP de l'auteur (sources/ansible) généralisé sur un labo Docker ;
+        module « concepts » rédigé par l'IA — relecture auteur indispensable. */
+    prov: {
+      fr: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", aiShare: 45 },
+      en: { by: "mixed", reviewedBy: "human", model: "Claude Fable 5", translated: "ai", aiShare: 70 },
+    },
+  },
   docker: {
     fr: "Fondements de Docker",
     en: "Docker fundamentals",

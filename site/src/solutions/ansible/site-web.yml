@@ -1,0 +1,11 @@
+# Deploy the web servers: one play, one role, one group.
+---
+- name: Install the infrastructure's web servers
+  hosts: web_server
+  tasks:
+    - name: Deploy the nginx_hello_world role
+      ansible.builtin.import_role:
+        name: nginx_hello_world
+      # Uncomment to override the role's default port (8080):
+      # vars:
+      #   nginx_hello_world_port: 80

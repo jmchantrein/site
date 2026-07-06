@@ -1,0 +1,12 @@
+# Role metadata — required by ansible-galaxy, checked by ansible-lint.
+---
+galaxy_info:
+  author: site
+  description: Install nginx and serve a Hello world page on a configurable port
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - all
+dependencies: []

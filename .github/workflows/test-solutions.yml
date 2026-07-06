@@ -19,6 +19,7 @@ on:
       - "site/scripts/test-solutions-yaml.sh"
       - "site/scripts/test-solutions-bash.sh"
       - "site/scripts/test-solutions-wireguard.sh"
+      - "site/scripts/test-solutions-ansible.sh"
       - ".github/workflows/test-solutions.yml"
 
 jobs:
@@ -49,3 +50,16 @@ jobs:
       - name: Mini-labo WireGuard (tunnel Docker)
         working-directory: site
         run: bash scripts/test-solutions-wireguard.sh
+      # Labo Ansible (série Ansible) — lint + syntax-check, puis labo Docker
+      # complet : les playbooks passent DEUX fois, le second doit dire
+      # changed=0 — la CI incarne l'idempotence enseignée.
+      # ansible-lint vient d'un venv dédié : le paquet apt (ansible-core
+      # 2.16) entre en conflit avec l'ansible préinstallé du runner
+      # (« Ansible CLI and python module versions do not match »).
+      - name: Labo Ansible (lint + idempotence)
+        working-directory: site
+        run: |
+          python3 -m venv /tmp/ansible-venv
+          /tmp/ansible-venv/bin/pip install -q ansible-core ansible-lint
+          export PATH="/tmp/ansible-venv/bin:$PATH"
+          bash scripts/test-solutions-ansible.sh --up

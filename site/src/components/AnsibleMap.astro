@@ -1,0 +1,126 @@
+---
+/**
+ * TOPOLOGIE ANSIBLE — schéma statique « nœud de contrôle → nœuds gérés ».
+ * Le point du dessin : tout part du nœud de contrôle par SSH ; les nœuds
+ * gérés n'hébergent AUCUN agent (sshd + Python suffisent). Thémable,
+ * accessible — remplace une capture d'écran.
+ *
+ * Usage MDX :
+ *   <AnsibleMap />
+ */
+import { pageLocale } from "../lib/locale";
+
+const label = {
+  fr: "Topologie Ansible : le nœud de contrôle, qui porte Ansible, l'inventaire et les playbooks, applique l'état voulu à plusieurs nœuds gérés à travers SSH ; chaque nœud géré n'a besoin que d'un serveur SSH et de Python — aucun agent.",
+  en: "Ansible topology: the control node, carrying Ansible, the inventory and the playbooks, applies the desired state to several managed nodes over SSH; each managed node only needs an SSH server and Python — no agent.",
+}[pageLocale(Astro.url)];
+---
+<figure class="ansmap" role="img" aria-label={label}>
+  <div class="ansmap__ctl">
+    <span class="ansmap__name"><span data-lang="fr">Nœud de contrôle</span><span data-lang="en">Control node</span></span>
+    <span class="ansmap__chip">ansible</span>
+    <span class="ansmap__chip"><span data-lang="fr">inventaire</span><span data-lang="en">inventory</span></span>
+    <span class="ansmap__chip">playbooks</span>
+  </div>
+  <div class="ansmap__links" aria-hidden="true">
+    {[1, 2, 3].map(() => (
+      <span class="ansmap__link">SSH<i /></span>
+    ))}
+  </div>
+  <div class="ansmap__nodes">
+    {[1, 2, 3].map((n) => (
+      <div class="ansmap__node">
+        <span class="ansmap__name"><span data-lang="fr">Nœud géré {n}</span><span data-lang="en">Managed node {n}</span></span>
+        <span class="ansmap__chip">sshd + python</span>
+        <span class="ansmap__noagent"><span data-lang="fr">aucun agent</span><span data-lang="en">no agent</span></span>
+      </div>
+    ))}
+  </div>
+</figure>
+
+<style>
+  .ansmap {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    font-size: var(--text-sm);
+  }
+  .ansmap__ctl,
+  .ansmap__node {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .ansmap__ctl {
+    align-self: center;
+    border-color: var(--color-accent);
+    background: var(--color-accent-weak);
+  }
+  .ansmap__nodes {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .ansmap__name {
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-strong);
+  }
+  .ansmap__chip {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+  .ansmap__noagent {
+    font-size: var(--text-xs);
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+  .ansmap__links {
+    display: grid;
+    align-content: space-around;
+    gap: var(--space-2);
+  }
+  .ansmap__link {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+  .ansmap__link i {
+    display: inline-block;
+    width: 1.6rem;
+    height: 0;
+    border-top: 1.5px dashed var(--color-border-strong);
+    position: relative;
+  }
+  .ansmap__link i::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: -4px;
+    border: 3.5px solid transparent;
+    border-left-color: var(--color-border-strong);
+  }
+  @media (max-width: 40rem) {
+    .ansmap {
+      grid-template-columns: 1fr;
+    }
+    .ansmap__links {
+      justify-content: start;
+    }
+    .ansmap__link i {
+      transform: rotate(90deg);
+    }
+  }
+</style>

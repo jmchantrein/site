@@ -1,0 +1,146 @@
+---
+title: "Ansible: the concepts"
+description: "Describing your machines' desired state instead of listing commands: inventory, modules, playbooks, idempotence, roles — the full vocabulary before the lab."
+order: 20
+serie: ansible
+topics: [linux, reseau]
+duration: 25
+badge: "Ansible"
+tags: [ansible, IaC, playbook, idempotence, roles]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+The whole Tools series was converging here. You can edit (Vim), script (Bash), transform text (sed & awk), reach remote machines (SSH), version (Git) and write YAML: **Ansible** assembles all of it into a single practice — describing your machines' configuration in files, and letting the tool bring them into the described state. Goals:
+
+- understand what **configuration management** and *infrastructure as code* are;
+- know Ansible's model: control node, managed nodes, inventory, modules, playbooks;
+- understand **idempotence** — the central contract, the one the lab's CI will verify;
+- know what roles, handlers, templates, collections and vault bring.
+
+## The problem: administering N machines
+
+Administering one machine by hand, you know how. Ten machines? A Bash loop over `ssh` still works — until the day machine 7 was off during the loop, machine 3 already had half the configuration, and nobody remembers *why* machine 9 differs from the others. The administration script **lists actions**; what is needed is describing a **state**: "on all these machines, nginx is installed, configured this way, and running".
+
+That is the reversal of **configuration management**: the desired state lives in files — hence versioned in Git, reviewed, tested — and a tool compares that state with each machine's reality, performing only the missing actions. Describing infrastructure in versioned files has a name: **infrastructure as code** (IaC).
+
+<Note type="info" title="IaC, not IaaS">
+  Two neighbouring acronyms, two unrelated concepts: **IaC** (*infrastructure as code*) is the practice just described; **IaaS** (*Infrastructure as a Service*) is a cloud offering — renting virtual machines on demand. This course's original material confused them; you will meet the confusion elsewhere, it is common.
+</Note>
+
+## Ansible's model
+
+<Duo>
+  Ansible distinguishes two roles. The **control node** is the machine where Ansible is installed: it carries the inventory, the playbooks, and applies the changes. The **managed nodes** are the administered machines — and here lies Ansible's great elegance: they host **no agent**. An SSH server and a Python interpreter are enough — in other words, what every Linux machine already has. Ansible pushes small Python programs (the modules) over SSH, runs them, collects the result, and leaves nothing behind.
+
+  <Fragment slot="media">
+    <AnsibleMap />
+  </Fragment>
+</Duo>
+
+Three practical consequences: nothing to install or maintain on the managed machines (the *agentless* approach, unlike historical Puppet or Chef); security is SSH's — the previous module's keys, accounts and firewall apply as they are; and everything you learned about SSH (client config, `ssh-copy-id`) is directly reinvested.
+
+## The inventory: who do we manage?
+
+The **inventory** is the list of managed machines, organized in **groups**, most often written in YAML:
+
+```yaml
+all:
+  hosts:
+    managed-node-1:
+      ansible_host: 203.0.113.10
+    managed-node-2:
+      ansible_host: 203.0.113.11
+
+web_server:
+  hosts:
+    managed-node-1:
+```
+
+A machine can belong to several groups (`web_server`, `production`, `angers`…); a group is the natural target of a command or a playbook. **Variables** are declared at the most relevant level: `group_vars/all.yaml` for everyone, `group_vars/web_server.yaml` for a group, `host_vars/managed-node-1.yaml` for a single machine. On conflict, **the most specific wins**: a `host_vars` variable masks the `group_vars` one — that is variable *precedence*, which the lab will have you observe.
+
+## Modules and ad hoc commands
+
+The **module** is Ansible's unit of action: `ansible.builtin.apt` installs packages, `ansible.builtin.copy` deposits files, `ansible.builtin.service` manages services, `ansible.builtin.ping` checks a node answers… There are thousands, each documented. A module can be invoked directly — an **ad hoc** command:
+
+```console
+ada@control-node ~ $ ansible all -m ping
+managed-node-1 | SUCCESS => { "ping": "pong" }
+managed-node-2 | SUCCESS => { "ping": "pong" }
+```
+
+The **facts** deserve a mention: before acting, Ansible automatically collects each node's identity card (distribution, addresses, CPU, memory… the `setup` module), available in the `ansible_*` variables — so your playbooks can adapt to what they find.
+
+## Playbooks: the desired state, in YAML
+
+A **playbook** is a YAML file applying **tasks** (each: a module + its parameters) to inventory hosts:
+
+```yaml
+---
+- name: Install the infrastructure's web servers
+  hosts: web_server
+  tasks:
+    - name: Install the nginx package
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+```
+
+Read the task: it does not say "install nginx" but "nginx is present" (`state: present`). That nuance is the tool's whole philosophy: the playbook describes a state; `ansible-playbook` **reconciles** it with reality.
+
+## Idempotence: the central contract
+
+An action is **idempotent** if replaying it changes nothing after the first time. Ansible modules are written to be: `apt` does not install an already-present package (`changed=0` on the second pass), `copy` does not rewrite an identical file, `service` does not restart a running service.
+
+Why it is central: you can rerun a playbook **without risk** — after a mid-run failure, after a change, every day from cron. The playbook stops being a script you barely dare replay, and becomes your infrastructure's **living definition**: the machine is in the playbook's state, always, and the `changed=…` output tells you exactly what had drifted.
+
+<Note type="warning" title="Idempotence is easily lost">
+  The `shell` and `command` modules execute whatever they are given, on every pass — Ansible cannot guess their effect. One misplaced `echo hello >> /file` and every run grows the file: idempotence broken. The rule: **look for the dedicated module first** (there almost always is one); fall back to `shell`/`command` only as a last resort, with guards (`when`, `changed_when`) — the lab will have you break then repair idempotence, and this site's harness replays every playbook twice in CI, requiring `changed=0`.
+</Note>
+
+## Roles: factor out and distribute
+
+When a playbook grows, it is split into **roles**: a role gathers everything a service needs (tasks, files, templates, default variables, handlers) in a conventional tree:
+
+```text
+roles/nginx_hello_world/
+├── defaults/main.yml      # default variables (overridable)
+├── files/index.html       # files deposited as-is
+├── handlers/main.yml      # actions triggered by notify
+├── meta/main.yml          # metadata (author, license, platforms)
+├── tasks/main.yml         # the role's tasks
+└── templates/…            # Jinja2 templates
+```
+
+Two mechanisms meet there:
+
+- **templates**: fill-in-the-blanks files (**Jinja2** syntax: `{{ variable }}`) completed at deploy time — one nginx configuration, a different port per environment;
+- **handlers**: tasks triggered only if another task **changed** something (`notify`) — nginx only restarts if its configuration was actually modified. Idempotence, down to the restarts.
+
+Roles are shared: **Ansible Galaxy** is their community repository (`ansible-galaxy install geerlingguy.docker` — a battle-tested role installing Docker), and **collections** are their modern distribution format (roles + modules + plugins versioned together). The professional reflex: before writing a role, check whether the community already wrote it — then **read its code**; they are excellent best-practice lessons.
+
+## The tooling around
+
+The full working cycle mobilizes the whole Tools series:
+
+- **ansible-lint** checks playbooks and roles (syntax, best practices, idempotence traps) — the linter for Ansible files, as shellcheck is for Bash;
+- **Git** versions everything, with hooks refusing an unlinted commit;
+- **Ansible Vault** encrypts secrets (passwords, API keys) *inside* the repository: sensitive files stay versioned, yet unreadable without the key;
+- **Molecule** tests roles in disposable containers — write a test, play the role, check the state, destroy.
+
+## Recap
+
+- **Configuration management**: describe a **state** in versioned files (IaC), don't list actions — and don't confuse IaC with IaaS.
+- Model: **control node** → SSH → **managed nodes**, agentless (sshd + Python suffice).
+- **Inventory** (machines, groups, variables — the most specific wins), **modules** (the unit of action), **playbooks** (the desired state in YAML), **facts** (what Ansible knows about the nodes).
+- **Idempotence**: replaying changes nothing — distrust `shell`/`command`, trust dedicated modules.
+- **Roles** (+ Jinja2 templates, handlers), **Galaxy** and **collections** for reuse; **ansible-lint**, **Vault**, **Molecule** for quality.
+- What follows is hands-on: the lab builds a full setup (one control node, two managed nodes) and walks through this whole vocabulary.
+
+## Further resources
+
+- [Official Ansible documentation](https://docs.ansible.com/) — the lab will keep sending you there: it is the source;
+- [Ansible Galaxy](https://galaxy.ansible.com/) — community roles and collections;
+- [Xavki's Ansible playlist](https://www.youtube.com/playlist?list=PLn6POgpklwWoCpLKOSw3mXCqbRocnhrh-) — in French, very progressive.

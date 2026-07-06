@@ -1,0 +1,39 @@
+# tmuxp: the whole working environment, declared in YAML (how fitting).
+# `tmuxp load admin` rebuilds it identically after any disconnection.
+# Lab version: the panes enter the containers with docker compose exec;
+# on a real infrastructure, replace them with your ssh commands.
+session_name: ADMIN
+windows:
+  - window_name: CONTROL_NODE
+    layout: even-horizontal
+    panes:
+      - focus: true
+        shell_command:
+          - docker compose exec control-node bash
+          - cd /etc/ansible
+          - clear
+      - shell_command:
+          - docker compose exec control-node bash
+          - cd /etc/ansible
+          - clear
+  - window_name: MANAGED_NODE
+    layout: even-horizontal
+    panes:
+      - focus: true
+        shell_command:
+          - docker compose exec managed-node-1 bash
+          - cd /
+          - clear
+      - shell_command:
+          - docker compose exec managed-node-2 bash
+          - cd /
+          - clear
+  - window_name: NOTES.MD
+    layout: even-horizontal
+    panes:
+      - focus: true
+        shell_command:
+          - clear
+          - vim notes.md
+      - shell_command:
+          - clear

@@ -348,8 +348,23 @@ conservés aux points structurants.
    — dates fixées, hash reproductibles, l'incohérence du log de la
    source disparaît ; git restore enseigné à côté de checkout ; rejeu
    vérifié par test-solutions-bash.sh --up).
-6. Ansible : concepts + TP labo Docker (+ CI). → *jalon : relecture
-   auteur du module concepts (contenu majoritairement IA).*
+6. Ansible : concepts + TP labo Docker (+ CI) — **réalisés** (juillet
+   2026, FR/EN, série `ansible`, status construction : module concepts
+   rédigé (IaC/IaaS distingués, figure AnsibleMap en Duo, idempotence
+   comme contrat central) ; TP généralisé sur labo Docker
+   control-node + 2 managed-nodes (solutions/ansible/ : lab compose,
+   ansible.cfg, inventaire, 4 playbooks, rôle nginx_hello_world,
+   hook pre-commit git diff --cached, tmuxp), encarts « Étudiants
+   d'Angers » (sshfs/starwars, ansible_user, rendu molecule),
+   corrections § 7 n° 8 intégrées (authorized_keys, welcome_msg,
+   Jinja quoté, defaults/, geerlingguy, ansible-playbook) ;
+   harnais scripts/test-solutions-ansible.sh : shellcheck,
+   ansible-lint profil production, syntax-check, et en --up labo
+   complet avec SECOND passage exigé à changed=0 — l'idempotence
+   testée en CI ; 15 entrées glossaire ansible liées aux modules).
+   → *jalon : relecture auteur du module concepts (contenu
+   majoritairement IA) ; premier passage CI du labo à surveiller
+   (Docker indisponible dans l'environnement de développement).*
 7. Traductions EN au fil de l'eau (chaque module part avec son EN,
    règle projet) ; `npm run build` sans warning et
    `test-solutions.sh --up` verts avant chaque étape conclue.

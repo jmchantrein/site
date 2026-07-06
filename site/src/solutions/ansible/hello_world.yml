@@ -1,0 +1,28 @@
+# First playbook: ping every managed node, then meet variables and facts.
+---
+- name: Hello world
+  hosts: all
+  tasks:
+    - name: Ping my hosts
+      ansible.builtin.ping:
+
+    # welcome_msg comes from group_vars/all.yaml — except on managed-node-1,
+    # where host_vars/managed-node-1.yaml overrides it (precedence).
+    - name: Print the welcome message
+      ansible.builtin.debug:
+        msg: "{{ welcome_msg }}"
+
+    # ansible_hostname is a FACT: gathered from the node, not declared by us.
+    - name: Print each node's hostname
+      ansible.builtin.debug:
+        msg: "{{ ansible_hostname }}"
+
+    - name: Gather the distribution fact only
+      ansible.builtin.setup:
+        filter:
+          - "ansible_distribution"
+      register: distribution_ansible_facts
+
+    - name: Print each node's distribution
+      ansible.builtin.debug:
+        msg: "{{ distribution_ansible_facts.ansible_facts.ansible_distribution }}"

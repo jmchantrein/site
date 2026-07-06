@@ -1,0 +1,19 @@
+# Ansible lab: one control node + two managed nodes on an ordinary Docker
+# network (service names resolve as DNS names — the inventory uses them).
+# The whole solutions/ansible tree is mounted at /etc/ansible on the control
+# node: ansible.cfg, inventory/, playbooks and roles are THE course files.
+services:
+  control-node:
+    build:
+      context: .
+      dockerfile: Dockerfile.control
+    volumes:
+      - ..:/etc/ansible
+  managed-node-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+  managed-node-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.node

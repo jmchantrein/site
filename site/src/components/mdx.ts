@@ -17,6 +17,7 @@ import Bypass from "./Bypass.astro";
 import CodeFile from "./CodeFile.astro";
 import Duo from "./Duo.astro";
 import MachineMap from "./MachineMap.astro";
+import AnsibleMap from "./AnsibleMap.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
@@ -38,6 +39,7 @@ export const mdxComponents = {
   CodeFile,
   Duo,
   MachineMap,
+  AnsibleMap,
   G,
   WikiImage,
   Artefact,

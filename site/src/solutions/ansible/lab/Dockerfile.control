@@ -1,0 +1,11 @@
+# Control node for the Ansible lab: ansible + its everyday companions
+# (linter, git, vim, tmux/tmuxp) and an SSH *client* — Ansible is agentless,
+# the control node only needs to reach the managed nodes over SSH.
+FROM debian:bookworm-slim
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      ansible ansible-lint git vim tmux tmuxp \
+      openssh-client curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+# The container just stays alive; the lab script (and you) drive it with
+# docker compose exec.
+CMD ["sleep", "infinity"]

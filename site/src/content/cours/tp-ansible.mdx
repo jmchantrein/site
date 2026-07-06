@@ -1,0 +1,310 @@
+---
+title: "TP : de l'inventaire aux rôles"
+description: "Le TP complet sur un labo Docker reproductible : inventaire, playbooks, variables, facts, lint et hooks Git, idempotence, rôle nginx, Galaxy, Molecule — tout Ansible en pratique."
+order: 21
+serie: ansible
+topics: [linux, reseau]
+badge: "TP"
+tags: [ansible, TP, playbook, rôles, idempotence, nginx]
+terminal: false
+status: [construction]
+---
+
+## Introduction
+
+Le module précédent a posé le vocabulaire ; celui-ci le fait pratiquer, de la première commande ad hoc jusqu'aux rôles. Le fil est cumulatif : chaque section réutilise la précédente — inventaire, playbooks, variables, facts, lint et Git, idempotence, rôle nginx, Galaxy, Molecule. **Il est inutile de griller une étape**, comme au TP Docker.
+
+<Note type="info" title="La documentation d'abord">
+  Règle du TP : pour tout ce qui concerne Ansible, vous irez chercher l'information **à la source**, c'est-à-dire dans la [documentation officielle](https://docs.ansible.com/). Savoir naviguer dans la documentation d'un outil est une compétence professionnelle à part entière — les solutions de ce TP suffisent à vérifier votre travail, pas à le remplacer.
+</Note>
+
+## Le labo : un nœud de contrôle, deux nœuds gérés
+
+Le TP se déroule sur un labo Docker reproductible par n'importe quel lecteur : un conteneur `control-node` (Ansible et ses compagnons : ansible-lint, git, vim, tmux/tmuxp) et deux conteneurs `managed-node-1` et `managed-node-2` (un serveur SSH, Python — et rien d'autre : c'est toute la promesse *agentless*). Deux nœuds gérés plutôt qu'un, pour que les **groupes** d'inventaire aient un sens dès le début.
+
+<CodeFile path="ansible/lab/Dockerfile.control" lang="dockerfile" />
+
+<CodeFile path="ansible/lab/Dockerfile.node" lang="dockerfile" />
+
+<CodeFile path="ansible/lab/docker-compose.yml" lang="yaml" />
+
+Le script du labo construit les trois conteneurs, câble SSH (paire de clés ed25519 générée sur le nœud de contrôle, clé publique déposée dans `authorized_keys` des nœuds gérés — le mécanisme du module SSH, exactement), puis rejoue tous les playbooks du TP :
+
+<CodeFile path="ansible/lab/lab.sh" lang="bash" />
+
+```console
+ada@laptop lab $ ./lab.sh --keep
+ada@laptop lab $ docker compose exec control-node bash
+root@control-node:/# cd /etc/ansible
+```
+
+Le dépôt du TP est monté dans `/etc/ansible` du nœud de contrôle : vos fichiers survivent aux conteneurs.
+
+<Note title="Étudiants d'Angers">
+  En TP encadré, vous travaillez sur l'infrastructure réelle plutôt que sur le labo : votre VPS KVM devient le nœud de contrôle (renommez son hostname en `control-node`), votre conteneur LXC est le nœud géré (son hostname ne peut pas être changé, n'essayez pas), et `starwars` complète l'inventaire. Prérequis spécifiques : montage **sshfs** de `starwars:~/ansible` dans `control-node:/etc/ansible` (persistant via `/etc/fstab` : `sshfs#loginENT@starwars:ansible /etc/ansible fuse defaults,_netdev,allow_other 0 0`), votre `.vimrc` (numéros de ligne, coloration, indentation 2 espaces sans tabulation — cf. module Vim), et un **snapshot** de la VM avant de commencer (`kvm.snapshot`). Le reste du TP est identique.
+</Note>
+
+<Note type="warning" title="La coquille qui casse tout">
+  Le fichier s'appelle `authorized_keys` — ni `autorized_keys`, ni `authorised_keys`. La coquille est indolore en apparence : sshd ignore simplement le fichier mal nommé, et la connexion par clé échoue sans message parlant. C'est l'erreur la plus fréquente de ce TP (le support d'origine la contenait deux fois…) — en cas de `Permission denied (publickey)`, vérifiez d'abord ce nom, puis les droits (`700` sur `~/.ssh`, `600` sur le fichier).
+</Note>
+
+## Configurer le nœud de contrôle
+
+<Exercise id="ansible-cfg" level={1}>
+  Écrivez le fichier `/etc/ansible/ansible.cfg` qui indique que le ou les fichiers d'inventaire se trouvent dans `/etc/ansible/inventory`. Où Ansible cherche-t-il sa configuration, et dans quel ordre ?
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/ansible.cfg" lang="ini" />
+
+    Ordre de recherche : la variable d'environnement `ANSIBLE_CONFIG`, puis `./ansible.cfg` (répertoire courant), puis `~/.ansible.cfg`, enfin `/etc/ansible/ansible.cfg`. Donner un **répertoire** en inventaire (et non un fichier) permet d'y déposer plusieurs fichiers d'inventaire, tous lus. Pensez aussi à vous faciliter la vie dans `~/.bashrc` (`cd /etc/ansible` à l'ouverture de session, alias, fonctions préfixées `___` comme au module Bash — la commande s'appelle `ansible-playbook`, au singulier, si vous l'aliasez).
+  </Fragment>
+</Exercise>
+
+## L'inventaire
+
+<Exercise id="ansible-inventaire" level={1}>
+  Créez l'arborescence de travail (`mkdir group_vars host_vars inventory roles`) puis l'inventaire `inventory/hosts.yaml` déclarant `managed-node-1` et `managed-node-2`. Ajoutez un groupe `mon_groupe` contenant les deux nœuds, et un groupe `web_server` contenant le premier. Vérifiez que vous joignez **tout le monde** avec `ansible all -m ping`, puis un groupe avec `ansible mon_groupe -m ping`.
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/inventory/hosts.yaml" lang="yaml" />
+
+    ```console
+    root@control-node:/etc/ansible# ansible all -m ping
+    managed-node-1 | SUCCESS => { "ping": "pong" }
+    managed-node-2 | SUCCESS => { "ping": "pong" }
+    ```
+
+    Dans le labo, les noms des services Docker se résolvent par DNS — `ansible_host` y est donc redondant, mais c'est lui qui porte l'adresse IP ou le FQDN sur une vraie infrastructure.
+  </Fragment>
+</Exercise>
+
+<Note title="Étudiants d'Angers">
+  Votre `mon_groupe` contient le LXC **et** `starwars` — et sur starwars vous n'êtes pas root : il faut y surcharger la variable de connexion, `ansible_user: loginENT`, au niveau de l'hôte dans l'inventaire. C'est votre premier contact avec une variable de connexion par hôte.
+</Note>
+
+## L'environnement de travail : tmux et tmuxp
+
+<Exercise id="ansible-tmux" level={2}>
+  Construisez votre environnement de travail tmux (revoyez la section tmux du module SSH) : une fenêtre `CONTROL_NODE` coupée en deux panneaux placés dans `/etc/ansible`, une fenêtre `MANAGED_NODE` avec un panneau par nœud géré, une fenêtre `NOTES.MD` avec Vim sur vos notes. Puis **pérennisez-le** : déclarez cet environnement avec `tmuxp`, tuez la session, et vérifiez que `tmuxp load` la reconstruit à l'identique.
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/tmuxp-admin.yaml" lang="yaml" />
+
+    ```console
+    ada@laptop lab $ tmux kill-session -t ADMIN
+    ada@laptop lab $ tmuxp load admin
+    ```
+
+    Tout l'environnement de travail est décrit dans un fichier YAML — remarquez la mise en abyme : vous venez de faire de l'*infrastructure as code* sur votre propre poste de travail, avant même le premier playbook.
+  </Fragment>
+</Exercise>
+
+## Premier playbook
+
+<Exercise id="ansible-playbook-hello" level={1}>
+  Écrivez `hello_world.yml` : une **tâche** qui ping l'**ensemble** des nœuds gérés (module `ping`), puis une tâche qui affiche « hello world » (module `debug`). Testez avec `ansible-playbook hello_world.yml`.
+
+  <Fragment slot="solution">
+    Les deux premières tâches du fichier final (affiché en fin de section, il grandit avec les exercices suivants) :
+
+    ```yaml
+    - name: Hello world
+      hosts: all
+      tasks:
+        - name: Ping my hosts
+          ansible.builtin.ping:
+
+        - name: Print a message
+          ansible.builtin.debug:
+            msg: "hello world"
+    ```
+
+    Un playbook est une **liste de plays** (d'où le tiret initial), chaque play visant des hôtes (`hosts: all`) et portant ses tâches. Chaque tâche invoque un module par son nom complet (`ansible.builtin.…` — la forme courte `ping:` fonctionne, mais le nom qualifié est la bonne pratique, ansible-lint vous y contraindra).
+  </Fragment>
+</Exercise>
+
+## Variables et précédence
+
+<Exercise id="ansible-variables" level={2}>
+  Déclarez une variable `welcome_msg` valant « Bonjour le monde from group_vars » dans `group_vars/all.yaml` **et** « Bonjour le monde from host_vars » dans `host_vars/managed-node-1.yaml`. Modifiez le playbook pour afficher `welcome_msg`. Que constatez-vous sur chaque nœud ? Comment faire pour que ce soit la valeur de `group_vars` qui s'applique partout ?
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/group_vars/all.yaml" lang="yaml" />
+
+    <CodeFile path="ansible/host_vars/managed-node-1.yaml" lang="yaml" />
+
+    `managed-node-1` affiche « from host_vars », `managed-node-2` « from group_vars » : en cas de conflit, **le plus spécifique gagne** — c'est la [précédence des variables](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence), et elle n'est pas négociable : on ne peut pas « inverser » la priorité. Pour que la valeur de groupe s'applique, il faut **retirer** (ou renommer) la déclaration de `host_vars` : la précédence est un ordre fixe dans lequel on choisit *où* déclarer, pas un réglage.
+  </Fragment>
+</Exercise>
+
+## Les facts
+
+<Exercise id="ansible-facts" level={2}>
+  Utilisez le module `setup` en ad hoc pour lister les **facts** d'un nœud géré, et trouvez celui qui contient la distribution. Puis complétez le playbook : afficher le hostname de chaque nœud, et afficher sa distribution en passant par `setup` filtré et une variable enregistrée (`register`).
+
+  <Fragment slot="solution">
+    ```console
+    root@control-node:/etc/ansible# ansible managed-node-1 -m setup | less
+    root@control-node:/etc/ansible# ansible managed-node-1 -m setup -a "filter=ansible_distribution"
+    managed-node-1 | SUCCESS => { "ansible_facts": { "ansible_distribution": "Debian" } }
+    ```
+
+    Le fichier complet, tel que le harnais du site le rejoue :
+
+    <CodeFile path="ansible/hello_world.yml" lang="yaml" />
+
+    `ansible_hostname` est disponible directement (les facts sont collectés en début de play) ; la version `setup` + `register` montre le mécanisme général — enregistrer la sortie d'un module dans une variable pour s'en resservir. Attention à la syntaxe : une valeur qui **commence** par du Jinja doit être quotée (`msg: "{{ … }}"`) — le support d'origine de ce TP l'oubliait, et son `welcome` ne correspondait pas à la variable `welcome_msg` déclarée… les coquilles n'épargnent personne.
+  </Fragment>
+</Exercise>
+
+## Linter, versionner, verrouiller : ansible-lint, Git et les hooks
+
+<Exercise id="ansible-lint-git" level={2}>
+  Passez `ansible-lint hello_world.yml` et corrigez tout (erreurs **et** avertissements). Initialisez ensuite un dépôt Git dans `/etc/ansible`, faites un premier commit, puis ajoutez un hook `pre-commit` qui refuse le commit si `shellcheck` (fichiers `.bash`/`.sh`) ou `ansible-lint` (fichiers `.yaml`/`.yml`) échoue.
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/hooks/pre-commit" lang="bash" />
+
+    Il s'installe d'une copie : `cp hooks/pre-commit .git/hooks/pre-commit` (les hooks ne sont **pas** versionnés par Git lui-même — revoyez le module Git). Le point important du script : il ne linte que les fichiers **indexés** (`git diff --cached --name-only --diff-filter=ACM`), pas toute l'arborescence — un hook qui relinte tout le dépôt à chaque commit ne passe pas à l'échelle. Vous vivrez ce flux — lint local, hook, commit — sur tous vos futurs projets d'infrastructure : autant le câbler dès le TP.
+  </Fragment>
+</Exercise>
+
+## L'idempotence, en la cassant
+
+<Note type="info" title="Consigne de section">
+  Exceptionnellement, n'utilisez **pas** ansible-lint dans cette section tant que ce n'est pas explicitement demandé : vous allez écrire du mauvais code *exprès*, et ansible-lint vous en empêcherait — c'est d'ailleurs toute la conclusion.
+</Note>
+
+<Exercise id="ansible-idempotence-apt" level={2}>
+  Écrivez `install-common-software.yaml` : installer `htop`, `ncdu` et `vim` sur tous les nœuds via le module `apt`. Exécutez-le **deux fois** en observant les sorties. Que constatez-vous ?
+
+  <Fragment slot="solution">
+    <CodeFile path="ansible/install-common-software.yaml" lang="yaml" />
+
+    Premier passage : `changed=1` (les paquets s'installent). Second : `ok=…, changed=0` — rien n'est réinstallé. Le module `apt` compare l'état demandé (« ces paquets sont présents ») à l'état réel et ne fait que le nécessaire : c'est l'**idempotence**, constatée.
+  </Fragment>
+</Exercise>
+
+<Exercise id="ansible-idempotence-shell" level={3}>
+  Écrivez `write_hello_world.yaml` : créer `/hello` contenant « hello » avec le module **shell**, et `/world` contenant « world » avec le module **command**. Exécutez deux fois. Que constatez-vous ? Et si vous aviez écrit `>>` au lieu de `>` par erreur, Ansible serait-il encore idempotent ?
+
+  <Fragment slot="solution">
+    La version naïve — volontairement absente des corrigés du site, c'est un anti-modèle :
+
+    ```yaml
+    - name: Shell module write hello world
+      ansible.builtin.shell: |
+        echo hello > /hello
+    - name: Command module write hello world
+      ansible.builtin.command: "python3 -c \"with open('/world', 'w') as f: f.write('world')\""
+    ```
+
+    Chaque passage affiche `changed=2` : Ansible ne peut pas connaître l'effet d'une commande arbitraire, donc il la rejoue et la déclare « changed » — l'idempotence est déjà rompue (ne serait-ce que la date de modification des fichiers, réécrite sans raison). Avec `>>`, c'est pire : le fichier grossit d'une ligne par exécution — le résultat lui-même diverge. Remarquez aussi le contorsionnisme du module `command` : pas de shell, donc pas de redirection `>`, d'où le détour par Python. Quand on lutte contre le module, c'est qu'on n'a pas pris le bon.
+  </Fragment>
+</Exercise>
+
+<Exercise id="ansible-idempotence-module" level={3}>
+  Toujours dans le même playbook, ajoutez une alternative n'utilisant ni `shell` ni `command` : un fichier `/hello_world` contenant « Hello world ! ». Exécutez deux fois, comparez les dates de modification des trois fichiers. Enfin, lintez le playbook et suivez les recommandations d'ansible-lint qui permettent de **conserver** l'idempotence, puis committez (deux commits : paquets, puis fichiers).
+
+  <Fragment slot="solution">
+    Le fichier final, gardé et linté — celui que le harnais rejoue deux fois en CI :
+
+    <CodeFile path="ansible/write_hello_world.yaml" lang="yaml" />
+
+    Le module `lineinfile` décrit un état (« cette ligne est présente dans ce fichier ») : il ne touche plus au fichier une fois l'état atteint — les dates de modification de `/hello` et `/world` changeaient à chaque passage naïf, celle de `/hello_world` non. Pour `shell` et `command`, ansible-lint exige `changed_when` (règle `no-changed-when`) : ici, la garde `stat` + `when` + `changed_when` ne les exécute que si le fichier manque. La leçon tient en une ligne : **un module dédié d'abord ; `shell`/`command` gardés, en dernier ressort.**
+  </Fragment>
+</Exercise>
+
+<Exercise id="ansible-lint-latest" level={2}>
+  Ajoutez `state: latest` à `install-common-software.yaml` et lintez. Pourquoi `package-latest: Package installs should not use latest.` ? Si l'on est sûr de soi, peut-on outrepasser une règle d'ansible-lint ? Et de shellcheck ?
+
+  <Fragment slot="solution">
+    `latest` signifie « installe **et mets à jour** à chaque passage » : le résultat dépend du moment de l'exécution — l'idempotence (et la reproductibilité) y passent. La bonne pratique : `state: present`, et des versions épinglées que l'on met à jour délibérément.
+
+    Oui, on peut outrepasser en connaissance de cause : un fichier `.ansible-lint` avec une `skip_list` (le nom de la règle, par exemple `package-latest`) ; et pour shellcheck, un commentaire `# shellcheck disable=SC2048` au-dessus de la ligne concernée. Dans les deux cas, la dérogation est **écrite, visible et versionnée** — c'est ce qui la rend acceptable.
+  </Fragment>
+</Exercise>
+
+## Un rôle : nginx_hello_world
+
+<Exercise id="ansible-role" level={3}>
+  En respectant les bonnes pratiques Ansible, écrivez un rôle `nginx_hello_world` qui installe nginx et publie une page « Hello world ! » (module `copy`), avec un port configurable `nginx_hello_world_port` (par défaut **8080**) défini dans `defaults/`, appliqué au fichier de configuration nginx par un **template** Jinja2 commençant par le commentaire `# {{ ansible_managed }}`, et un **handler** qui redémarre nginx. Invoquez le rôle depuis un playbook `site-web.yml` visant le groupe `web_server`, vérifiez la page avec `curl`, puis surchargez le port à 80 et repassez le playbook. Quel est l'intérêt de `notify` et des handlers ?
+
+  <Fragment slot="solution">
+    L'arborescence complète du rôle, telle que testée par le harnais :
+
+    <CodeFile path="ansible/roles/nginx_hello_world/defaults/main.yml" lang="yaml" />
+
+    <CodeFile path="ansible/roles/nginx_hello_world/tasks/main.yml" lang="yaml" />
+
+    <CodeFile path="ansible/roles/nginx_hello_world/templates/etc_nginx_sites_available_default.j2" lang="jinja" />
+
+    <CodeFile path="ansible/roles/nginx_hello_world/handlers/main.yml" lang="yaml" />
+
+    <CodeFile path="ansible/site-web.yml" lang="yaml" />
+
+    ```console
+    root@control-node:/etc/ansible# ansible-playbook site-web.yml
+    root@control-node:/etc/ansible# curl -s http://managed-node-1:8080/
+    <h1>Hello world !</h1>
+    ```
+
+    Pour revenir au port 80 : décommenter la surcharge `vars:` de `site-web.yml` (une variable de play bat le `defaults/` du rôle — la précédence, encore). Le premier passage après changement affiche `changed=1` sur le template **et déclenche le handler** ; un passage sans changement n'en déclenche aucun : `notify`/handlers = « ne redémarre le service que si sa configuration a réellement changé ». C'est l'idempotence appliquée aux redémarrages — un service en production ne se redémarre pas pour rien.
+
+    Quant à `{{ ansible_managed }}` : regardez la première ligne du fichier déployé sur le nœud (`head -1 /etc/nginx/sites-available/default`). Le message se personnalise dans `ansible.cfg` (clé `ansible_managed`) — par exemple « Ce fichier est géré par Ansible, ne le modifiez pas localement : vos modifications seront perdues », prévenance minimale envers les collègues qui découvriraient le fichier à la main.
+  </Fragment>
+</Exercise>
+
+## Ansible Galaxy : réutiliser la communauté
+
+<Exercise id="ansible-galaxy" level={2}>
+  Installez le rôle `geerlingguy.docker` avec `ansible-galaxy`. Où s'installe-t-il par défaut ? Parcourez son code (arborescence, structure), puis installez Docker sur le nœud de contrôle lui-même via un playbook `site-local.yml`. Ensuite, créez la structure d'un nouveau rôle `molecule_nginx_hello_world` avec `ansible-galaxy role init`, et comparez son arborescence à celle de votre rôle.
+
+  <Fragment slot="solution">
+    ```console
+    root@control-node:/etc/ansible# ansible-galaxy install geerlingguy.docker
+    root@control-node:/etc/ansible# ls ~/.ansible/roles/
+    geerlingguy.docker
+    ```
+
+    Le playbook local vise `localhost` (`hosts: localhost`) et importe le rôle (`ansible.builtin.import_role`) — vérification : `docker run hello-world`. Attention à l'orthographe : geerling**g**uy, avec deux g (autre coquille du support d'origine qui casse réellement la commande). `ansible-galaxy role init` génère l'arborescence de référence — `defaults/`, `tasks/`, `handlers/`, `templates/`, `files/`, `meta/`, plus `vars/` et `tests/` : votre rôle en est un sous-ensemble conforme. Lire le code de `geerlingguy.docker` est le vrai exercice : c'est un cours de bonnes pratiques à ciel ouvert.
+  </Fragment>
+</Exercise>
+
+<Note type="info" title="Les collections">
+  Les rôles sont **historiquement** le format de distribution des briques d'IaC ; leurs limites ont fait émerger les **collections**, format standard moderne qui regroupe rôles, modules et plugins versionnés ensemble. Les dépendances (rôles ou collections externes) se déclarent dans un `requirements.yml`, installé par `ansible-galaxy install -r requirements.yml`. Pour explorer : `ansible-galaxy collection install debops.debops` (une distribution d'infrastructure complète), puis `ansible-galaxy collection init ma_collection` pour voir la structure.
+</Note>
+
+## Molecule : tester ses rôles — le projet
+
+<Exercise id="ansible-molecule" level={3}>
+  Installez `pipx` (apt) puis `molecule` (pipx, en ajoutant `~/.local/bin` au PATH). Dans le rôle `molecule_nginx_hello_world`, reconstituez le fonctionnement de `nginx_hello_world`, initiez un scénario (`molecule init scenario`) et observez ce qui est créé (`molecule/default/`, fichiers `create/converge/destroy/molecule.yml`). **Projet à rendre** (seul·e ou par groupe de 2 à 4) : un cours/tutoriel en Markdown + une démonstration expliquant Molecule et testant le rôle dans des conteneurs Docker — nginx installé, port exposé, 404 sur une mauvaise URL…
+
+  <Fragment slot="solution">
+    Ce projet est un travail à rendre, volontairement **hors corrigés** — il n'y a donc rien à déplier ici, sinon la piste de départ : un scénario Molecule n'est qu'une suite de playbooks (`create` → `converge` → `verify` → `destroy`) exécutés sur une instance jetable ; votre tutoriel doit faire comprendre ce cycle, et votre démonstration l'exécuter. La [documentation Molecule](https://ansible.readthedocs.io/projects/molecule/) est la source.
+  </Fragment>
+</Exercise>
+
+<Note title="Étudiants d'Angers">
+  Le rendu se fait sous forme d'archive `nom1_nom2_nom3.tar.gz` (rôle + cours/tutoriel), à m'envoyer — les modalités précises et l'échéance sont données en séance.
+</Note>
+
+## Ansible Vault, pour la suite
+
+Dernier morceau de vocabulaire, en éclaireur : **Ansible Vault** chiffre des fichiers (ou des variables) *dans* le dépôt — mots de passe, clés d'API, secrets de production restent versionnés mais illisibles sans la clé de déchiffrement. Allez lire [à quoi sert Vault](https://docs.ansible.com/ansible/latest/vault_guide/index.html) dans la documentation : le jour où un `git push` public embarque un mot de passe en clair, il est déjà trop tard.
+
+## Récapitulatif
+
+- Le labo : `control-node` + 2 nœuds gérés, SSH câblé comme au module SSH — et **rejoué en CI** : chaque playbook de ce TP passe deux fois, le second passage doit dire `changed=0`.
+- Inventaire → playbooks → variables (la précédence : le plus spécifique gagne) → facts (`setup`, `register`).
+- Qualité outillée : ansible-lint, Git, hook `pre-commit` sur les fichiers indexés.
+- Idempotence : constatée (`apt`), cassée (`shell`/`command` nus), réparée (module dédié, gardes `changed_when`) — et `state: latest` la brise aussi.
+- Rôle : `defaults/` surchargeable, template Jinja2 (`ansible_managed`), handler via `notify` — le redémarrage seulement quand il le faut.
+- Réutiliser : Galaxy (rôles, collections, `requirements.yml`) ; tester : Molecule (le projet à rendre).
+
+## Ressources supplémentaires
+
+- [docs.ansible.com](https://docs.ansible.com/) — la source, encore et toujours ;
+- [Variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence) — les 22 niveaux, pour les curieux ;
+- [Molecule](https://ansible.readthedocs.io/projects/molecule/) — pour le projet ;
+- [Playlist Ansible de Xavki](https://www.youtube.com/playlist?list=PLn6POgpklwWoCpLKOSw3mXCqbRocnhrh-) — le complément vidéo en français.

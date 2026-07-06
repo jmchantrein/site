@@ -1,0 +1,5 @@
+# The role's default variables — the WEAKEST precedence level: everything
+# (inventory, play vars, --extra-vars) can override them. Prefixing the
+# variable with the role's name avoids collisions between roles.
+---
+nginx_hello_world_port: 8080

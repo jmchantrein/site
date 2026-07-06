@@ -1,0 +1,3 @@
+# Variables for one specific host — they BEAT the group's variables
+# (variable precedence: the more specific wins).
+welcome_msg: "Bonjour le monde from host_vars"

@@ -1,0 +1,38 @@
+# The idempotence lesson, as code. shell and command know nothing about the
+# node's state: without the stat guards they would rewrite the files on every
+# run (changed every time — idempotence broken). lineinfile, a real module,
+# checks before acting: no guard needed.
+---
+- name: Write hello world
+  hosts: all
+  tasks:
+    - name: Check whether /hello already exists
+      ansible.builtin.stat:
+        path: /hello
+      register: hello_file
+
+    - name: Write /hello with the shell module (guarded)
+      ansible.builtin.shell: |
+        echo hello > /hello
+      when: not hello_file.stat.exists
+      changed_when: not hello_file.stat.exists
+
+    - name: Check whether /world already exists
+      ansible.builtin.stat:
+        path: /world
+      register: world_file
+
+    # command has no shell, hence no redirection: a workaround is needed
+    # to write a file — a sign this is NOT the right module for the job.
+    - name: Write /world with the command module (guarded)
+      ansible.builtin.command: "python3 -c \"with open('/world', 'w') as f: f.write('world\\n')\""
+      when: not world_file.stat.exists
+      changed_when: not world_file.stat.exists
+
+    - name: Write /hello_world with the lineinfile module (idempotent itself)
+      ansible.builtin.lineinfile:
+        path: /hello_world
+        line: "Hello world !"
+        state: present
+        create: true
+        mode: "0644"
