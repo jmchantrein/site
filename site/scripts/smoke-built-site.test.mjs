@@ -29,6 +29,15 @@ test("une page de cours conserve ses parcours interactifs essentiels", async () 
   assert.match(html, /href="\/site\/en\/cours\/bash-bases\/?"/);
 });
 
+test("le sommaire mobile est navigable dans le HTML rendu au build", async () => {
+  const html = await output("cours/bash-bases/index.html");
+  const mobileToc = html.match(/<details class="toc-m"[^>]*>[\s\S]*?<\/details>/)?.[0];
+
+  assert.ok(mobileToc, "le sommaire mobile doit exister sans exécution de JavaScript");
+  assert.match(mobileToc, /<summary[^>]*>Sommaire<\/summary>/);
+  assert.match(mobileToc, /href="#introduction"/);
+});
+
 test("les index générés sont lisibles et préfixés pour GitHub Pages", async () => {
   const search = JSON.parse(await output("search-index.json"));
   const glossary = JSON.parse(await output("glossaire.json"));

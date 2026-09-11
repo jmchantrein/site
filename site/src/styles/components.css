@@ -550,9 +550,9 @@ iframe[data-term-frame] { width: 100%; flex: 1; border: 0; background: var(--ter
 .course-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 
 /* -----------------------------------------------------------------------------
-   SOMMAIRE LATÉRAL (.toc) — composant partagé, défini UNE FOIS, instancié par page
-   site.js · wireTocs() génère le double mobile <details class="toc-m"> depuis le
-   même <ol> et anime le scrollspy — aucune page ne duplique le sommaire.
+   SOMMAIRE LATÉRAL (.toc) ET MOBILE (.toc-m)
+   Reading.astro rend les deux variantes au build depuis la même prop ; site.js
+   ne fournit que les améliorations progressives (fermeture et scrollspy).
    --------------------------------------------------------------------------- */
 .toc-layout { display: grid; grid-template-columns: var(--toc-col, 220px) minmax(0, 1fr); gap: var(--space-7); align-items: start; }
 .toc-layout__body { min-width: 0; }
@@ -579,11 +579,13 @@ iframe[data-term-frame] { width: 100%; flex: 1; border: 0; background: var(--ter
 /* SCROLLSPY — la section en cours de lecture se signale dans le sommaire */
 .toc a[aria-current="true"] { color: var(--color-accent-text); border-left-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent-weak) 55%, transparent); }
 
-/* Double mobile (généré par site.js) — visible uniquement quand le latéral disparaît */
+/* Variante mobile rendue au build — visible uniquement quand le latéral disparaît */
 .toc-m { display: none; }
 @media (max-width: 880px) {
   .toc-layout, .toc-layout[data-swapped] { grid-template-columns: 1fr; }
-  .toc { display: none; }
+  /* Reading.astro place sa variante mobile juste avant la grille. Les autres
+     sommaires statiques restent visibles plutôt que de dépendre de JavaScript. */
+  .toc-m + .toc-layout > .toc { display: none; }
   .toc-m { display: block; margin-block: var(--space-5) 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); }
   .toc-m > summary { list-style: none; cursor: pointer; user-select: none; padding: var(--space-3) var(--space-4); font-weight: var(--weight-semibold); color: var(--color-accent-text); display: flex; align-items: center; gap: var(--space-2); }
   .toc-m > summary::-webkit-details-marker { display: none; }

@@ -8,6 +8,7 @@
  */
 import Base from "./Base.astro";
 import Terminal from "../components/Terminal.astro";
+import TocList from "../components/TocList.astro";
 import SerieTimeline from "../components/SerieTimeline.astro";
 import ProvBadge from "../components/ProvBadge.astro";
 import type { Provenance } from "../data/provenance";
@@ -27,7 +28,7 @@ interface Props {
   terminal?: boolean;
   terminalTitle?: string;
   terminalComment?: string;
-  /** Sommaire (h2 extraits au rendu) — colonne latérale + double mobile (site.js). */
+  /** Sommaire (h2 extraits au rendu) — versions latérale et mobile rendues au build. */
   toc?: TocItem[];
   /** Timeline de série : un point par module, position courante. */
   serieNav?: { items: { href: string; title: string; num: string }[]; current: number };
@@ -83,6 +84,12 @@ const dateLine = [pub, upd].filter(Boolean).join(" · ");
       {serieNav && <SerieTimeline items={serieNav.items} current={serieNav.current} locale={locale} />}
     </div>
 
+    {toc.length > 1 && (
+      <details class="toc-m">
+        <summary>{locale === "en" ? "Contents" : "Sommaire"}</summary>
+        <TocList toc={toc} />
+      </details>
+    )}
     <div class:list={[toc.length > 1 && "toc-layout"]} data-swap={toc.length > 1 ? "" : undefined}>
       {toc.length > 1 && (
         <nav
@@ -99,15 +106,7 @@ const dateLine = [pub, upd].filter(Boolean).join(" · ");
           >
             <span aria-hidden="true">↔</span>
           </button>
-          <ol>
-            {toc.map((h, i) => (
-              <li>
-                <a href={`#${h.slug}`}>
-                  <span class="num">{String(i + 1).padStart(2, "0")}</span> {h.text}
-                </a>
-              </li>
-            ))}
-          </ol>
+          <TocList toc={toc} />
           {(prev || next) && (
             <div class="toc__nav">
               {prev && <a href={prev.href}><span class="dir" aria-hidden="true">←</span> {prev.label}</a>}
