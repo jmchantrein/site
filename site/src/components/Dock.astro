@@ -15,11 +15,13 @@ interface Props {
 }
 const { locale = "fr" } = Astro.props;
 const T = {
-  fr: { dock: "Applications", opts: "Options :", grow: "Agrandir", fs: "Plein écran", min: "Minimiser", close: "Fermer", comment: "# terminal du dock — tapez « help »" },
-  en: { dock: "Applications", opts: "Options:", grow: "Enlarge", fs: "Full screen", min: "Minimise", close: "Close", comment: "# dock terminal — type “help”" },
+  fr: { tools: "Outils", dock: "Applications", opts: "Options :", grow: "Agrandir", fs: "Plein écran", min: "Minimiser", close: "Fermer", comment: "# terminal du dock — tapez « help »" },
+  en: { tools: "Tools", dock: "Applications", opts: "Options:", grow: "Enlarge", fs: "Full screen", min: "Minimise", close: "Close", comment: "# dock terminal — type “help”" },
 }[locale];
 ---
-<div class="dock" role="toolbar" aria-label={T.dock}>
+<details class="dock" data-dock-context="idle">
+  <summary class="dock__trigger"><Icon name="settings" class="dock__trigger-icon" />{T.tools}</summary>
+  <div class="dock__apps" role="toolbar" aria-label={T.dock}>
   {DOCK_APPS.map((app) => (
     <span class="dock__item">
       <button
@@ -41,7 +43,8 @@ const T = {
       )}
     </span>
   ))}
-</div>
+  </div>
+</details>
 
 {/* Fenêtres du dock (gérées par dock.js). La fenêtre terminal est pré-rendue
     pour que site.js câble son terminal émulé au chargement. */}

@@ -28,6 +28,19 @@ const u0 = units[0];
 const featuredCourse = !u0 ? null : u0.kind === "serie"
   ? { href: `${cpfx}/cours/serie/${u0.serie}/`, title: SERIES[u0.serie][locale], desc: SERIES[u0.serie].desc[locale], meta: `${u0.modules.length} modules` }
   : { href: `${cpfx}/cours/${slug(u0.entry.id)}/`, title: u0.entry.data.title, desc: u0.entry.data.description, meta: u0.entry.data.duration ? `≈ ${u0.entry.data.duration} min` : "" };
+const recommended = !u0 ? null : u0.kind === "serie"
+  ? {
+      href: `${cpfx}/cours/${slug(u0.modules[0].id)}/`,
+      title: u0.modules[0].data.title,
+      duration: u0.modules.reduce((sum, module) => sum + (module.data.duration ?? 0), 0),
+      modules: u0.modules.length,
+    }
+  : {
+      href: `${cpfx}/cours/${slug(u0.entry.id)}/`,
+      title: u0.entry.data.title,
+      duration: u0.entry.data.duration ?? 0,
+      modules: 1,
+    };
 
 const articles = await getCollection("miscelanea", ({ data, id }) =>
   !data.draft && (locale === "en" ? id.startsWith("en/") : !id.startsWith("en/")));
@@ -62,9 +75,20 @@ const featuredArticle = !a0 ? null : {
         <span data-lang="fr">Ce site est en construction — le contenu s'enrichit cours après cours.</span><span data-lang="en">This site is under construction — content grows course after course.</span>
       </p>
       <div class="hero__actions">
-        <a class="btn btn--primary" href={`${cpfx}/cours/`}><span data-lang="fr">Commencer les cours</span><span data-lang="en">Start the courses</span> →</a>
-        <a class="btn btn--ghost" href={`${cpfx}/systeme/`}><span data-lang="fr">Voir le système de design</span><span data-lang="en">See the design system</span></a>
+        <a class="btn btn--ghost" href={`${cpfx}/cours/`}><span data-lang="fr">Voir tous les parcours</span><span data-lang="en">See all learning paths</span></a>
       </div>
+
+      {recommended && (
+        <section class="start" aria-labelledby="recommended-start">
+          <p class="start__eyebrow"><span data-lang="fr">Point de départ recommandé</span><span data-lang="en">Recommended starting point</span></p>
+          <h2 id="recommended-start">{recommended.title}</h2>
+          <dl class="start__meta">
+            <div><dt><span data-lang="fr">Niveau attendu</span><span data-lang="en">Expected level</span></dt><dd><span data-lang="fr">Débutant · aucun prérequis</span><span data-lang="en">Beginner · no prerequisites</span></dd></div>
+            <div><dt><span data-lang="fr">Durée estimée</span><span data-lang="en">Estimated time</span></dt><dd>≈ {recommended.duration} min · {recommended.modules} <span data-lang="fr">module(s)</span><span data-lang="en">module(s)</span></dd></div>
+          </dl>
+          <a class="btn btn--primary" href={recommended.href}><span data-lang="fr">Commencer le premier module</span><span data-lang="en">Start the first module</span> →</a>
+        </section>
+      )}
 
       <div class="principles" aria-label={locale === "en" ? "Framework principles" : "Principes du cadre"}>
         <div class="principle">
@@ -84,6 +108,7 @@ const featuredArticle = !a0 ? null : {
           <p><span data-lang="fr">Taille, espacement, contraste, mouvement, police — persistants.</span><span data-lang="en">Size, spacing, contrast, motion, font — all persistent.</span></p>
         </div>
       </div>
+      <a class="btn btn--ghost" href={`${cpfx}/systeme/`}><span data-lang="fr">Découvrir les principes du design en détail</span><span data-lang="en">Explore the design principles in detail</span> →</a>
     </section>
 
     <section class="wrap explore" aria-label={locale === "en" ? "Explore the site" : "Explorer le site"}>
@@ -138,6 +163,13 @@ const featuredArticle = !a0 ? null : {
   .hero h1 { font-size: clamp(2rem, 5.2vw, 3rem); max-width: 18ch; margin-top: var(--space-4); }
   .hero .lead { margin-top: var(--space-5); max-width: 60ch; }
   .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .start { max-width: 66ch; margin-top: var(--space-6); padding: var(--space-5); border: 1px solid var(--color-accent); border-left-width: 4px; border-radius: var(--radius-lg); background: var(--color-surface); }
+  .start__eyebrow { margin: 0 0 var(--space-2); color: var(--color-accent-text); font: 600 var(--text-xs)/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+  .start h2 { margin: 0; font-size: var(--text-xl); }
+  .start__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-3); margin-block: var(--space-4); }
+  .start__meta div { display: grid; gap: var(--space-1); }
+  .start__meta dt { color: var(--color-text-muted); font-size: var(--text-xs); }
+  .start__meta dd { margin: 0; color: var(--color-text-strong); font-weight: var(--weight-semibold); }
   .construction { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-5); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
   .construction img { image-rendering: pixelated; border-radius: 2px; }
   :global(html[data-motion="off"]) .construction img { display: none; }
