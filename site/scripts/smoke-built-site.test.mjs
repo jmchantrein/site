@@ -15,7 +15,7 @@ test("les pages représentatives contiennent le chrome et les scripts interactif
     assert.match(html, /<main\b/);
     assert.match(html, /class="site-header"/);
     assert.match(html, /data-search-trigger/);
-    assert.match(html, /data-settings-trigger/);
+    assert.match(html, /data-a11y-trigger/);
     assert.match(html, /_astro\/[^"']+\.js/);
   }
 });
