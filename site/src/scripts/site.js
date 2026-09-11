@@ -1,6 +1,6 @@
 /* =============================================================================
    SITE.JS — runtime partagé (chargé par Base.astro, bundlé par Astro)
-   - Tiroirs Accessibilité + Paramètres (persistants via localStorage)
+   - Panneau unique « Préférences de lecture » (persistant via localStorage)
    - Langue par route (FR à la racine, EN sous /en/) — la bascule est un lien
    - Terminal « live » : commandes cliquables, saisie directe, thème local
    - Exercices : verrou de la solution tant que la réponse est vide
@@ -45,8 +45,8 @@ function storageWarn() {
   el.className = "storage-warn";
   el.setAttribute("role", "alert");
   el.innerHTML =
-    '<span data-lang="fr">Stockage local saturé — votre dernière saisie n\'a pas été enregistrée. Exportez vos données (Paramètres) puis faites de la place.</span>' +
-    '<span data-lang="en">Local storage is full — your latest input was not saved. Export your data (Settings), then free up space.</span>';
+    '<span data-lang="fr">Stockage local saturé — votre dernière saisie n\'a pas été enregistrée. Exportez vos données (Préférences de lecture) puis faites de la place.</span>' +
+    '<span data-lang="en">Local storage is full — your latest input was not saved. Export your data (Reading preferences), then free up space.</span>';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 12000);
 }
@@ -85,45 +85,38 @@ function apply() {
    /en/) : html[lang] est posé au build, la bascule d'en-tête est un lien. */
 const curLang = () => (root.getAttribute("lang") === "en" ? "en" : "fr");
 
-/* ---- Tiroirs Accessibilité + Paramètres ----------------------------------- */
-let lastFocus = null, openName = null;
+/* ---- Panneau unique « Préférences de lecture » ----------------------------------- */
+let lastFocus = null, panelOpen = false;
 const qp = (s) => document.querySelector(s);
 function setTriggers() {
-  document.querySelectorAll("[data-a11y-trigger]").forEach((t) => t.setAttribute("aria-expanded", String(openName === "a11y")));
-  document.querySelectorAll("[data-settings-trigger]").forEach((t) => t.setAttribute("aria-expanded", String(openName === "settings")));
+  document.querySelectorAll("[data-a11y-trigger]").forEach((t) => t.setAttribute("aria-expanded", String(panelOpen)));
 }
-function currentPanel() { return openName === "settings" ? qp("[data-settings-panel]") : qp("[data-a11y-panel]"); }
 function setPanelState(panel, isOpen) {
   panel.setAttribute("data-open", String(isOpen));
   panel.setAttribute("aria-hidden", String(!isOpen));
   if (isOpen) panel.removeAttribute("inert"); else panel.setAttribute("inert", "");
 }
-function openPanel(name) {
-  name = name || "a11y";
-  const a11yPanel = qp("[data-a11y-panel]");
-  const settingsPanel = qp("[data-settings-panel]");
-  const pn = name === "settings" ? settingsPanel : a11yPanel;
-  setPanelState(a11yPanel, pn === a11yPanel);
-  setPanelState(settingsPanel, pn === settingsPanel);
-  lastFocus = document.activeElement; openName = name;
+function openPanel() {
+  const panel = qp("[data-a11y-panel]");
+  setPanelState(panel, true);
+  lastFocus = document.activeElement; panelOpen = true;
   qp("[data-a11y-overlay]").setAttribute("data-open", "true");
   setTriggers();
-  pn.focus();
+  panel.focus();
   document.addEventListener("keydown", onPanelKey);
 }
 function closePanel() {
   qp("[data-a11y-overlay]").removeAttribute("data-open");
   setPanelState(qp("[data-a11y-panel]"), false);
-  setPanelState(qp("[data-settings-panel]"), false);
-  openName = null; setTriggers();
+  panelOpen = false; setTriggers();
   document.removeEventListener("keydown", onPanelKey);
   if (lastFocus && lastFocus.focus) lastFocus.focus();
 }
 function onPanelKey(e) {
   if (e.key === "Escape") closePanel();
   if (e.key === "Tab") {
-    const pn = currentPanel(); if (!pn) return;
-    const f = pn.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    const panel = qp("[data-a11y-panel]");
+    const f = panel.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
     if (!f.length) return;
     const first = f[0], last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -158,6 +151,16 @@ function syncControls() {
   document.querySelectorAll("[data-a11y-theme] button").forEach((b) => {
     b.setAttribute("aria-pressed", String(b.getAttribute("data-set-theme") === (prefs.theme || systemTheme())));
   });
+  const themeSummary = q("[data-theme-summary]");
+  if (themeSummary) {
+    const chosen = prefs.theme || systemTheme();
+    const names = curLang() === "en"
+      ? { abysse: "Abyss", marine: "Marine", ardoise: "Slate", foret: "Forest", aurore: "Dawn" }
+      : { abysse: "Abysse", marine: "Marine", ardoise: "Ardoise", foret: "Forêt", aurore: "Aurore" };
+    themeSummary.textContent = prefs.contrast
+      ? (curLang() === "en" ? `Selected theme: ${names[chosen]}. High contrast is currently overriding it.` : `Thème choisi : ${names[chosen]}. Le contraste élevé le neutralise actuellement.`)
+      : (curLang() === "en" ? `Active theme: ${names[chosen]}.` : `Thème actif : ${names[chosen]}.`);
+  }
   const sc = document.querySelector('[data-a11y-scale="-1"]'), si = document.querySelector('[data-a11y-scale="1"]');
   if (sc) sc.disabled = prefs.scale <= 0.9;
   if (si) si.disabled = prefs.scale >= 1.6;
@@ -165,13 +168,10 @@ function syncControls() {
 
 function wirePanel() {
   document.querySelectorAll("[data-a11y-trigger]").forEach((t) => {
-    t.addEventListener("click", () => { openName === "a11y" ? closePanel() : openPanel("a11y"); });
-  });
-  document.querySelectorAll("[data-settings-trigger]").forEach((t) => {
-    t.addEventListener("click", () => { openName === "settings" ? closePanel() : openPanel("settings"); });
+    t.addEventListener("click", () => { panelOpen ? closePanel() : openPanel(); });
   });
   qp("[data-a11y-overlay]").addEventListener("click", closePanel);
-  document.querySelectorAll("[data-a11y-close], [data-settings-close]").forEach((b) => b.addEventListener("click", closePanel));
+  qp("[data-a11y-close]").addEventListener("click", closePanel);
 
   document.querySelectorAll("[data-a11y-scale]").forEach((b) => {
     b.addEventListener("click", () => {
@@ -989,7 +989,7 @@ function wireTermResize() {
 
 /* ---- RAIL de largeur globale (bord droit du contenu) ------------------------
    Glisser = ajuster --page-max ; clic = largeur par défaut ; ←/→ au clavier.
-   Synchronisé avec le slider du panneau Paramètres (mêmes prefs). */
+   Synchronisé avec le curseur du panneau Préférences de lecture (mêmes prefs). */
 function wireWidthGrip() {
   if (window.innerWidth <= 980) return;
   const grip = document.createElement("div");
