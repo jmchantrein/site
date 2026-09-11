@@ -46,3 +46,19 @@ test("les métadonnées bilingues pointent vers les routes correspondantes", asy
   assert.match(fr, /hreflang="en" href="https:\/\/jmchantrein\.github\.io\/site\/en\/cours\/bash-bases\/?"/);
   assert.match(en, /hreflang="fr" href="https:\/\/jmchantrein\.github\.io\/site\/cours\/bash-bases\/?"/);
 });
+
+test("la navigation anglaise reste dans son espace localisé", async () => {
+  const [home, course] = await Promise.all([
+    output("en/index.html"),
+    output("en/cours/bash-bases/index.html"),
+  ]);
+
+  for (const html of [home, course]) {
+    assert.match(html, /class="brand" href="\/site\/en\/"/);
+    assert.match(html, /href="\/site\/en\/aide\/"/);
+    assert.match(html, /href="\/site\/en\/systeme\/"/);
+  }
+  assert.match(home, /href="\/site\/en\/" aria-current="page"/);
+  assert.doesNotMatch(course, /href="\/site\/en\/" aria-current="page"/);
+  assert.match(home, /class="btn btn--ghost" href="\/site\/en\/systeme\/"/);
+});
