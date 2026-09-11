@@ -2,8 +2,14 @@
    DOCK — lanceur d'applications de l'en-tête + fenêtres flottantes.
    Les passe-temps (data-pastime) sont grisés hors des pauses Pomodoro.
    ============================================================================= */
-.dock { display: flex; align-items: center; gap: var(--space-1); padding-bottom: var(--space-3); margin-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.dock { position: relative; margin-left: auto; }
+.dock__trigger { list-style: none; display: flex; align-items: center; gap: var(--space-2); cursor: pointer; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.dock__trigger::-webkit-details-marker { display: none; }
+.dock__trigger:hover, .dock__trigger:focus-visible { border-color: var(--color-accent); background: var(--color-accent-weak); }
+.dock__trigger-icon, .dock__trigger-icon svg { width: 18px; height: 18px; }
+.dock__apps { position: absolute; top: calc(100% + var(--space-2)); right: 0; z-index: var(--z-menu); display: flex; align-items: center; gap: var(--space-1); min-width: max-content; padding: var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-2); }
 .dock[data-dock-context="idle"] .dock__btn { opacity: .62; }
+.dock[data-dock-context="terminal"] .dock__trigger { color: var(--color-accent-text); border-color: var(--color-accent); }
 .dock[data-dock-context="terminal"] [data-dock-app="terminal"] { color: var(--color-accent-text); background: var(--color-accent-weak); border-color: var(--color-accent); }
 .dock__item { position: relative; display: inline-flex; }
 .dock__btn {

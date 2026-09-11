@@ -134,7 +134,14 @@ const isCurrent = (href: string) =>
             </a>
           ))}
         </nav>
+        <Dock locale={locale} />
         <div class="header-utils">
+          {altUrl && (
+            <a class="util-btn lang-toggle" href={altUrl} aria-label={locale === "fr" ? "Read this page in English" : "Lire cette page en français"}>
+              <Icon name="earth" class="util-btn__icon" />
+              <span data-lang-cur>{locale === "fr" ? "EN" : "FR"}</span>
+            </a>
+          )}
           <button class="util-btn util-btn--icon nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="site-navigation" aria-label={A11Y.menu}>
             <span class="nav-toggle__icon" aria-hidden="true">☰</span>
             <span class="util-btn__label"><span data-lang="fr">Navigation</span><span data-lang="en">Navigation</span></span>
@@ -148,16 +155,10 @@ const isCurrent = (href: string) =>
             <Icon name="search" class="util-btn__icon" />
             <span class="util-btn__label"><span data-lang="fr">Rechercher</span><span data-lang="en">Search</span> <kbd>Ctrl K</kbd></span>
           </button>
-          <details class="tools-menu">
-            <summary class="util-btn tools-menu__trigger"><Icon name="settings" class="util-btn__icon" /><span data-lang="fr">Outils</span><span data-lang="en">Tools</span></summary>
-            <div class="tools-menu__panel">
-              <Dock locale={locale} />
-              <div class="tools-menu__prefs">
-                <button class="util-btn" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog"><Icon name="eye" class="util-btn__icon" /><span data-lang="fr">Préférences de lecture</span><span data-lang="en">Reading preferences</span></button>
-                {altUrl && <a class="util-btn lang-toggle" href={altUrl} aria-label={locale === "fr" ? "Read this page in English" : "Lire cette page en français"}><Icon name="earth" class="util-btn__icon" /><span data-lang-cur>{locale === "fr" ? "English" : "Français"}</span></a>}
-              </div>
-            </div>
-          </details>
+          <button class="util-btn util-btn--icon" data-a11y-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
+            <Icon name="eye" class="util-btn__icon" />
+            <span class="util-btn__label"><span data-lang="fr">Préférences de lecture</span><span data-lang="en">Reading preferences</span></span>
+          </button>
         </div>
       </div>
     </header>
@@ -193,12 +194,6 @@ const isCurrent = (href: string) =>
         background: var(--color-accent-text); color: var(--color-on-accent);
       }
       .annot-count[data-n="0"] { display: none; }
-      .tools-menu { position: relative; }
-      .tools-menu > summary { list-style: none; }
-      .tools-menu > summary::-webkit-details-marker { display: none; }
-      .tools-menu__panel { position: absolute; top: calc(100% + var(--space-2)); right: 0; z-index: var(--z-menu); min-width: min(440px, calc(100vw - 24px)); padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-2); }
-      .tools-menu__prefs { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
-      .tools-menu__prefs .util-btn { flex: 1 1 auto; justify-content: center; }
     </style>
   </body>
 </html>
