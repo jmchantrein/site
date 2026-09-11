@@ -93,22 +93,28 @@ function setTriggers() {
   document.querySelectorAll("[data-settings-trigger]").forEach((t) => t.setAttribute("aria-expanded", String(openName === "settings")));
 }
 function currentPanel() { return openName === "settings" ? qp("[data-settings-panel]") : qp("[data-a11y-panel]"); }
+function setPanelState(panel, isOpen) {
+  panel.setAttribute("data-open", String(isOpen));
+  panel.setAttribute("aria-hidden", String(!isOpen));
+  if (isOpen) panel.removeAttribute("inert"); else panel.setAttribute("inert", "");
+}
 function openPanel(name) {
   name = name || "a11y";
-  qp("[data-a11y-panel]").removeAttribute("data-open");
-  qp("[data-settings-panel]").removeAttribute("data-open");
-  const pn = name === "settings" ? qp("[data-settings-panel]") : qp("[data-a11y-panel]");
+  const a11yPanel = qp("[data-a11y-panel]");
+  const settingsPanel = qp("[data-settings-panel]");
+  const pn = name === "settings" ? settingsPanel : a11yPanel;
+  setPanelState(a11yPanel, pn === a11yPanel);
+  setPanelState(settingsPanel, pn === settingsPanel);
   lastFocus = document.activeElement; openName = name;
   qp("[data-a11y-overlay]").setAttribute("data-open", "true");
-  pn.setAttribute("data-open", "true");
   setTriggers();
   pn.focus();
   document.addEventListener("keydown", onPanelKey);
 }
 function closePanel() {
   qp("[data-a11y-overlay]").removeAttribute("data-open");
-  qp("[data-a11y-panel]").removeAttribute("data-open");
-  qp("[data-settings-panel]").removeAttribute("data-open");
+  setPanelState(qp("[data-a11y-panel]"), false);
+  setPanelState(qp("[data-settings-panel]"), false);
   openName = null; setTriggers();
   document.removeEventListener("keydown", onPanelKey);
   if (lastFocus && lastFocus.focus) lastFocus.focus();
