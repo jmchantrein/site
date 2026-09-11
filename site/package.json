@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "check": "npm run check:content && npm run build && npm run test:smoke",
+    "check:content": "node scripts/check-content.mjs",
+    "test:smoke": "node --test scripts/smoke-built-site.test.mjs",
     "preview": "astro preview"
   },
   "dependencies": {

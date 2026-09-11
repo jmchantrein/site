@@ -9,6 +9,7 @@ local** : polices, icônes et maths sont résolus au build — aucun CDN.
 npm install     # une fois
 npm run dev     # développement (http://localhost:4321)
 npm run build   # production → dist/ (servi sous /site/ — GitHub Pages)
+npm run check   # parité FR/EN + build + smoke tests du site généré
 ```
 
 ## Architecture en couches (séparation stricte contenu / forme)
