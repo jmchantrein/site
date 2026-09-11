@@ -1,10 +1,8 @@
 ---
 /**
- * Les deux tiroirs de préférences, présents sur toute page (via Base.astro) :
- * - ACCESSIBILITÉ (œil)    : réglages WCAG — taille, espacements, contraste,
- *   animations, police de lecture. WCAG 1.4.12 / 2.3.3 / 1.4.6.
- * - PARAMÈTRES (engrenage) : apparence — thème, exercices, largeur, langue.
- * Le comportement (ouverture, persistance) est câblé par scripts/site.js.
+ * Point d’accès unique aux préférences de lecture, présent sur toute page
+ * via Base.astro. Les attributs data-* restent alignés sur scripts/site.js
+ * afin de préserver les préférences déjà enregistrées.
  */
 import Icon from "./Icon.astro";
 
@@ -12,8 +10,6 @@ interface Props {
   locale?: "fr" | "en";
 }
 const { locale = "fr" } = Astro.props;
-/* Attributs (aria-label…) : localisés via la prop — le doublon data-lang ne
-   vaut que pour le contenu d'élément. */
 const T = {
   fr: {
     close: "Fermer le panneau",
@@ -43,24 +39,21 @@ const T = {
 ---
 <div class="a11y-overlay" data-a11y-overlay></div>
 
-<aside class="a11y-panel" data-a11y-panel data-open="false" role="dialog" aria-modal="true" aria-labelledby="a11y-title" aria-hidden="true" tabindex="-1" inert>
+<aside class="a11y-panel" data-a11y-panel data-open="false" role="dialog" aria-modal="true" aria-labelledby="reading-prefs-title" aria-hidden="true" tabindex="-1" inert>
   <div class="a11y-panel__head">
     <Icon name="eye" class="panel-head-ico" />
     <div>
-      <h2 id="a11y-title"><span data-lang="fr">Accessibilité</span><span data-lang="en">Accessibility</span></h2>
-      <span class="sub">WCAG 1.4.12 / 2.3.3 / 1.4.6</span>
+      <h2 id="reading-prefs-title"><span data-lang="fr">Préférences de lecture</span><span data-lang="en">Reading preferences</span></h2>
+      <span class="sub"><span data-lang="fr">lisibilité, apparence et données</span><span data-lang="en">readability, appearance and data</span></span>
     </div>
     <button class="a11y-close" data-a11y-close aria-label={T.close}>✕</button>
   </div>
   <div class="a11y-panel__body">
+    <h3 class="a11y-section-title"><span data-lang="fr">Lisibilité</span><span data-lang="en">Readability</span></h3>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span><span data-lang="fr">Taille du texte</span><span data-lang="en">Text size</span></span><span class="a11y-field__value" data-a11y-scaleval>100%</span></span>
-      <div class="a11y-stepper">
-        <button data-a11y-scale="-1" aria-label={T.scaleDown}>A−</button>
-        <output data-a11y-scaleout>100%</output>
-        <button data-a11y-scale="1" aria-label={T.scaleUp}>A+</button>
-      </div>
+      <div class="a11y-stepper"><button data-a11y-scale="-1" aria-label={T.scaleDown}>A−</button><output data-a11y-scaleout>100%</output><button data-a11y-scale="1" aria-label={T.scaleUp}>A+</button></div>
     </div>
 
     <div class="a11y-field">
@@ -80,49 +73,28 @@ const T = {
       <div class="a11y-preview" aria-hidden="true"><p><span data-lang="fr">Un conteneur isole un processus et son système de fichiers.</span><span data-lang="en">A container isolates a process and its filesystem.</span></p></div>
     </div>
 
-    <div class="a11y-section-title"><span data-lang="fr">Modes</span><span data-lang="en">Modes</span></div>
-
-    <label class="a11y-toggle">
-      <input type="checkbox" data-a11y-contrast />
-      <span class="a11y-toggle__sw" aria-hidden="true"></span>
-      <span class="a11y-toggle__text"><b><span data-lang="fr">Contraste élevé</span><span data-lang="en">High contrast</span></b><small><span data-lang="fr">Renforce le corps au-delà de 7:1</span><span data-lang="en">Pushes body text beyond 7:1</span></small></span>
-      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
-    </label>
-
-    <label class="a11y-toggle">
-      <input type="checkbox" data-a11y-motion />
-      <span class="a11y-toggle__sw" aria-hidden="true"></span>
-      <span class="a11y-toggle__text"><b><span data-lang="fr">Réduire les animations</span><span data-lang="en">Reduce motion</span></b><small><span data-lang="fr">Fige le terminal, le scroll et les transitions</span><span data-lang="en">Freezes terminal, scroll and transitions</span></small></span>
-      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
-    </label>
-
     <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Police de lecture</span><span data-lang="en">Reading font</span></span>
       <div class="a11y-seg" data-a11y-font role="group" aria-label={T.font}>
         <button data-set-font="default"><span data-lang="fr">Défaut</span><span data-lang="en">Default</span></button>
-        <button data-set-font="atkinson">Atkinson</button>
-        <button data-set-font="dyslexic">OpenDyslexic</button>
+        <button data-set-font="atkinson">Atkinson</button><button data-set-font="dyslexic">OpenDyslexic</button>
       </div>
       <p class="a11y-field__help"><span data-lang="fr">Proposée, jamais imposée. Atkinson Hyperlegible distingue mieux les caractères proches ; OpenDyslexic aide certains lecteurs dyslexiques.</span><span data-lang="en">Offered, never forced. Atkinson Hyperlegible better distinguishes similar glyphs; OpenDyslexic helps some dyslexic readers.</span></p>
     </div>
 
-  </div>
-  <div class="a11y-panel__foot">
-    <button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button>
-    <span class="a11y-saved"><span data-lang="fr">Préférences enregistrées</span><span data-lang="en">Preferences saved</span></span>
-  </div>
-</aside>
-
-<aside class="a11y-panel" data-settings-panel data-open="false" role="dialog" aria-modal="true" aria-labelledby="set-title" aria-hidden="true" tabindex="-1" inert>
-  <div class="a11y-panel__head">
-    <Icon name="settings" class="panel-head-ico" />
-    <div>
-      <h2 id="set-title"><span data-lang="fr">Paramètres</span><span data-lang="en">Settings</span></h2>
-      <span class="sub"><span data-lang="fr">apparence &amp; préférences</span><span data-lang="en">appearance &amp; preferences</span></span>
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value" data-a11y-widthval>84 rem</span></span>
+      <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label={T.width} />
+      <p class="a11y-field__help"><span data-lang="fr">De compact à quasi pleine largeur (borné à la fenêtre).</span><span data-lang="en">From compact to nearly full width (capped to the window).</span></p>
     </div>
-    <button class="a11y-close" data-settings-close aria-label={T.close}>✕</button>
-  </div>
-  <div class="a11y-panel__body">
+
+    <div class="a11y-field">
+      <span class="a11y-field__label"><span><span data-lang="fr">Largeur de la colonne de lecture</span><span data-lang="en">Reading column width</span></span><span class="a11y-field__value" data-a11y-measureval>66 ch</span></span>
+      <input class="a11y-range" type="range" min="56" max="96" step="2" data-a11y-measure aria-label={T.measure} />
+      <p class="a11y-field__help"><span data-lang="fr">En caractères par ligne — 66 est le défaut typographique, augmentez pour exploiter l’écran.</span><span data-lang="en">In characters per line — 66 is the typographic default; increase to use more of the screen.</span></p>
+    </div>
+
+    <h3 class="a11y-section-title"><span data-lang="fr">Apparence</span><span data-lang="en">Appearance</span></h3>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Thème de couleurs</span><span data-lang="en">Color theme</span></span>
@@ -133,49 +105,28 @@ const T = {
         <button data-set-theme="foret" type="button"><span class="sw" style="background:linear-gradient(135deg,#eef3ee 50%,#14532d 50%)"></span><span data-lang="fr">Forêt</span><span data-lang="en">Forest</span></button>
         <button data-set-theme="aurore" type="button"><span class="sw" style="background:linear-gradient(135deg,#f5efe4 50%,#0b5067 50%)"></span><span data-lang="fr">Aurore</span><span data-lang="en">Dawn</span></button>
       </div>
-      <p class="a11y-field__help"><span data-lang="fr">Le mode contraste élevé (Accessibilité) prime sur le thème choisi.</span><span data-lang="en">High-contrast mode (Accessibility) overrides the chosen theme.</span></p>
+      <p class="a11y-field__help" data-theme-summary role="status" aria-live="polite"></p>
     </div>
 
-    <label class="a11y-toggle">
-      <input type="checkbox" data-a11y-require />
-      <span class="a11y-toggle__sw" aria-hidden="true"></span>
-      <span class="a11y-toggle__text"><b><span data-lang="fr">Exiger une réponse avant la correction</span><span data-lang="en">Require an answer before the solution</span></b><small><span data-lang="fr">Verrouille la solution des exercices tant que le champ réponse est vide</span><span data-lang="en">Locks an exercise solution until the answer field is filled</span></small></span>
-      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
-    </label>
+    <label class="a11y-toggle"><input type="checkbox" data-a11y-contrast /><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b><span data-lang="fr">Contraste élevé</span><span data-lang="en">High contrast</span></b><small><span data-lang="fr">Renforce le corps au-delà de 7:1</span><span data-lang="en">Pushes body text beyond 7:1</span></small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
 
-    <label class="a11y-toggle">
-      <input type="checkbox" data-gloss-pref />
-      <span class="a11y-toggle__sw" aria-hidden="true"></span>
-      <span class="a11y-toggle__text"><b><span data-lang="fr">Glossaire dans un panneau latéral</span><span data-lang="en">Glossary in a side panel</span></b><small><span data-lang="fr">Un clic sur un terme ouvre sa fiche à droite du cours quand la place le permet — sinon sur sa page</span><span data-lang="en">Clicking a term opens its entry beside the course when space allows — otherwise on its page</span></small></span>
-      <span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span>
-    </label>
+    <label class="a11y-toggle"><input type="checkbox" data-a11y-motion /><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b><span data-lang="fr">Réduire les animations</span><span data-lang="en">Reduce motion</span></b><small><span data-lang="fr">Fige le terminal, le défilement et les transitions</span><span data-lang="en">Freezes terminal, scrolling and transitions</span></small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
 
-    <div class="a11y-field">
-      <span class="a11y-field__label"><span><span data-lang="fr">Largeur du site</span><span data-lang="en">Site width</span></span><span class="a11y-field__value" data-a11y-widthval>72 rem</span></span>
-      <input class="a11y-range" type="range" min="60" max="160" step="2" data-a11y-width aria-label={T.width} />
-      <p class="a11y-field__help"><span data-lang="fr">De compact à quasi pleine largeur (borné à la fenêtre).</span><span data-lang="en">From compact to nearly full width (capped to the window).</span></p>
-    </div>
+    <h3 class="a11y-section-title"><span data-lang="fr">Exercices et glossaire</span><span data-lang="en">Exercises and glossary</span></h3>
 
-    <div class="a11y-field">
-      <span class="a11y-field__label"><span><span data-lang="fr">Largeur de la colonne de lecture</span><span data-lang="en">Reading column width</span></span><span class="a11y-field__value" data-a11y-measureval>66 ch</span></span>
-      <input class="a11y-range" type="range" min="56" max="96" step="2" data-a11y-measure aria-label={T.measure} />
-      <p class="a11y-field__help"><span data-lang="fr">En caractères par ligne — 66 est le défaut typographique, augmentez pour exploiter l'écran.</span><span data-lang="en">In characters per line — 66 is the typographic default; increase to use more of the screen.</span></p>
-    </div>
+    <label class="a11y-toggle"><input type="checkbox" data-a11y-require /><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b><span data-lang="fr">Exiger une réponse avant la correction</span><span data-lang="en">Require an answer before the solution</span></b><small><span data-lang="fr">Verrouille la solution des exercices tant que le champ réponse est vide</span><span data-lang="en">Locks an exercise solution until the answer field is filled</span></small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
+
+    <label class="a11y-toggle"><input type="checkbox" data-gloss-pref /><span class="a11y-toggle__sw" aria-hidden="true"></span><span class="a11y-toggle__text"><b><span data-lang="fr">Glossaire dans un panneau latéral</span><span data-lang="en">Glossary in a side panel</span></b><small><span data-lang="fr">Un clic sur un terme ouvre sa fiche à droite du cours quand la place le permet — sinon sur sa page</span><span data-lang="en">Clicking a term opens its entry beside the course when space allows — otherwise on its page</span></small></span><span class="a11y-toggle__state"><span class="on">ON</span><span class="off">OFF</span></span></label>
+
+    <h3 class="a11y-section-title"><span data-lang="fr">Données locales</span><span data-lang="en">Local data</span></h3>
 
     <div class="a11y-field">
       <span class="a11y-field__label"><span data-lang="fr">Mes données locales</span><span data-lang="en">My local data</span></span>
-      <div class="a11y-data-btns">
-        <button class="annot-btn" data-data-export type="button"><span data-lang="fr">Exporter</span><span data-lang="en">Export</span></button>
-        <button class="annot-btn" data-data-import type="button"><span data-lang="fr">Importer</span><span data-lang="en">Import</span></button>
-      </div>
-      <p class="a11y-field__help" data-data-msg><span data-lang="fr">Tout ce que ce site garde dans votre navigateur — préférences, réponses d'exercices, annotations — dans un fichier JSON réimportable ici ou sur une autre machine.</span><span data-lang="en">Everything this site keeps in your browser — preferences, exercise answers, annotations — as a JSON file you can re-import here or on another machine.</span></p>
+      <div class="a11y-data-btns"><button class="annot-btn" data-data-export type="button"><span data-lang="fr">Exporter</span><span data-lang="en">Export</span></button><button class="annot-btn" data-data-import type="button"><span data-lang="fr">Importer</span><span data-lang="en">Import</span></button></div>
+      <p class="a11y-field__help" data-data-msg><span data-lang="fr">Tout ce que ce site garde dans votre navigateur — préférences, réponses d’exercices, annotations — dans un fichier JSON réimportable ici ou sur une autre machine.</span><span data-lang="en">Everything this site keeps in your browser — preferences, exercise answers, annotations — as a JSON file you can re-import here or on another machine.</span></p>
     </div>
-
   </div>
-  <div class="a11y-panel__foot">
-    <button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button>
-    <span class="a11y-saved"><span data-lang="fr">Préférences enregistrées</span><span data-lang="en">Preferences saved</span></span>
-  </div>
+  <div class="a11y-panel__foot"><button class="a11y-reset" data-a11y-reset><span data-lang="fr">Réinitialiser</span><span data-lang="en">Reset</span></button><span class="a11y-saved"><span data-lang="fr">Préférences enregistrées</span><span data-lang="en">Preferences saved</span></span></div>
 </aside>
 
 <style>
