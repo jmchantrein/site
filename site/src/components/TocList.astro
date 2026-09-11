@@ -1,0 +1,21 @@
+---
+interface TocItem {
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  toc: TocItem[];
+}
+
+const { toc } = Astro.props;
+---
+<ol>
+  {toc.map((heading, index) => (
+    <li>
+      <a href={`#${heading.slug}`}>
+        <span class="num">{String(index + 1).padStart(2, "0")}</span> {heading.text}
+      </a>
+    </li>
+  ))}
+</ol>

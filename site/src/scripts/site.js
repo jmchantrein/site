@@ -4,7 +4,7 @@
    - Langue par route (FR à la racine, EN sous /en/) — la bascule est un lien
    - Terminal « live » : commandes cliquables, saisie directe, thème local
    - Exercices : verrou de la solution tant que la réponse est vide
-   - Sommaires (.toc) : double mobile généré + scrollspy
+   - Sommaires (.toc/.toc-m) : fermeture mobile facultative + scrollspy
    - Ancres copiables, recherche Ctrl+K (index généré au build), diaporamas
    ============================================================================= */
 "use strict";
@@ -594,26 +594,15 @@ function wireBypass() {
   });
 }
 
-/* ---- SOMMAIRE LATÉRAL (.toc) — double mobile généré + scrollspy ------------ */
+/* ---- SOMMAIRES — améliorations facultatives (fermeture mobile + scrollspy) -- */
 function wireTocs() {
-  document.querySelectorAll(".toc").forEach((toc) => {
-    if (toc.hasAttribute("data-toc-no-mobile")) return;
-    const layout = toc.closest(".toc-layout");
-    const list = toc.querySelector("ol, ul");
-    if (!layout || !list) return;
-    const prev = layout.previousElementSibling;
-    if (prev && prev.classList && prev.classList.contains("toc-m")) return;
-    const det = document.createElement("details");
-    det.className = "toc-m";
-    const sum = document.createElement("summary");
-    sum.innerHTML = '<span data-lang="fr">Sommaire</span><span data-lang="en">Contents</span>';
-    det.appendChild(sum);
-    det.appendChild(list.cloneNode(true));
-    det.addEventListener("click", (e) => { if (e.target.closest("a")) det.open = false; });
-    layout.parentNode.insertBefore(det, layout);
+  document.querySelectorAll("details.toc-m").forEach((details) => {
+    details.addEventListener("click", (event) => {
+      if (event.target.closest("a")) details.open = false;
+    });
   });
   // Scrollspy : signale la section en cours de lecture (aria-current)
-  document.querySelectorAll(".toc").forEach((toc) => {
+  document.querySelectorAll(".toc, .toc-m").forEach((toc) => {
     const links = [].filter.call(toc.querySelectorAll("a"), (a) => {
       const h = a.getAttribute("href"); return h && h.charAt(0) === "#";
     });
