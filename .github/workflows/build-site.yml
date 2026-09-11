@@ -29,6 +29,6 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
         working-directory: site
-      - name: Construire le site
-        run: npm run build
+      - name: Vérifier les contenus, construire et tester le site généré
+        run: npm run check
         working-directory: site
