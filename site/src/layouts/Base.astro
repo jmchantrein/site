@@ -59,16 +59,17 @@ const A11Y = {
   fr: { progress: "Progression de lecture", nav: "Navigation principale", search: "Rechercher (Ctrl+K)" },
   en: { progress: "Reading progress", nav: "Main navigation", search: "Search (Ctrl+K)" },
 }[locale];
+const homeHref = locale === "en" ? `${base}/en/` : `${base}/`;
 const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const nav = [
-  { href: `${base}/`, fr: "Accueil", en: "Home" },
+  { href: homeHref, fr: "Accueil", en: "Home" },
   { href: `${cpfx}/cours/`, fr: "Cours", en: "Courses" },
   { href: `${cpfx}/miscelanea/`, fr: "Miscelánea", en: "Miscellanea" },
-  { href: `${base}/aide/`, fr: "Aide", en: "Help" },
-  { href: `${base}/systeme/`, fr: "Système", en: "System" },
+  { href: `${cpfx}/aide/`, fr: "Aide", en: "Help" },
+  { href: `${cpfx}/systeme/`, fr: "Système", en: "System" },
 ];
 const isCurrent = (href: string) =>
-  href === `${base}/` ? path === href : path.startsWith(href);
+  href === homeHref ? path === homeHref : path.startsWith(href);
 ---
 <!doctype html>
 <html lang={locale} data-theme="marine">
@@ -122,7 +123,7 @@ const isCurrent = (href: string) =>
 
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href={`${base}/`}>
+        <a class="brand" href={homeHref}>
           <span class="brand__mark" aria-hidden="true">$_</span>
           <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en">teaching framework</small></span>
         </a>
