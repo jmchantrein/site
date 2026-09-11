@@ -208,6 +208,42 @@ function wirePanel() {
   syncControls();
 }
 
+/* ---- NAVIGATION MOBILE --------------------------------------------------- */
+function wireMobileNav() {
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const nav = document.querySelector("[data-site-nav]");
+  if (!toggle || !nav) return;
+
+  let returnFocus = null;
+  const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
+  const close = (restoreFocus = true) => {
+    if (!isOpen()) return;
+    toggle.setAttribute("aria-expanded", "false");
+    nav.removeAttribute("data-open");
+    if (restoreFocus && returnFocus && returnFocus.focus) returnFocus.focus();
+    returnFocus = null;
+  };
+  const open = () => {
+    returnFocus = document.activeElement;
+    toggle.setAttribute("aria-expanded", "true");
+    nav.setAttribute("data-open", "true");
+  };
+
+  toggle.addEventListener("click", () => { isOpen() ? close() : open(); });
+  nav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) close(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && isOpen()) { event.preventDefault(); close(); }
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (isOpen() && !event.target.closest(".site-header")) close();
+  });
+  window.matchMedia("(min-width: 881px)").addEventListener("change", (event) => {
+    if (event.matches) close(false);
+  });
+}
+
 /* ---- TERMINAL « live » + commandes cliquables ------------------------------ */
 function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
@@ -1115,6 +1151,7 @@ function wireCopyPrompt() {
 
 function init() {
   apply();
+  wireMobileNav();
   wirePanel();
   wireTerminals();
   wireTermThemes();
