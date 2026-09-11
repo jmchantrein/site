@@ -488,10 +488,12 @@ function init() {
   const course = document.querySelector(".course");
   const aside = courseAside();
   const host = termHost();
+  const dock = document.querySelector(".dock");
   if (course && aside && host) {
     const dockTerm = host.querySelector(".terminal");
     if (dockTerm) { dockTerm.setAttribute("data-parked", "true"); dockTerm.hidden = true; }
     const courseTerm = aside.querySelector(".terminal");
+    if (courseTerm && dock) dock.setAttribute("data-dock-context", "terminal");
     if (courseTerm) host.querySelector('[data-term-pane="emulated"]').appendChild(courseTerm);
     aside.appendChild(host);
     // Barre du pane iframe (affichée en colonne seulement) : mêmes contrôles.

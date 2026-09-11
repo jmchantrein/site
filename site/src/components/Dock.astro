@@ -19,7 +19,7 @@ const T = {
   en: { dock: "Applications", opts: "Options:", grow: "Enlarge", fs: "Full screen", min: "Minimise", close: "Close", comment: "# dock terminal — type “help”" },
 }[locale];
 ---
-<div class="dock" role="toolbar" aria-label={T.dock}>
+<div class="dock" role="toolbar" aria-label={T.dock} data-dock-context="idle">
   {DOCK_APPS.map((app) => (
     <span class="dock__item">
       <button
