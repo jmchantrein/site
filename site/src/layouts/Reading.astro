@@ -88,11 +88,17 @@ const dateLine = [pub, upd].filter(Boolean).join(" · ");
         <nav
           class="toc"
           aria-label={locale === "en" ? "Table of contents" : "Sommaire"}
-          data-swap-grip
-          role="button"
-          tabindex="0"
-          title={locale === "en" ? "Drag to move the table of contents left or right (Enter to toggle)" : "Glisser pour déplacer le sommaire à gauche ou à droite (Entrée pour basculer)"}
         >
+          <button
+            class="toc__swap"
+            type="button"
+            data-swap-grip
+            aria-pressed="false"
+            aria-label={locale === "en" ? "Move the table of contents to the right. Current position: left" : "Déplacer le sommaire à droite. Position actuelle : gauche"}
+            title={locale === "en" ? "Drag or activate to move the table of contents" : "Glisser ou activer pour déplacer le sommaire"}
+          >
+            <span aria-hidden="true">↔</span>
+          </button>
           <ol>
             {toc.map((h, i) => (
               <li>

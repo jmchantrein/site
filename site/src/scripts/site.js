@@ -597,16 +597,6 @@ function wireBypass() {
 /* ---- SOMMAIRE LATÉRAL (.toc) — double mobile généré + scrollspy ------------ */
 function wireTocs() {
   document.querySelectorAll(".toc").forEach((toc) => {
-    // Sommaire-poignée : curseur pointeur sur le texte des liens uniquement,
-    // le reste du sommaire se saisit (grab) pour le déplacer.
-    if (toc.hasAttribute("data-swap-grip")) {
-      toc.querySelectorAll("a").forEach((a) => {
-        if (a.querySelector(".lbl")) return;
-        const lbl = document.createElement("span"); lbl.className = "lbl";
-        while (a.firstChild) lbl.appendChild(a.firstChild);
-        a.appendChild(lbl);
-      });
-    }
     if (toc.hasAttribute("data-toc-no-mobile")) return;
     const layout = toc.closest(".toc-layout");
     const list = toc.querySelector("ol, ul");
@@ -904,10 +894,21 @@ CoursePane.prototype.onMove = function (leftHalf) { const s = leftHalf == null ?
 CoursePane.prototype.onDrop = function (leftHalf) { const s = this._side(leftHalf); try { localStorage.setItem(SIDE_KEY, s); } catch (e) {} setCourseSide(this.box, s); };
 CoursePane.prototype.onToggle = function () { const cur = this.box.getAttribute("data-term-side") === "left" ? "left" : "right"; const s = cur === "left" ? "right" : "left"; try { localStorage.setItem(SIDE_KEY, s); } catch (e) {} setCourseSide(this.box, s); };
 
-function SwapIsland(grip, box, pane) { DragWidget.call(this, grip, box, pane); }
+function SwapIsland(grip, box, pane) {
+  DragWidget.call(this, grip, box, pane);
+  this.wasDragged = false;
+  grip.addEventListener("click", () => {
+    if (!this.wasDragged) this.onToggle();
+    this.wasDragged = false;
+  });
+}
 SwapIsland.prototype = Object.create(DragWidget.prototype);
 SwapIsland.prototype.constructor = SwapIsland;
 SwapIsland.prototype.followY = 0;
+SwapIsland.prototype._onUp = function (e) {
+  this.wasDragged = this.moved;
+  DragWidget.prototype._onUp.call(this, e);
+};
 SwapIsland.prototype.onDrop = function (leftHalf) { if (this._isFirst() !== leftHalf) this.box.setAttribute("data-swapped", ""); else this.box.removeAttribute("data-swapped"); };
 SwapIsland.prototype.onToggle = function () { this.box.toggleAttribute("data-swapped"); };
 
@@ -927,30 +928,30 @@ function wireTermDrag() {
   });
 }
 
-/* Le sommaire se déplace à gauche/droite (drag, Entrée/Espace au clavier).
-   GÉNÉRIQUE : tout .toc-layout contenant un .toc est déplaçable — le runtime
-   pose lui-même les attributs, le comportement est identique sur chaque page. */
+/* Le sommaire se déplace à gauche/droite depuis son bouton-poignée uniquement. */
 function wireTocSwap() {
   const SWAP_KEY = "site-astro-toc-side-v1";
   document.querySelectorAll(".toc-layout").forEach((box) => {
-    const grip = box.querySelector(":scope > .toc");
-    if (!grip) return;
+    const pane = box.querySelector(":scope > .toc");
+    const grip = pane && pane.querySelector(":scope > [data-swap-grip]");
+    if (!pane || !grip) return;
     box.setAttribute("data-swap", "");
-    if (!grip.hasAttribute("data-swap-grip")) {
-      grip.setAttribute("data-swap-grip", "");
-      grip.setAttribute("role", "button");
-      grip.setAttribute("tabindex", "0");
-      grip.setAttribute("title", curLang() === "en"
-        ? "Drag to move the table of contents left or right (Enter to toggle)"
-        : "Glisser pour déplacer le sommaire à gauche ou à droite (Entrée pour basculer)");
-    }
     try { if (localStorage.getItem(SWAP_KEY) === "right") box.setAttribute("data-swapped", ""); } catch (e) {}
-    const w = new SwapIsland(grip, box, grip);
-    w.ignoreSel = "button, input, select, textarea";
+    const updateGrip = () => {
+      const right = box.hasAttribute("data-swapped");
+      const en = curLang() === "en";
+      grip.setAttribute("aria-pressed", String(right));
+      grip.setAttribute("aria-label", en
+        ? `Move the table of contents to the ${right ? "left" : "right"}. Current position: ${right ? "right" : "left"}`
+        : `Déplacer le sommaire à ${right ? "gauche" : "droite"}. Position actuelle : ${right ? "droite" : "gauche"}`);
+    };
+    updateGrip();
+    const w = new SwapIsland(grip, box, pane);
+    w.ignoreSel = "";
     const persist = () => { try { localStorage.setItem(SWAP_KEY, box.hasAttribute("data-swapped") ? "right" : "left"); } catch (e) {} };
     const drop = w.onDrop.bind(w), tog = w.onToggle.bind(w);
-    w.onDrop = (lh) => { drop(lh); persist(); };
-    w.onToggle = () => { tog(); persist(); };
+    w.onDrop = (lh) => { drop(lh); persist(); updateGrip(); };
+    w.onToggle = () => { tog(); persist(); updateGrip(); };
   });
 }
 
