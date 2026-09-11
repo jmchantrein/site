@@ -56,8 +56,8 @@ const frAbs = locale === "fr" ? canonical : altAbs;
 /* Attributs du chrome (aria-label…) : localisés via la prop — le doublon
    data-lang ne vaut que pour le contenu d'élément. */
 const A11Y = {
-  fr: { progress: "Progression de lecture", nav: "Navigation principale", search: "Rechercher (Ctrl+K)" },
-  en: { progress: "Reading progress", nav: "Main navigation", search: "Search (Ctrl+K)" },
+  fr: { progress: "Progression de lecture", nav: "Navigation principale", menu: "Afficher la navigation", search: "Rechercher (Ctrl+K)" },
+  en: { progress: "Reading progress", nav: "Main navigation", menu: "Show navigation", search: "Search (Ctrl+K)" },
 }[locale];
 const homeHref = locale === "en" ? `${base}/en/` : `${base}/`;
 const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
@@ -127,7 +127,7 @@ const isCurrent = (href: string) =>
           <span class="brand__mark" aria-hidden="true">$_</span>
           <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en">teaching framework</small></span>
         </a>
-        <nav class="site-nav" aria-label={A11Y.nav}>
+        <nav class="site-nav" id="site-navigation" data-site-nav aria-label={A11Y.nav}>
           {nav.map((item) => (
             <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
               <span data-lang="fr">{item.fr}</span><span data-lang="en">{item.en}</span>
@@ -142,6 +142,10 @@ const isCurrent = (href: string) =>
               <span data-lang-cur>{locale === "fr" ? "EN" : "FR"}</span>
             </a>
           )}
+          <button class="util-btn util-btn--icon nav-toggle" data-nav-toggle type="button" aria-expanded="false" aria-controls="site-navigation" aria-label={A11Y.menu}>
+            <span class="nav-toggle__icon" aria-hidden="true">☰</span>
+            <span class="util-btn__label"><span data-lang="fr">Navigation</span><span data-lang="en">Navigation</span></span>
+          </button>
           <button class="util-btn util-btn--icon annot-trigger" data-annot-trigger type="button" aria-expanded="false" aria-haspopup="dialog">
             <Icon name="pen-line" class="util-btn__icon" />
             <span class="annot-count" data-annot-count aria-hidden="true">0</span>

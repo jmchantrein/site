@@ -212,6 +212,36 @@ html[data-motion="off"] .site-header { backdrop-filter: none; background: var(--
 .lang-toggle { font-family: var(--font-mono); }
 .lang-toggle [data-lang-cur] { color: var(--color-accent-text); font-weight: 700; }
 .header-utils { display: flex; align-items: center; gap: var(--space-3); }
+.nav-toggle { display: none; }
+.nav-toggle__icon { font-size: 1.35rem; line-height: 1; }
+
+/* Le seuil est partagé avec le dock : sous 880 px, le chrome tient sur une
+   première ligne et les liens restent dans le DOM, dans une zone dépliable. */
+@media (max-width: 880px) {
+  .site-header__inner {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--space-2) var(--space-3); gap: var(--space-2);
+  }
+  .brand { min-width: 0; }
+  .header-utils { grid-column: 2; gap: var(--space-1); }
+  .header-utils .util-btn { min-width: 40px; min-height: 40px; justify-content: center; padding: var(--space-2); }
+  .nav-toggle { display: inline-flex; }
+  .site-nav {
+    grid-column: 1 / -1; margin: 0; padding: var(--space-2) 0;
+    display: none; align-items: stretch; gap: var(--space-1);
+    max-height: calc(100dvh - 4.5rem); overflow-y: auto;
+    border-top: 1px solid var(--color-border);
+  }
+  .site-nav[data-open="true"] { display: grid; }
+  .site-nav a { padding: var(--space-3); }
+}
+
+@media (max-width: 560px) {
+  .brand__name { display: none; }
+  .site-header__inner { padding-inline: var(--space-2); }
+  .header-utils .util-btn { min-width: 36px; min-height: 36px; padding: 7px; }
+  .header-utils .util-btn__icon { width: 18px; height: 18px; }
+}
 
 /* ---- i18n : montre/masque selon html[lang] (chrome bilingue) ------------ */
 :root[lang="fr"] [data-lang="en"] { display: none !important; }
