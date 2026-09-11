@@ -43,7 +43,7 @@ const T = {
 ---
 <div class="a11y-overlay" data-a11y-overlay></div>
 
-<aside class="a11y-panel" data-a11y-panel role="dialog" aria-modal="true" aria-labelledby="a11y-title" tabindex="-1">
+<aside class="a11y-panel" data-a11y-panel data-open="false" role="dialog" aria-modal="true" aria-labelledby="a11y-title" aria-hidden="true" tabindex="-1" inert>
   <div class="a11y-panel__head">
     <Icon name="eye" class="panel-head-ico" />
     <div>
@@ -113,7 +113,7 @@ const T = {
   </div>
 </aside>
 
-<aside class="a11y-panel" data-settings-panel role="dialog" aria-modal="true" aria-labelledby="set-title" tabindex="-1">
+<aside class="a11y-panel" data-settings-panel data-open="false" role="dialog" aria-modal="true" aria-labelledby="set-title" aria-hidden="true" tabindex="-1" inert>
   <div class="a11y-panel__head">
     <Icon name="settings" class="panel-head-ico" />
     <div>
