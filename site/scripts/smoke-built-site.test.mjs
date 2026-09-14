@@ -21,6 +21,14 @@ test("les pages représentatives contiennent le chrome et les scripts interactif
   }
 });
 
+test("le dock ne propose que le terminal et le Pomodoro", async () => {
+  const html = await output("index.html");
+  const apps = [...html.matchAll(/data-dock-app="([^"]+)"/g)].map((match) => match[1]);
+
+  assert.deepEqual([...new Set(apps)].sort(), ["pomodoro", "terminal"]);
+  assert.doesNotMatch(html, /data-pastime/);
+});
+
 test("une page de cours conserve ses parcours interactifs essentiels", async () => {
   const html = await output("cours/bash-bases/index.html");
   assert.match(html, /class="exercise"/);

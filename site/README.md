@@ -26,9 +26,9 @@ Le runtime partagé (`src/scripts/site.js`) câble : tiroirs Accessibilité /
 Paramètres (persistants), langue FR/EN, terminal interactif, verrou des
 exercices, sommaires, ancres, recherche Ctrl+K, diaporamas.
 Le **dock** de l'en-tête (`src/data/dock.ts` + `src/scripts/dock.js`) porte
-les applications : terminal (5 modes via ⋮ : émulé, JSLinux, LinuxOnTab,
-ttyd local, distant), Pomodoro, et des passe-temps (`pastime: true`)
-déverrouillés 5 min après 25 min de lecture active.
+deux outils : le terminal (5 modes via ⋮ : émulé, JSLinux, LinuxOnTab,
+ttyd local, distant) et un Pomodoro qui comptabilise uniquement la lecture
+active avant de proposer une pause après 25 minutes.
 
 ## Écrire un cours (MDX)
 

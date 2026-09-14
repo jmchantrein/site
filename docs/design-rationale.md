@@ -98,10 +98,8 @@ jamais imposée. Toutes les préférences persistent (`localStorage`).
 - **Abandonné** : l'effet de « plongée » au scroll (tokens retirés —
   décoration sans bénéfice pédagogique démontré).
 
-- **Dock & passe-temps cadencés** (juin 2026) : l'en-tête porte un dock
-  d'applications (terminal multi-modes, Pomodoro, jeux — Snake, 2048, vie
-  de Conway 2D/3D). Les jeux sont des *digressions volontaires* — la
-  tension avec « aucune distraction » est arbitrée par le **Pomodoro** :
-  25 min de lecture active déverrouillent 5 min de passe-temps (alternance
-  mode focalisé / mode diffus), icônes grisées le reste du temps, aucun
-  signal d'appel.
+- **Dock sans distraction** (septembre 2026) : l'en-tête ne conserve que le
+  terminal multi-modes et le **Pomodoro**. Ce dernier additionne uniquement
+  les périodes de lecture active (page visible, au premier plan et activité
+  récente dans le contenu), puis invite explicitement à prendre une pause au
+  terme des 25 minutes. Aucun jeu ni raccourci vers un passe-temps ne subsiste.
