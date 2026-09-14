@@ -1,7 +1,7 @@
 {
-  "name": "site-astro",
+  "name": "iadmin",
   "version": "0.1.0",
-  "description": "Site pédagogique — cours techniques + blog scientifique. Cadre fondé sur les sciences cognitives (Sweller, Mayer), WCAG AA/AAA.",
+  "description": "IAdmin — cours et articles sur l'administration système, l'automatisation et l'intelligence artificielle.",
   "type": "module",
   "scripts": {
     "dev": "astro dev",

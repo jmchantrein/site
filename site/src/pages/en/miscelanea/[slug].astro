@@ -26,7 +26,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
 <Reading
   title={d.title}
   description={d.description}
-  crumb={{ href: `${base}/en/miscelanea/`, label: "Miscelánea" }}
+  crumb={{ href: `${base}/en/miscelanea/`, label: "Articles" }}
   badges={d.duration ? [`≈ ${d.duration} min`] : []}
   topics={d.topics.map((t) => TOPICS[t])}
   lead={d.description}

@@ -11,9 +11,9 @@ export async function GET(context: APIContext) {
   const articles = await getCollection("miscelanea", ({ data, id }) => !data.draft && !id.startsWith("en/"));
 
   return rss({
-    title: "Site Astro — cadre pédagogique",
+    title: "IAdmin — systèmes, automatisation et IA",
     description:
-      "Cours techniques et blog scientifique Miscelánea — administration systèmes, réseau, sciences.",
+      "Cours et articles sur l'administration système, l'automatisation et l'intelligence artificielle.",
     site: new URL(`${base}/`, context.site ?? "https://jmchantrein.github.io").href,
     items: [
       ...cours.map((c) => ({
