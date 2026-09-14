@@ -60,23 +60,17 @@ const featuredArticle = !a0 ? null : {
 <Base
   title={locale === "en" ? "Home" : "Accueil"}
   description={locale === "en"
-    ? "Structured technical courses and a scientific blog — a teaching framework grounded in the cognitive science of learning, WCAG AA compliant."
-    : "Cours techniques structurés et blog scientifique — un cadre pédagogique fondé sur les sciences cognitives de l'apprentissage, conforme WCAG AA."}
+    ? "Practical courses and articles about systems administration, automation and artificial intelligence."
+    : "Cours et articles pratiques sur l'administration système, l'automatisation et l'intelligence artificielle."}
   locale={locale}
   altUrl={locale === "fr" ? `${base}/en/` : `${base}/`}
 >
   <main id="main">
     <section class="hero wrap">
-      <p class="kicker kicker--bar"><span data-lang="fr">Cours &amp; blog technique</span><span data-lang="en">Courses &amp; technical blog</span></p>
-      <h1><span data-lang="fr">Des cours techniques expliqués pour être retenus.</span><span data-lang="en">Technical courses explained to be remembered.</span></h1>
-      <p class="lead"><span data-lang="fr">Des manuels techniques structurés et un blog scientifique (maths, code, exercices). Chaque décision de mise en forme sert un objectif : réduire la charge cognitive extrinsèque pour que l'attention aille au fond.</span><span data-lang="en">Structured technical manuals and a scientific blog (math, code, exercises). Every design decision serves one goal: cut extraneous cognitive load so attention goes to the substance.</span></p>
-      <p class="construction">
-        <img src={`${base}/img/construction.gif`} width="232" height="34" alt={locale === "en" ? "Site under construction" : "Site en construction"} />
-        <span data-lang="fr">Ce site est en construction — le contenu s'enrichit cours après cours.</span><span data-lang="en">This site is under construction — content grows course after course.</span>
-      </p>
-      <div class="hero__actions">
-        <a class="btn btn--ghost" href={`${cpfx}/cours/`}><span data-lang="fr">Voir tous les parcours</span><span data-lang="en">See all learning paths</span></a>
-      </div>
+      <p class="kicker kicker--bar">IAdmin</p>
+      <h1><span data-lang="fr">Systèmes, automatisation et IA.</span><span data-lang="en">Systems, automation and AI.</span></h1>
+      <p class="lead"><span data-lang="fr">Des cours pratiques sur Linux, Bash, réseau, virtualisation, Docker, Ansible, Qt et bientôt davantage d'intelligence artificielle.</span><span data-lang="en">Practical courses on Linux, Bash, networking, virtualisation, Docker, Ansible, Qt, and soon more artificial intelligence.</span></p>
+      <p class="site-status"><span class="status-dot" aria-hidden="true"></span><span data-lang="fr">Le catalogue s'enrichit régulièrement.</span><span data-lang="en">The catalogue grows regularly.</span></p>
 
       {recommended && (
         <section class="start" aria-labelledby="recommended-start">
@@ -86,29 +80,12 @@ const featuredArticle = !a0 ? null : {
             <div><dt><span data-lang="fr">Niveau attendu</span><span data-lang="en">Expected level</span></dt><dd><span data-lang="fr">Débutant · aucun prérequis</span><span data-lang="en">Beginner · no prerequisites</span></dd></div>
             <div><dt><span data-lang="fr">Durée estimée</span><span data-lang="en">Estimated time</span></dt><dd>≈ {recommended.duration} min · {recommended.modules} <span data-lang="fr">module(s)</span><span data-lang="en">module(s)</span></dd></div>
           </dl>
-          <a class="btn btn--primary" href={recommended.href}><span data-lang="fr">Commencer le premier module</span><span data-lang="en">Start the first module</span> →</a>
+          <div class="start__actions">
+            <a class="btn btn--primary" href={recommended.href}><span data-lang="fr">Commencer ce parcours</span><span data-lang="en">Start this path</span> →</a>
+            <a class="btn btn--ghost" href={`${cpfx}/cours/`}><span data-lang="fr">Explorer tous les cours</span><span data-lang="en">Explore all courses</span></a>
+          </div>
         </section>
       )}
-
-      <div class="principles" aria-label={locale === "en" ? "Framework principles" : "Principes du cadre"}>
-        <div class="principle">
-          <h3><span data-lang="fr">Colonne ≤ 66 caractères</span><span data-lang="en">≤ 66-character column</span></h3>
-          <p><span data-lang="fr">La longueur de ligne optimale soutient le suivi visuel.</span><span data-lang="en">Optimal line length supports visual tracking.</span> <code>max-width: 66ch</code></p>
-        </div>
-        <div class="principle">
-          <h3><span data-lang="fr">Corps ≥ 18px, AAA</span><span data-lang="en">Body ≥ 18px, AAA</span></h3>
-          <p><span data-lang="fr">Contraste du corps visé à 7:1, jamais en dessous de 4,5:1.</span><span data-lang="en">Body contrast aims for 7:1, never below 4.5:1.</span></p>
-        </div>
-        <div class="principle">
-          <h3><span data-lang="fr">Signalement sobre</span><span data-lang="en">Plain signaling</span></h3>
-          <p><span data-lang="fr">Hiérarchie nette, mise en évidence discrète — pas d'esthétique « SaaS ».</span><span data-lang="en">Clear hierarchy, restrained highlighting — no "SaaS" aesthetic.</span></p>
-        </div>
-        <div class="principle">
-          <h3><span data-lang="fr">Réglable par le lecteur</span><span data-lang="en">Reader-adjustable</span></h3>
-          <p><span data-lang="fr">Taille, espacement, contraste, mouvement, police — persistants.</span><span data-lang="en">Size, spacing, contrast, motion, font — all persistent.</span></p>
-        </div>
-      </div>
-      <a class="btn btn--ghost" href={`${cpfx}/systeme/`}><span data-lang="fr">Découvrir les principes du design en détail</span><span data-lang="en">Explore the design principles in detail</span> →</a>
     </section>
 
     <section class="wrap explore" aria-label={locale === "en" ? "Explore the site" : "Explorer le site"}>
@@ -136,7 +113,7 @@ const featuredArticle = !a0 ? null : {
 
         <section class="pillar">
           <div class="pillar__head">
-            <h3>Miscelánea</h3>
+            <h3><span data-lang="fr">Articles</span><span data-lang="en">Articles</span></h3>
             <span class="count">{articles.length} <span data-lang="fr">article(s)</span><span data-lang="en">article(s)</span></span>
           </div>
           <p class="pillar__lead"><span data-lang="fr">Des articles courts, scientifiques et techniques — un sujet, droit au but.</span><span data-lang="en">Short scientific and technical articles — one topic, straight to the point.</span></p>
@@ -154,15 +131,15 @@ const featuredArticle = !a0 ? null : {
           <a class="btn btn--ghost pillar__all" href={`${cpfx}/miscelanea/`}><span data-lang="fr">Tous les articles</span><span data-lang="en">All articles</span> →</a>
         </section>
       </div>
+      <p class="design-note"><span data-lang="fr">Une présentation sobre, lisible et réglable.</span><span data-lang="en">A restrained, readable and adjustable presentation.</span> <a href={`${cpfx}/systeme/`}><span data-lang="fr">Découvrir les choix de conception</span><span data-lang="en">Explore the design choices</span> →</a></p>
     </section>
   </main>
 </Base>
 
 <style>
-  .hero { padding-block: var(--space-8) var(--space-7); }
+  .hero { padding-block: var(--space-8) var(--space-6); }
   .hero h1 { font-size: clamp(2rem, 5.2vw, 3rem); max-width: 18ch; margin-top: var(--space-4); }
   .hero .lead { margin-top: var(--space-5); max-width: 60ch; }
-  .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
   .start { max-width: 66ch; margin-top: var(--space-6); padding: var(--space-5); border: 1px solid var(--color-accent); border-left-width: 4px; border-radius: var(--radius-lg); background: var(--color-surface); }
   .start__eyebrow { margin: 0 0 var(--space-2); color: var(--color-accent-text); font: 600 var(--text-xs)/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
   .start h2 { margin: 0; font-size: var(--text-xl); }
@@ -170,10 +147,10 @@ const featuredArticle = !a0 ? null : {
   .start__meta div { display: grid; gap: var(--space-1); }
   .start__meta dt { color: var(--color-text-muted); font-size: var(--text-xs); }
   .start__meta dd { margin: 0; color: var(--color-text-strong); font-weight: var(--weight-semibold); }
-  .construction { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-5); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
-  .construction img { image-rendering: pixelated; border-radius: 2px; }
-  :global(html[data-motion="off"]) .construction img { display: none; }
-  .explore { margin-top: var(--space-7); }
+  .start__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .site-status { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+  .status-dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--color-success); flex: none; }
+  .explore { margin-top: var(--space-5); }
   .explore__title { margin-bottom: var(--space-5); font-size: var(--text-xl); }
   .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-5); align-items: stretch; }
   .pillar { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
@@ -182,10 +159,6 @@ const featuredArticle = !a0 ? null : {
   .pillar__head .count { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); }
   .pillar__lead { margin: 0; color: var(--color-text-muted); font-size: var(--text-base); max-width: none; }
   .pillar__all { align-self: flex-start; margin-top: auto; }
-  .module-card__flag { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-accent-text); text-transform: uppercase; letter-spacing: 0.04em; }
-  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); margin-block: var(--space-6); max-width: none; }
-  .principle { padding-top: var(--space-4); border-top: 2px solid var(--color-accent); }
-  .principle h3 { font-size: var(--text-md); margin: 0 0 var(--space-2); }
-  .principle p { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 34ch; margin: 0; }
-  .principle code { font-size: 0.85em; }
+  .module-card__flag { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-accent-text); text-transform: uppercase; letter-spacing: 0.04em; }
+  .design-note { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
 </style>

@@ -1,7 +1,7 @@
-# Site Astro — cadre pédagogique
+# IAdmin
 
-Site pédagogique statique : cours techniques structurés + blog scientifique
-(Miscelánea). Design fondé sur les sciences cognitives de l'apprentissage
+Site pédagogique statique : cours techniques structurés + articles.
+Design fondé sur les sciences cognitives de l'apprentissage
 (Sweller, Mayer), conforme WCAG AA (corps AAA). **Tout est statique et
 local** : polices, icônes et maths sont résolus au build — aucun CDN.
 

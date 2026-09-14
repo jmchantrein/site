@@ -68,7 +68,7 @@ test("la navigation anglaise reste dans son espace localisé", async () => {
     assert.match(html, /href="\/site\/en\/aide\/"/);
     assert.match(html, /href="\/site\/en\/systeme\/"/);
   }
-  assert.match(home, /href="\/site\/en\/" aria-current="page"/);
-  assert.doesNotMatch(course, /href="\/site\/en\/" aria-current="page"/);
-  assert.match(home, /class="btn btn--ghost" href="\/site\/en\/systeme\/"/);
+  assert.doesNotMatch(home, /href="\/site\/en\/" aria-current="page"/);
+  assert.match(course, /href="\/site\/en\/cours\/" aria-current="page"/);
+  assert.match(home, /href="\/site\/en\/systeme\/"/);
 });

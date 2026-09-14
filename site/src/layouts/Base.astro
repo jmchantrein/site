@@ -62,11 +62,9 @@ const A11Y = {
 const homeHref = locale === "en" ? `${base}/en/` : `${base}/`;
 const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const nav = [
-  { href: homeHref, fr: "Accueil", en: "Home" },
   { href: `${cpfx}/cours/`, fr: "Cours", en: "Courses" },
-  { href: `${cpfx}/miscelanea/`, fr: "Miscelánea", en: "Miscellanea" },
-  { href: `${cpfx}/aide/`, fr: "Aide", en: "Help" },
-  { href: `${cpfx}/systeme/`, fr: "Système", en: "System" },
+  { href: `${cpfx}/miscelanea/`, fr: "Articles", en: "Articles" },
+  { href: `${cpfx}/glossaire/`, fr: "Glossaire", en: "Glossary" },
 ];
 const isCurrent = (href: string) =>
   href === homeHref ? path === homeHref : path.startsWith(href);
@@ -93,7 +91,7 @@ const isCurrent = (href: string) =>
         } catch (e) {}
       })();
     </script>
-    <title>{title} — Site Astro</title>
+    <title>{title} — IAdmin</title>
     {description && <meta name="description" content={description} />}
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
@@ -109,7 +107,7 @@ const isCurrent = (href: string) =>
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="Site Astro" />
+    <meta property="og:site_name" content="IAdmin" />
     <meta property="og:locale" content={locale === "en" ? "en_US" : "fr_FR"} />
     {altAbs && <meta property="og:locale:alternate" content={locale === "en" ? "fr_FR" : "en_US"} />}
   </head>
@@ -125,7 +123,7 @@ const isCurrent = (href: string) =>
       <div class="site-header__inner">
         <a class="brand" href={homeHref}>
           <span class="brand__mark" aria-hidden="true">$_</span>
-          <span class="brand__name">Site Astro<small data-lang="fr">cadre pédagogique</small><small data-lang="en">teaching framework</small></span>
+          <span class="brand__name">IAdmin<small><span data-lang="fr">Systèmes · automatisation · IA</span><span data-lang="en">Systems · automation · AI</span></small></span>
         </a>
         <nav class="site-nav" id="site-navigation" data-site-nav aria-label={A11Y.nav}>
           {nav.map((item) => (
@@ -166,14 +164,30 @@ const isCurrent = (href: string) =>
     <slot />
 
     <footer class="site-footer">
-      <div class="wrap">
-        <span class="footer-credit"><span data-lang="fr">Co-conçu avec </span><span data-lang="en">Co-designed with </span><a href="https://claude.ai" target="_blank" rel="noopener">Claude Design</a><span aria-hidden="true"> · </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
-        <span data-lang="fr">Site Astro — cadre pédagogique fondé sur les sciences cognitives de l'apprentissage (Sweller, Mayer).</span><span data-lang="en">Site Astro — a teaching framework grounded in the cognitive science of learning (Sweller, Mayer).</span>
-        <span class="pill">WCAG 2.1 · AA / <span data-lang="fr">corps</span><span data-lang="en">body</span> AAA</span>
-        <button class="util-btn footer-a11y" data-a11y-trigger type="button" aria-haspopup="dialog">
-          <Icon name="eye" class="util-btn__icon" />
-          <span data-lang="fr">Préférences de lecture</span><span data-lang="en">Reading preferences</span>
-        </button>
+      <div class="wrap footer-nav">
+        <section>
+          <h2><span data-lang="fr">Explorer</span><span data-lang="en">Explore</span></h2>
+          <a href={`${cpfx}/cours/`}><span data-lang="fr">Cours</span><span data-lang="en">Courses</span></a>
+          <a href={`${cpfx}/miscelanea/`}><span data-lang="fr">Articles</span><span data-lang="en">Articles</span></a>
+          <a href={`${cpfx}/glossaire/`}><span data-lang="fr">Glossaire</span><span data-lang="en">Glossary</span></a>
+        </section>
+        <section>
+          <h2><span data-lang="fr">À propos</span><span data-lang="en">About</span></h2>
+          <a href={`${cpfx}/aide/`}><span data-lang="fr">Aide</span><span data-lang="en">Help</span></a>
+          <a href={`${cpfx}/systeme/`}><span data-lang="fr">Conception du site</span><span data-lang="en">Site design</span></a>
+        </section>
+        <section>
+          <h2><span data-lang="fr">Lecture</span><span data-lang="en">Reading</span></h2>
+          <button class="footer-link" data-a11y-trigger type="button" aria-haspopup="dialog">
+            <span data-lang="fr">Préférences de lecture</span><span data-lang="en">Reading preferences</span>
+          </button>
+          {altUrl && <a href={altUrl}>{locale === "fr" ? "English" : "Français"}</a>}
+        </section>
+      </div>
+      <div class="wrap footer-meta">
+        <span>IAdmin</span>
+        <span class="footer-credit"><span data-lang="fr">Réalisé avec l'aide de l'IA · propulsé par </span><span data-lang="en">Made with AI assistance · powered by </span><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></span>
+        <span class="pill">WCAG 2.1 · AA</span>
       </div>
     </footer>
 
@@ -183,7 +197,6 @@ const isCurrent = (href: string) =>
     <script src="../scripts/dock.js"></script>
     <script src="../scripts/gloss.js"></script>
     <style>
-      .footer-a11y { margin-left: auto; }
       .annot-trigger { position: relative; }
       .annot-count {
         position: absolute; top: -6px; right: -6px;
