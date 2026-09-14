@@ -1,47 +1,53 @@
 /* =============================================================================
-   DOCK.JS — dock de l'en-tête : fenêtres flottantes (terminal, Pomodoro,
-   passe-temps), grisage des passe-temps hors pause Pomodoro, modes du
-   terminal (émulé / JSLinux / LinuxOnTab / local ttyd / distant).
-   Registre des applis : src/data/dock.ts (champ `pastime`).
+   DOCK.JS — dock de l'en-tête : fenêtres flottantes (terminal, Pomodoro),
+   comptage de la lecture active et modes du terminal
+   (émulé / JSLinux / LinuxOnTab / local ttyd / distant).
+   Registre des applis : src/data/dock.ts.
    Persistance : clés `site-astro-` → couvertes par l'export global.
    ============================================================================= */
-import { mountSnake } from "./apps/snake.js";
-import { mount2048 } from "./apps/g2048.js";
-import { mountGol } from "./apps/gol.js";
-import { mountLenia } from "./apps/lenia.js";
-
 "use strict";
 
 const lang = () => (document.documentElement.getAttribute("lang") === "en" ? "en" : "fr");
 const T = (fr, en) => (lang() === "en" ? en : fr);
 
-/* ---- POMODORO — moteur : 25 min de lecture active → 5 min de passe-temps --- */
-const POMO_KEY = "site-astro-pomodoro-v1";
+/* ---- POMODORO — 25 minutes de lecture réellement active ------------------- */
+const POMO_KEY = "site-astro-pomodoro-v2";
 const WORK_MS = 25 * 60 * 1000;
-const BREAK_MS = 5 * 60 * 1000;
 function pomoLoad() {
-  try { return Object.assign({ workMs: 0, state: "work", breakEnd: 0 }, JSON.parse(localStorage.getItem(POMO_KEY) || "{}")); }
-  catch (e) { return { workMs: 0, state: "work", breakEnd: 0 }; }
+  try { return Object.assign({ workMs: 0, done: false }, JSON.parse(localStorage.getItem(POMO_KEY) || "{}")); }
+  catch (e) { return { workMs: 0, done: false }; }
 }
 function pomoSave(p) { try { localStorage.setItem(POMO_KEY, JSON.stringify(p)); } catch (e) {} }
 let pomo = pomoLoad();
-let lastActivity = Date.now();
-["scroll", "pointerdown", "keydown", "pointermove"].forEach((ev) =>
-  window.addEventListener(ev, () => { lastActivity = Date.now(); }, { passive: true }));
+let lastReadingActivity = 0;
+const markReadingActivity = (event) => {
+  const main = document.querySelector("main");
+  if (!main) return;
+  if (event.type === "scroll" || main.contains(event.target)) lastReadingActivity = Date.now();
+};
+["scroll", "pointerdown", "keydown", "touchstart"].forEach((ev) =>
+  window.addEventListener(ev, markReadingActivity, { passive: true }));
 
 const pomoListeners = [];
 function onPomo(fn) { pomoListeners.push(fn); fn(pomo); }
 function pomoEmit() { pomoListeners.forEach((fn) => fn(pomo)); }
-function startBreak() { pomo.state = "break"; pomo.breakEnd = Date.now() + BREAK_MS; pomo.workMs = 0; pomoSave(pomo); pomoEmit(); }
+function showBreakMessage() {
+  window.alert(T(
+    "Vous avez lu activement pendant 25 minutes. Il est temps de faire une pause.",
+    "You have been actively reading for 25 minutes. It is time to take a break."
+  ));
+}
 function pomoTick() {
-  if (pomo.state === "break") {
-    if (Date.now() >= pomo.breakEnd) {
-      pomo.state = "work"; pomo.breakEnd = 0; pomoSave(pomo);
-      closePastimes();
-    }
-  } else if (document.visibilityState === "visible" && Date.now() - lastActivity < 60 * 1000) {
+  if (!pomo.done && document.visibilityState === "visible" && document.hasFocus() && Date.now() - lastReadingActivity < 60 * 1000) {
     pomo.workMs += 1000;
-    if (pomo.workMs >= WORK_MS) { startBreak(); return; }
+    if (pomo.workMs >= WORK_MS) {
+      pomo.workMs = WORK_MS;
+      pomo.done = true;
+      pomoSave(pomo);
+      pomoEmit();
+      showBreakMessage();
+      return;
+    }
     if (pomo.workMs % 5000 === 0) pomoSave(pomo);
   }
   pomoEmit();
@@ -178,10 +184,6 @@ function wireWindowTools(id, win, onClose) {
 
 /* ---- APPLIS ------------------------------------------------------------------ */
 const APPS = {
-  snake: { title: () => "Snake", mount: mountSnake },
-  g2048: { title: () => "2048", mount: mount2048 },
-  gol: { title: () => T("Jeu de la vie", "Game of Life"), mount: mountGol },
-  lenia: { title: () => "Lenia", mount: mountLenia },
   pomodoro: { title: () => "Pomodoro", mount: mountPomodoro },
 };
 
@@ -207,15 +209,6 @@ function toggleApp(id) {
   else if (w.el.hidden) { w.el.hidden = false; w.el.style.zIndex = String(++topZ); setDockState(id, "open"); }
   else { w.el.hidden = true; setDockState(id, "min"); }
 }
-function closePastimes() {
-  document.querySelectorAll('[data-dock-app][data-pastime="true"]').forEach((b) => {
-    const id = b.getAttribute("data-dock-app");
-    if (id === "terminal") return;
-    closeApp(id);
-  });
-  refreshLocks();
-}
-
 /* ---- POMODORO — fenêtre -------------------------------------------------------- */
 function mountPomodoro(body) {
   body.innerHTML = "";
@@ -226,11 +219,10 @@ function mountPomodoro(body) {
     '<span class="pomo__time" data-time>--:--</span>' +
     '<div class="pomo__track"><div class="pomo__fill" data-fill></div></div>' +
     '<p class="dockapp__hint">' +
-    T("25 min de lecture active débloquent les passe-temps du dock pour 5 min.",
-      "25 min of active reading unlock the dock pastimes for 5 min.") + "</p>" +
+    T("Seule la lecture active de la page est comptabilisée. Après 25 minutes, un message vous invite à faire une pause.",
+      "Only active reading on the page is counted. After 25 minutes, a message invites you to take a break.") + "</p>" +
     '<div class="dockapp__bar">' +
-    '<button class="dockapp__btn" data-force type="button">' + T("Déclencher la pause", "Start the break") + "</button>" +
-    '<button class="dockapp__btn" data-reset type="button">' + T("Réinitialiser", "Reset") + "</button>" +
+    '<button class="dockapp__btn" data-reset type="button">' + T("Nouvelle session", "New session") + "</button>" +
     "</div>";
   body.appendChild(el);
   const mmss = (ms) => {
@@ -238,33 +230,16 @@ function mountPomodoro(body) {
     return String((s / 60) | 0).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
   };
   const update = (p) => {
-    const brk = p.state === "break";
-    el.classList.toggle("pomo--break", brk);
-    el.querySelector("[data-phase]").textContent = brk
-      ? T("Pause — passe-temps débloqués", "Break — pastimes unlocked")
-      : T("Lecture", "Reading");
-    el.querySelector("[data-time]").textContent = brk ? mmss(p.breakEnd - Date.now()) : mmss(WORK_MS - p.workMs);
-    el.querySelector("[data-fill]").style.width = (brk ? ((p.breakEnd - Date.now()) / BREAK_MS) : (p.workMs / WORK_MS)) * 100 + "%";
+    el.classList.toggle("pomo--done", p.done);
+    el.querySelector("[data-phase]").textContent = p.done ? T("Pause recommandée", "Break recommended") : T("Lecture active", "Active reading");
+    el.querySelector("[data-time]").textContent = mmss(WORK_MS - p.workMs);
+    el.querySelector("[data-fill]").style.width = (p.workMs / WORK_MS) * 100 + "%";
   };
-  el.querySelector("[data-force]").addEventListener("click", startBreak);
   el.querySelector("[data-reset]").addEventListener("click", () => {
-    pomo = { workMs: 0, state: "work", breakEnd: 0 }; pomoSave(pomo); pomoEmit(); closePastimes();
+    pomo = { workMs: 0, done: false }; pomoSave(pomo); pomoEmit();
   });
   pomoListeners.push(update); update(pomo);
   return () => { const i = pomoListeners.indexOf(update); if (i !== -1) pomoListeners.splice(i, 1); };
-}
-
-/* ---- GRISAGE des passe-temps -------------------------------------------------- */
-function refreshLocks() {
-  const unlocked = pomo.state === "break";
-  document.querySelectorAll('[data-dock-app][data-pastime="true"]').forEach((b) => {
-    b.setAttribute("data-locked", String(!unlocked));
-    const label = b.querySelector(".util-btn__label");
-    if (label && !unlocked) {
-      const left = Math.ceil((WORK_MS - pomo.workMs) / 60000);
-      label.setAttribute("data-left", String(left));
-    }
-  });
 }
 
 /* ---- TERMINAL — fenêtre pré-rendue + modes -------------------------------------- */
@@ -519,7 +494,6 @@ function init() {
   document.querySelectorAll("[data-dock-app]").forEach((btn) => {
     const id = btn.getAttribute("data-app") || btn.getAttribute("data-dock-app");
     btn.addEventListener("click", () => {
-      if (btn.getAttribute("data-locked") === "true") { openApp("pomodoro"); return; }
       if (id === "terminal") toggleTerminal(); else toggleApp(id);
     });
   });
@@ -537,7 +511,6 @@ function init() {
       opts.setAttribute("aria-expanded", String(!menu.hidden));
     });
   }
-  onPomo(refreshLocks);
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 else init();

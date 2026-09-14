@@ -1,8 +1,8 @@
 ---
 /**
- * DOCK — lanceur d'applications de l'en-tête (terminal, Pomodoro, passe-temps).
- * Le registre vit dans src/data/dock.ts (champ `pastime`) ; le comportement
- * (fenêtres, minimisation, grisage Pomodoro, modes du terminal) dans
+ * DOCK — lanceur des deux outils de l'en-tête (terminal et Pomodoro).
+ * Le registre vit dans src/data/dock.ts ; le comportement (fenêtres,
+ * minuterie de lecture active et modes du terminal) dans
  * src/scripts/dock.js. La fenêtre terminal embarque un vrai composant
  * Terminal (mode émulé) câblé par site.js au chargement.
  */
@@ -28,7 +28,6 @@ const T = {
         class="dock__btn"
         type="button"
         data-dock-app={app.id}
-        data-pastime={app.pastime ? "true" : undefined}
         aria-pressed="false"
         aria-label={app[locale]}
       >

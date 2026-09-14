@@ -1,6 +1,6 @@
 /* =============================================================================
    DOCK — lanceur d'applications de l'en-tête + fenêtres flottantes.
-   Les passe-temps (data-pastime) sont grisés hors des pauses Pomodoro.
+   Le dock ne contient que le terminal et le compteur Pomodoro.
    ============================================================================= */
 .dock { position: relative; margin-left: auto; }
 .dock__trigger { list-style: none; display: flex; align-items: center; gap: var(--space-2); cursor: pointer; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-size: var(--text-sm); font-weight: var(--weight-medium); }
@@ -27,11 +27,7 @@
 .dock__state { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: transparent; }
 .dock__btn[data-state="open"] .dock__state { background: var(--color-accent); }
 .dock__btn[data-state="min"] .dock__state { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-accent); }
-/* Passe-temps verrouillé (Pomodoro en phase lecture) */
-.dock__btn[data-locked="true"] { opacity: 0.38; cursor: not-allowed; }
-.dock__btn[data-locked="true"]:hover { border-color: transparent; background: transparent; color: var(--color-text-muted); }
 .dock__btn .util-btn__label { z-index: calc(var(--z-tooltip) + 10); } /* au-dessus des infobulles voisines de l'en-tête */
-.dock__btn[data-locked="true"] .util-btn__label::after { content: " · " attr(data-left) " min"; }
 /* Bouton ⋮ d'options accolé */
 .dock__opts {
   cursor: pointer; width: 16px; height: 36px; display: grid; place-items: center;
@@ -126,11 +122,9 @@ body.dockwin-dragging iframe { pointer-events: none; }
 .dockwin__help { padding: var(--space-2) var(--space-3) var(--space-3); font-size: var(--text-sm); }
 .dockwin__help ol { padding-left: var(--space-5); margin: var(--space-2) 0 0; }
 
-/* Corps générique des applis (jeux, pomodoro) */
+/* Corps générique des applis */
 .dockapp { padding: var(--space-4); display: grid; gap: var(--space-3); justify-items: center; }
-.dockapp canvas { border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--term-bg); max-width: 100%; touch-action: none; }
 .dockapp__bar { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; justify-content: center; width: 100%; }
-.dockapp__bar .score { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); margin-right: auto; }
 .dockapp__btn {
   cursor: pointer; font: inherit; font-size: var(--text-xs); font-weight: 600;
   border: 1px solid var(--color-border-strong); background: var(--color-surface);
@@ -140,21 +134,13 @@ body.dockwin-dragging iframe { pointer-events: none; }
 .dockapp__btn[aria-pressed="true"] { background: var(--color-accent-weak); border-color: var(--color-accent); color: var(--color-accent-text); }
 .dockapp__hint { font-size: var(--text-xs); color: var(--color-text-faint); text-align: center; margin: 0; }
 
-/* Grille 2048 (DOM) */
-.g2048 { display: grid; grid-template-columns: repeat(4, 64px); gap: 6px; padding: 6px; background: var(--color-surface-sunken); border-radius: var(--radius-md); outline: none; }
-.g2048:focus-visible { outline: var(--focus-ring); }
-.g2048 .c { width: 64px; height: 64px; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--color-bg); font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; color: var(--color-text-strong); }
-.g2048 .c[data-v=""] { color: transparent; }
-.g2048 .c[data-big="true"] { background: var(--color-accent); color: var(--color-on-accent); }
-.g2048 .c:not([data-v=""]):not([data-big="true"]) { background: var(--color-accent-weak); }
-
 /* Pomodoro */
 .pomo { text-align: center; }
 .pomo__phase { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
 .pomo__time { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 700; color: var(--color-text-strong); line-height: 1.1; }
 .pomo__track { width: 100%; height: 8px; border-radius: 999px; background: var(--color-surface-sunken); overflow: hidden; border: 1px solid var(--color-border); }
 .pomo__fill { height: 100%; width: 0; background: var(--color-accent); transition: width 400ms var(--ease); }
-.pomo--break .pomo__fill { background: var(--color-success); }
+.pomo--done .pomo__fill { background: var(--color-success); }
 
 /* Cibles tactiles ≥ 44px sur écran tactile (WCAG 2.5.5 — cf. components.css).
    La poignée de redimensionnement est absolue : l'élargir ne décale rien. */
