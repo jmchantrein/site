@@ -23,6 +23,9 @@ import Img from "./Img.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
+import LearningLoop from "./LearningLoop.astro";
+import NeuralNetworkDemo from "./NeuralNetworkDemo.astro";
+import RagFlow from "./RagFlow.astro";
 
 export const mdxComponents = {
   Note,
@@ -47,4 +50,7 @@ export const mdxComponents = {
   G,
   WikiImage,
   Artefact,
+  LearningLoop,
+  NeuralNetworkDemo,
+  RagFlow,
 };
