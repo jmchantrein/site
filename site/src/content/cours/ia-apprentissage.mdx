@@ -8,20 +8,11 @@ badge: "Méthode"
 tags: [IA, apprentissage, esprit critique, prompt]
 terminal: false
 status: [construction]
-provenance:
-  by: mixed
-  reviewedBy: human
-  model: "GPT-5.6 Sol"
-  aiShare: 55
 ---
 
 ## Comment bien utiliser une IA en tant qu’apprenant ?
 
-Les progrès récents des modèles génératifs interrogent l’avenir de l’emploi et la nature du travail. Le développement web semble particulièrement exposé, mais tous les métiers qualifiés du secteur tertiaire sont concernés.
-
-En recherche, ces systèmes assistent déjà les mathématiques, la physique, l’astrophysique et la médecine — par exemple avec [AlphaFold et la prédiction de structures protéiques](https://doi.org/10.1038/s41586-021-03819-2). Des annonces leur attribuent aussi des résolutions de problèmes de plus en plus autonomes. Une revendication aussi forte que la résolution de l’hypothèse de Riemann exige toutefois une preuve publiée, vérifiée et reconnue par la communauté mathématique : la source précise de l’annonce évoquée en séance reste à joindre avant publication. Cette prudence illustre justement le propos du cours.
-
-Avant de confier du travail à ces systèmes, ou de les craindre, il faut comprendre ce qu’ils font et vérifier la part respective de la machine et des humains.
+Les progrès récents des modèles génératifs interrogent l’avenir du développement web, mais aussi plus largement celui des métiers qualifiés du secteur tertiaire. Ils assistent déjà chercheurs et chercheuses en mathématiques, physique, astrophysique ou médecine — par exemple avec [AlphaFold et la prédiction de structures protéiques](https://doi.org/10.1038/s41586-021-03819-2) — sans que cela autorise à attribuer à une IA la résolution autonome d’un problème scientifique majeur. Avant de confier du travail à ces systèmes, ou de les craindre, il faut comprendre ce qu’ils font et vérifier précisément la part respective de la machine et des humains.
 
 La réponse n’entre pas proprement dans deux colonnes « bien » et « pas bien ». Copier-coller sans comprendre est un mauvais usage ; obtenir une explication adaptée, se faire questionner puis vérifier sa réponse peut être extrêmement efficace. Tout dépend de la place laissée au jugement et à l’effort de l’apprenant.
 
@@ -37,7 +28,7 @@ L’idée du neurone artificiel est ancienne : [McCulloch et Pitts](https://doi.
 
 Un neurone reçoit des nombres, les multiplie par des **poids**, les combine et transmet un résultat. Pendant l’**entraînement**, l’erreur entre prédiction et résultat attendu sert à ajuster les poids. Pendant l’**inférence**, les poids déjà appris servent à traiter une nouvelle entrée.
 
-<Artefact file="reseau-neurones/index.html" title="Entraîner puis utiliser un réseau de neurones" height={520} />
+<NeuralNetworkDemo />
 
 <Note type="info" title="L’exemple du chat simplifie volontairement">
   Dans un apprentissage supervisé, on peut présenter des images étiquetées « chat » ou « pas chat » et ajuster le réseau selon ses erreurs. Il existe aussi des apprentissages non supervisé, auto-supervisé — essentiel aux LLM — et par renforcement. Un modèle moderne est beaucoup plus complexe que ce dessin mental.
@@ -63,7 +54,7 @@ Un montage de **génération augmentée par récupération** (RAG) suit souvent 
 
 La recherche retrouve donc du contexte ; le modèle rédige. Elle ne garantit ni que le bon passage existe dans le corpus, ni qu’il soit vrai, ni que le modèle l’interprète correctement.
 
-<Artefact file="chaine-rag/index.html" title="Les cinq étapes d’une chaîne RAG" height={520} />
+<RagFlow />
 
 <Note type="warning" title="La Terre plate entre, la Terre plate sort">
   Un outil documentaire alimenté uniquement par des textes affirmant que la Terre est plate peut répondre conformément à ses sources. NotebookLM est intéressant pour questionner un corpus et revenir aux citations, mais la qualité de la réponse reste bornée par la qualité, la représentativité et l’actualité des documents fournis.
@@ -174,10 +165,8 @@ La démarche et les restrictions préservent la difficulté utile. L’évaluati
 | Dépendre d’un service irremplaçable | Garder ses données, méthodes et solutions de repli |
 
 <Note type="success" title="L’effort n’est pas un défaut">
-  Entraîner un modèle demande beaucoup de calcul ; apprendre durablement demande beaucoup d’effort humain. L’IA peut retirer les obstacles inutiles et accélérer le retour, mais elle ne doit pas remplacer le rappel, la résolution et l’explication qui transforment une information en savoir mobilisable. La vidéo de Micode intégrée ci-dessous prolonge cette interrogation sur la délégation de l’effort intellectuel.
+  Entraîner un modèle demande beaucoup de calcul ; apprendre durablement demande beaucoup d’effort humain. L’IA peut retirer les obstacles inutiles et accélérer le retour, mais elle ne doit pas remplacer le rappel, la résolution et l’explication qui transforment une information en savoir mobilisable. La vidéo de Micode [*La fabrique des idiots*](https://www.youtube.com/watch?v=4xq6bVbS-Pw) prolonge cette interrogation sur la délégation de l’effort intellectuel.
 </Note>
-
-<VideoEmbed id="4xq6bVbS-Pw" title="La fabrique des idiots — Micode" />
 
 ## Choisir : performance, coût et ouverture
 
