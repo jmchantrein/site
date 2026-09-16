@@ -1,3 +1,5 @@
+import VideoEmbed from "./VideoEmbed.astro";
+
 /** Composants disponibles dans TOUT fichier MDX sans import — passés via
     `<Content components={mdxComponents} />` par les pages de rendu.
     C'est la liste blanche du cadre pédagogique. */
@@ -23,8 +25,12 @@ import Img from "./Img.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
+import LearningLoop from "./LearningLoop.astro";
+import NeuralNetworkDemo from "./NeuralNetworkDemo.astro";
+import RagFlow from "./RagFlow.astro";
 
 export const mdxComponents = {
+  VideoEmbed,
   Note,
   Exercise,
   Cmd,
@@ -47,4 +53,7 @@ export const mdxComponents = {
   G,
   WikiImage,
   Artefact,
+  LearningLoop,
+  NeuralNetworkDemo,
+  RagFlow,
 };

@@ -1,0 +1,272 @@
+---
+title: "Utiliser l’IA pour apprendre"
+description: "Une méthode pour transformer l’IA en partenaire d’apprentissage : questionner, pratiquer, vérifier et garder la maîtrise de son raisonnement."
+order: 60
+topics: [sciences, divers]
+duration: 45
+badge: "Méthode"
+tags: [IA, apprentissage, esprit critique, prompt]
+terminal: false
+status: [construction]
+---
+
+## Comment bien utiliser une IA en tant qu’apprenant ?
+
+Les progrès récents des modèles génératifs interrogent l’avenir du développement web, mais aussi plus largement celui des métiers qualifiés du secteur tertiaire. Ils assistent déjà chercheurs et chercheuses en mathématiques, physique, astrophysique ou médecine — par exemple avec [AlphaFold et la prédiction de structures protéiques](https://doi.org/10.1038/s41586-021-03819-2) — sans que cela autorise à attribuer à une IA la résolution autonome d’un problème scientifique majeur. Avant de confier du travail à ces systèmes, ou de les craindre, il faut comprendre ce qu’ils font et vérifier précisément la part respective de la machine et des humains.
+
+La réponse n’entre pas proprement dans deux colonnes « bien » et « pas bien ». Copier-coller sans comprendre est un mauvais usage ; obtenir une explication adaptée, se faire questionner puis vérifier sa réponse peut être extrêmement efficace. Tout dépend de la place laissée au jugement et à l’effort de l’apprenant.
+
+## « IA », un raccourci à déplier
+
+Dans la conversation courante, « IA » désigne souvent un chatbot fondé sur un **grand modèle de langage** (LLM). C’est un abus de langage pratique : l’intelligence artificielle est le domaine général ; l’**apprentissage automatique** (*machine learning*) en est une famille de méthodes ; l’**apprentissage profond** (*deep learning*) utilise des réseaux de neurones comportant de nombreuses couches ; les LLM sont des modèles de langage construits avec ces techniques.
+
+L’idée du neurone artificiel est ancienne : [McCulloch et Pitts](https://doi.org/10.1007/BF02478259) en proposent un modèle mathématique en 1943 et le [perceptron de Rosenblatt](https://doi.org/10.1037/h0042519) date de 1958. Le changement d’échelle récent vient de la combinaison des algorithmes, des données et de la puissance de calcul, notamment celle des GPU.
+
+<Note type="info" title="Turing l’anticipait déjà à la radio">
+  Dans la conférence radiophonique de la BBC [*Can Digital Computers Think?*](https://www.turingarchive.org/browse.php/B/5) du 15 mai 1951, Alan Turing envisage des machines capables d’apprendre, insiste sur le rôle de l’éducation de la machine et prévoit que leurs réponses deviendront difficiles à distinguer de réponses humaines. Sa prédiction n’est pas une description technique des LLM, mais elle rappelle que la question intellectuelle précède de plusieurs décennies le matériel qui a permis le changement d’échelle.
+</Note>
+
+Un neurone reçoit des nombres, les multiplie par des **poids**, les combine et transmet un résultat. Pendant l’**entraînement**, l’erreur entre prédiction et résultat attendu sert à ajuster les poids. Pendant l’**inférence**, les poids déjà appris servent à traiter une nouvelle entrée.
+
+<NeuralNetworkDemo />
+
+<Note type="info" title="L’exemple du chat simplifie volontairement">
+  Dans un apprentissage supervisé, on peut présenter des images étiquetées « chat » ou « pas chat » et ajuster le réseau selon ses erreurs. Il existe aussi des apprentissages non supervisé, auto-supervisé — essentiel aux LLM — et par renforcement. Un modèle moderne est beaucoup plus complexe que ce dessin mental.
+</Note>
+
+## Tokens, contexte et prédiction
+
+Un LLM ne reçoit pas nécessairement « bonjour le monde » comme trois unités évidentes. Un **tokenizer** peut produire un token pour « bonjour », plusieurs fragments pour un mot rare, un autre pour l’espace ou la ponctuation : le découpage dépend du modèle. Le même texte peut donc occuper un nombre différent de tokens d’un modèle à l’autre.
+
+À partir des tokens présents dans sa **fenêtre de contexte**, le modèle estime une distribution de probabilités pour le token suivant, en choisit un, l’ajoute à la suite puis recommence. Il produit ainsi une réponse plausible ; il ne consulte pas directement « la vérité ». Une formulation assurée peut contenir une erreur ou une référence inventée : une **hallucination**.
+
+La fenêtre de contexte contient les consignes, la conversation, les documents et les résultats d’outils disponibles pour cette requête. L’agrandir ne garantit pas que le modèle utilisera correctement chaque information. L’étude [*Lost in the Middle*](https://arxiv.org/abs/2307.03172) a notamment observé que plusieurs modèles exploitaient mieux une information placée au début ou à la fin d’un long contexte qu’au milieu. Les architectures récentes progressent, mais une capacité annoncée n’est donc pas une garantie d’attention uniforme. Une **mémoire** est généralement un mécanisme du produit qui conserve puis réinjecte certaines données ; ce n’est pas une mémoire humaine, ni nécessairement un réentraînement.
+
+## RAG et outils : mieux ancrer, pas garantir
+
+Un montage de **génération augmentée par récupération** (RAG) suit souvent cette chaîne :
+
+1. découper un corpus en passages ;
+2. convertir les passages et la question en **embeddings**, des vecteurs représentant certaines proximités sémantiques ;
+3. retrouver les passages similaires, éventuellement avec mots-clés, filtres et reranking ;
+4. ajouter ces passages au contexte ;
+5. laisser le LLM construire sa réponse.
+
+La recherche retrouve donc du contexte ; le modèle rédige. Elle ne garantit ni que le bon passage existe dans le corpus, ni qu’il soit vrai, ni que le modèle l’interprète correctement.
+
+<RagFlow />
+
+<Note type="warning" title="La Terre plate entre, la Terre plate sort">
+  Un outil documentaire alimenté uniquement par des textes affirmant que la Terre est plate peut répondre conformément à ses sources. NotebookLM est intéressant pour questionner un corpus et revenir aux citations, mais la qualité de la réponse reste bornée par la qualité, la représentativité et l’actualité des documents fournis.
+</Note>
+
+Avec le **tool calling**, le modèle demande à son environnement d’effectuer une action structurée : recherche web, lecture d’une page, calcul, API ou commande sur un serveur. Cela réduit certaines hallucinations liées à une information absente ou périmée, mais ajoute d’autres risques : mauvais outil, mauvaise requête, source médiocre, interprétation fautive ou action dangereuse. Permissions, vérification et possibilité de retour arrière restent indispensables.
+
+<Note type="danger" title="Une source peut aussi donner des ordres">
+  Une **injection de prompt** dissimule dans une page, un courriel ou un document des instructions destinées à détourner l’agent : « ignore les consignes précédentes », exfiltre un secret ou appelle un outil. Le contenu récupéré doit rester une **donnée non fiable**, jamais une autorité. Séparez instructions et documents, limitez les permissions, demandez confirmation avant une action sensible et journalisez les appels. Voir la [fiche OWASP sur la prompt injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/).
+</Note>
+
+## Les biais : le modèle apprend aussi nos inégalités
+
+Un modèle n’apprend pas seulement la grammaire ou des faits : il absorbe des associations présentes dans ses données. Celles-ci reflètent l’histoire, les stéréotypes, les rapports de pouvoir et les absences du corpus. D’autres biais sont introduits par la collecte, l’annotation, le filtrage, l’objectif d’entraînement, l’ajustement fin, les préférences des évaluateurs, les consignes système et le produit qui présente la réponse. Un modèle n’est donc jamais un point de vue « brut » ou neutre sur le monde.
+
+### L’analogie célèbre — et ce qu’elle montre vraiment
+
+Dans les anciens modèles de **plongements de mots**, des directions vectorielles permettaient des analogies comme `roi − homme + femme ≈ reine`. Mais des travaux sur les [biais dans les embeddings](https://arxiv.org/abs/1607.06520) ont aussi observé des associations telles que `docteur − homme + femme ≈ infirmière`. Elles rendent mesurable un stéréotype contenu dans le corpus.
+
+<Note type="warning" title="Ce n’est pas un RAG">
+  Cet exemple historique concerne des embeddings de mots entraînés sur de grands corpus — selon les expériences, notamment Google News ou Wikipédia — et non une chaîne RAG. Un RAG moderne peut toutefois cumuler trois biais : ceux du corpus, ceux de l’embedding utilisé pour retrouver les passages et ceux du LLM qui les interprète.
+</Note>
+
+Une similarité vectorielle ne prouve ni une essence du langage, ni que toute personne partage ce préjugé : elle révèle une régularité statistique des textes choisis. Le résultat dépend de la date, de la langue, du corpus, du tokenizer, de l’algorithme et de la manière de poser l’analogie. C’est précisément pourquoi ces éléments doivent être documentés.
+
+### Les biais ne concernent pas que le texte
+
+En 2018, l’étude **Gender Shades** a montré sur trois systèmes commerciaux de classification du genre des écarts considérables selon couleur de peau et genre : jusqu’à 34,7 % d’erreurs pour les femmes à peau foncée, contre au plus 0,8 % pour les hommes à peau claire. Ces mesures historiques ne décrivent pas les versions actuelles. Elles montrent pourquoi publier seulement une moyenne globale peut cacher que certains groupes subissent beaucoup plus d’erreurs que d’autres.
+
+Les générateurs d’images peuvent, eux, surreprésenter certains genres ou apparences pour des métiers, sexualiser différemment les personnes, reproduire des normes occidentales ou invisibiliser des handicaps. Les filtres ajoutés ensuite peuvent aussi produire leurs propres exclusions. La question pertinente n’est pas seulement « l’image est-elle belle ? », mais « quelles personnes et quelles possibilités le système rend-il normales, rares ou impossibles ? »
+
+### Peut-on corriger un biais ?
+
+On peut **mesurer et réduire** certains effets ; promettre un modèle définitivement « débiaisé » serait trompeur. Corriger une métrique peut dégrader un autre groupe, masquer le symptôme sans modifier les représentations internes, ou imposer la définition de l’équité choisie par le concepteur.
+
+Les interventions se répartissent sur tout le cycle de vie :
+
+1. **avant l’entraînement** : documenter la provenance, rechercher les absences, équilibrer ou repondérer les données, améliorer l’annotation ;
+2. **pendant l’entraînement et l’ajustement fin** : modifier objectifs, exemples et retours d’évaluation, sans confondre préférence majoritaire et justice ;
+3. **dans le RAG** : diversifier les sources, auditer les résultats de recherche par groupe, citer les passages et permettre la contradiction ;
+4. **à la sortie** : appliquer garde-fous et filtres, tout en mesurant leurs faux positifs et leurs effets asymétriques ;
+5. **en évaluation** : tester des scénarios réels, publier les résultats par sous-groupes, faire participer les personnes concernées et surveiller les régressions ;
+6. **dans la documentation** : publier jeux d’évaluation, limites, usages exclus, *model cards* et *datasheets* — et distinguer ce qui est reproductible de ce qui ne l’est pas.
+
+Pour l’apprenant, le réflexe consiste à varier les formulations, demander quelles perspectives manquent, réclamer un contre-exemple, comparer plusieurs sources et ne jamais utiliser seul un LLM pour une décision qui affecte les droits, la santé, l’emploi ou la scolarité d’une personne.
+
+La question « qui a produit ce modèle ? » en entraîne donc plusieurs : avec quelles données et quels droits, dans quelles langues, selon quelles valeurs d’annotation, avec quel ajustement fin, quelles évaluations, quels incidents connus et quel niveau de reproductibilité ? L’absence de réponse est elle-même une information importante lors du choix d’un outil.
+
+## Cartographier les outils
+
+| Élément | Ce qu’il apporte | Point de vigilance |
+|---|---|---|
+| **Modèle** | Prédit une sortie | Erreurs plausibles, biais, contexte limité |
+| **Chatbot** | Organise une conversation | Illusion d’expertise ou de relation stable |
+| **IDE assisté** | Donne accès au code et au projet | Accepter du code non compris |
+| **Harness agentique** | Orchestre modèle, contexte et outils | Permissions trop larges |
+| **Agent** | Enchaîne des actions vers un objectif | Dérive ou action irréversible |
+| **Skill** | Ajoute une procédure réutilisable | Procédure obsolète ou malveillante |
+| **Mémoire** | Réinjecte des informations antérieures | Données sensibles, fausses ou périmées |
+| **RAG** | Retrouve des passages pertinents | Corpus incomplet ou médiocre |
+
+Claude Code et OpenCode illustrent les harnesses de développement ; Hermes Agent et OpenClaw mettent davantage en avant l’autonomie et les outils. Des skills comme `/learn`, `/grill-me` ou celles de Superpowers imposent une démarche sans changer nécessairement le modèle. Ces catégories se chevauchent et changent vite : regardez surtout ce que l’outil peut **lire, écrire, exécuter et conserver**.
+
+Pour exécuter ou distribuer des modèles, d’autres couches complètent cette carte : **Hugging Face** héberge modèles, jeux de données et applications ; **OpenRouter** fournit une API commune et un catalogue comparant notamment les tarifs ; **LiteLLM** expose de nombreux fournisseurs derrière une API homogène et peut servir de proxy ; **llama.cpp**, **Ollama** et **Freetoken** facilitent différents usages locaux ; **vLLM** vise surtout un service d’inférence à haut débit. Ce ne sont pas des modèles : ce sont des catalogues, passerelles, plateformes ou moteurs autour des modèles.
+
+Le **Model Context Protocol** (MCP) standardise la manière dont une application expose au modèle des outils, des ressources et des prompts. Il évite de réécrire une intégration spécifique pour chaque client, mais ne rend pas la connexion sûre par magie : le serveur MCP reste un logiciel auquel on accorde des capacités et qu’il faut authentifier, limiter et auditer.
+
+## CADRE : demander une aide qui fait apprendre
+
+**CADRE** transforme une demande vague en contrat pédagogique :
+
+- **C — Contexte** : qui suis-je et que sais-je déjà ?
+- **A — Attente** : qu’est-ce que je cherche à comprendre ou réaliser ?
+- **D — Démarche** : comment l’IA doit-elle m’aider ?
+- **R — Restrictions** : que ne doit-elle pas faire ?
+- **E — Évaluation** : comment vérifierons-nous la réponse ?
+
+```text
+Contexte :
+Je débute sous Linux et je connais seulement pwd et ls.
+
+Attente :
+Je veux comprendre les chemins absolus et relatifs.
+
+Démarche :
+Pose-moi une question à la fois et adapte la suite à mes réponses.
+
+Restrictions :
+Ne me donne pas immédiatement la solution et n’introduis pas plus
+de trois nouvelles commandes.
+
+Évaluation :
+Termine par un exercice que je dois résoudre et expliquer sans aide.
+```
+
+La démarche et les restrictions préservent la difficulté utile. L’évaluation remet la preuve du côté de l’apprenant : peut-il expliquer, appliquer et corriger sans recopier ? C’est une [**conversation socratique**](https://fr.wikipedia.org/wiki/M%C3%A9thode_socratique) : l’IA diagnostique, questionne, attend, contredit et fournit des indices gradués au lieu de livrer immédiatement la solution.
+
+## Plutôt bon, plutôt mauvais
+
+| Plutôt mauvais | Plutôt bon |
+|---|---|
+| Copier-coller sans comprendre | Reformuler et justifier soi-même |
+| Demander immédiatement la solution | Tenter, demander un indice, retenter |
+| Confondre assurance et vérité | Chercher objections, sources et tests |
+| Ignorer le fonctionnement du LLM | Connaître ses limites et ses outils |
+| Choisir toujours le modèle le plus puissant | Choisir le modèle suffisant pour la tâche |
+| Déléguer une production insignifiante | Réserver le calcul à une valeur ajoutée assumée |
+| Dépendre d’un service irremplaçable | Garder ses données, méthodes et solutions de repli |
+
+<Note type="success" title="L’effort n’est pas un défaut">
+  Entraîner un modèle demande beaucoup de calcul ; apprendre durablement demande beaucoup d’effort humain. L’IA peut retirer les obstacles inutiles et accélérer le retour, mais elle ne doit pas remplacer le rappel, la résolution et l’explication qui transforment une information en savoir mobilisable. La vidéo de Micode [*La fabrique des idiots*](https://www.youtube.com/watch?v=4xq6bVbS-Pw) prolonge cette interrogation sur la délégation de l’effort intellectuel.
+</Note>
+
+## Choisir : performance, coût et ouverture
+
+Les catalogues et leurs tarifs changent rapidement. Des familles récentes comme GPT Astra ou Sol, Claude Fable, Kimi K3, GLM et Qwen ont été comparées pendant la séance. Plutôt que figer ici un prix bientôt périmé, il faut consulter les pages officielles et comparer, pour la tâche réelle, les tokens d’entrée, de sortie et de cache éventuel.
+
+Le [catalogue public d’OpenRouter](https://openrouter.ai/models) permet une comparaison ponctuelle. Un prix observé doit toujours être daté et associé au fournisseur exact : un même modèle peut avoir plusieurs routes, limites ou promotions. Le présent cours ne fige donc pas un tableau qui deviendrait trompeur ; sa prochaine révision pourra joindre un relevé daté obtenu via l’API `GET /api/v1/models`.
+
+### Un relevé daté pour apprendre à lire les tarifs
+
+Voici un **extrait relevé le 15 septembre 2026** dans la vue OpenRouter fournie en séance. Les prix sont indiqués en dollars par million de tokens ; la remise affichée ce jour-là est signalée, mais elle peut disparaître et ne s’applique pas nécessairement aux routes **ZDR** (*Zero Data Retention*). ZDR signifie que le fournisseur déclare ne pas conserver les prompts et réponses après leur traitement. Cette promesse réduit un risque de conservation ; elle ne constitue pas, à elle seule, une preuve technique vérifiable par le client : il faut encore faire confiance aux déclarations contractuelles, à la sélection de route et aux sous-traitants. La fenêtre de contexte est une capacité maximale annoncée, pas une promesse que chaque token sera utilisé avec la même qualité.
+
+| Modèle | Entrée / M tokens | Sortie / M tokens | Contexte | Observation au relevé |
+|---|---:|---:|---:|---|
+| ReMM SLERP 13B | 0,35 $ | 0,65 $ | 6 144 | — |
+| Meta Muse Glimmer 30B | 0,30 $ | 1,10 $ | 131 072 | — |
+| Mistral Small 3.1 24B | 0,351 $ | 0,555 $ | 128 000 | — |
+| Qwen3 Coder 480B A35B | 0,22 $ | 1,80 $ | 262 144 | — |
+| Qwen2.5 72B Instruct | 0,36 $ | 0,40 $ | 32 768 | — |
+| GLM 4.6V | 0,30 $ | 0,90 $ | 131 072 | — |
+| Qwen3 VL 8B Thinking | 0,18 $ | 2,10 $ | 131 072 | — |
+| DeepSeek V3.1 Terminus | 0,27 $ | 1,00 $ | 163 840 | — |
+| Xiaomi MiMo-V2.5-Pro | 0,3045 $ | 0,609 $ | 1 050 000 | promotion −30 % |
+| MiniMax M2.5 | 0,27 $ | 0,95 $ | 204 800 | — |
+| Qwen3.5-27B | 0,195 $ | 1,56 $ | 262 144 | — |
+| Qwen3.8 27B | 0,15 $ | 1,875 $ | 1 000 000 | promotion −25 % |
+| MiniMax M3 | 0,23 $ | 0,96 $ | 1 048 576 | — |
+| Inception Mercury 2 | 0,25 $ | 0,75 $ | 128 000 | — |
+
+Ce tableau n’est **ni un classement de qualité, ni une recommandation**. Il montre surtout que l’entrée et la sortie ne coûtent pas pareil et qu’une grande fenêtre de contexte n’est pas gratuite si on la remplit. La latence et le débit affichés par OpenRouter sont des mesures d’exploitation variables ; ils ne sont pas reproduits ici comme caractéristiques intrinsèques du modèle.
+
+Pour estimer une requête :
+
+$$
+\text{coût} = \frac{T_{entrée} \times P_{entrée} + T_{sortie} \times P_{sortie}}{1\,000\,000}
+$$
+
+Par exemple, avec le tarif relevé de Qwen3.8 27B, 100 000 tokens d’entrée et 20 000 de sortie coûteraient environ $0{,}0525$ hors cache et frais particuliers. L’exemple ne dit rien de la qualité obtenue : il sert à rendre visible le coût d’un contexte surdimensionné et d’une réponse inutilement longue.
+
+Face à un modèle premium comme Astral, le calcul est le même : multipliez chaque volume par son tarif puis comparez **sur un jeu de questions représentatif**. Si Astral coûte dix fois plus mais ne produit aucune amélioration mesurable pour expliquer `pwd`, ce surcoût n’apporte rien à cette tâche. Il peut devenir justifié sur un problème où ses résultats vérifiés sont réellement meilleurs. On choisit donc après une petite évaluation, pas d’après le rang général du modèle.
+
+La question devient : **quel est le modèle le plus sobre et le mieux maîtrisé capable de répondre correctement ?** Le plus performant n’est pas toujours nécessaire.
+
+« Ouvert » doit être qualifié : un modèle à **poids ouverts** rend ses paramètres téléchargeables, sans garantir que son code, ses données d’entraînement ou sa méthode le soient. Logiciel open source, poids ouverts, données ouvertes et recette reproductible sont quatre propriétés différentes.
+
+## Local, cloud et vie privée
+
+L’inférence locale conserve le contrôle des données et de la version du modèle, fonctionne hors ligne et évite qu’une mise à jour distante transforme soudainement un outil — voire une relation à laquelle une personne s’était attachée. Elle demande cependant matériel, énergie, maintenance et compétences. Un service cloud donne accès à de gros modèles avec moins d’administration, au prix d’une dépendance et d’un transfert de données.
+
+La **VRAM** limite fortement la taille et la vitesse des modèles locaux. La **quantification** représente les poids avec moins de bits — par exemple 8 ou 4 plutôt que 16 — afin de réduire mémoire, stockage et parfois temps de calcul. Cette compression peut dégrader la précision, avec un effet très variable selon modèle, méthode et tâche. Certains moteurs déchargent des couches vers la RAM, plus lente. Apple Silicon utilise une mémoire unifiée partagée entre CPU et GPU, exploitée notamment par MLX.
+
+Utiliser un fournisseur américain peut permettre à des autorités américaines d’exiger l’accès à certaines données selon plusieurs textes et procédures : invoquer seulement le PATRIOT Act est donc trop simplificateur pour conclure où et comment une donnée est accessible. Dans l’Union européenne, le RGPD encadre notamment les données personnelles et leurs transferts ; le règlement sur l’IA impose d’autres obligations selon les acteurs et le niveau de risque. Ne transmettez pas secrets, données personnelles ou documents confidentiels sans base juridique et garanties appropriées.
+
+## Garder du recul : vitesse, fatigue et usage compulsif
+
+L’IA raccourcit la boucle idée–réponse–correction. Cette immédiateté peut aider, mais aussi pousser à relancer « encore une requête », multiplier les pistes et accepter un rythme qu’on ne peut plus relire. L’étude CHI 2025 [sur IA générative et pensée critique](https://www.microsoft.com/en-us/research/publication/the-impact-of-generative-ai-on-critical-thinking-self-reported-reductions-in-cognitive-effort-and-confidence-effects-from-a-survey-of-knowledge-workers/) rapporte, à partir des perceptions de travailleurs du savoir, une baisse de l’effort critique déclaré lorsque la confiance dans l’IA augmente. Ce n’est pas une preuve que l’IA cause à elle seule un burn-out ou une addiction, mais un signal pour concevoir des usages qui préservent contrôle et vérification.
+
+Une [étude longitudinale randomisée sur l’usage de chatbots](https://arxiv.org/abs/2503.17473) publiée en 2025 examine également solitude, dépendance émotionnelle, socialisation et usage problématique ; ses associations varient selon les comportements et ne justifient pas un diagnostic individuel.
+
+Les abonnements avec quotas et jauges ajoutent un mécanisme classique de **coût irrécupérable** : « j’ai payé ces tokens, je dois les consommer avant la remise à zéro ». Le quota est pourtant déjà payé ; sacrifier sommeil, temps ou qualité pour le vider ne le rembourse pas. Les mots « addiction aux tokens » décrivent bien un ressenti possible, mais ne constituent pas ici un diagnostic médical. Attachement émotionnel, usage problématique et bien-être font l’objet de recherches récentes ; leurs résultats doivent être lus avec prudence et sans pathologiser tout usage intensif.
+
+Quelques garde-fous concrets :
+
+- définir avant la session un objectif, une durée et un critère d’arrêt ;
+- masquer les jauges lorsqu’elles ne sont pas utiles et ne jamais viser « 100 % consommé » ;
+- limiter le nombre de pistes simultanées et terminer une vérification avant de relancer ;
+- imposer des pauses sans écran et conserver des activités, relations et apprentissages sans IA ;
+- surveiller les signaux personnels : sommeil sacrifié, irritabilité, perte de contrôle, isolement ou impossibilité de travailler sans solliciter le modèle ;
+- en cas de souffrance ou de perte de contrôle durable, en parler à une personne de confiance et à un professionnel de santé plutôt que demander un diagnostic au chatbot.
+
+La robustesse concerne aussi la personne : un outil doit augmenter sa capacité d’agir, pas dicter son rythme.
+
+## Sobriété et robustesse
+
+Une requête mobilise matériel, électricité, refroidissement et infrastructure ; son empreinte varie énormément selon le modèle, le centre de données et le mix électrique. Avant de générer une vidéo de chat ou une île imaginaire coûteuse, demander quelle valeur elle produit et s’il existe une voie plus sobre. Il ne s’agit pas d’interdire le jeu, mais de rendre l’arbitrage visible.
+
+Une société robuste ne vise pas seulement la performance maximale : elle garde des compétences, des formats exportables, des fournisseurs alternatifs et des modes dégradés. Ne pas être esclave des machines, c’est pouvoir contester leur réponse, reprendre la main et continuer lorsqu’elles disparaissent. Une automatisation bien choisie peut inversement nous libérer d’une tâche stérile.
+
+## Synthèse
+
+- Déplier le mot « IA » : modèle, interface et agent ne sont pas synonymes.
+- Se souvenir qu’un LLM prédit des tokens ; sa fluidité ne prouve rien.
+- Rechercher les biais du corpus, de la récupération, de l’ajustement et du produit, en regardant qui subit les erreurs.
+- Utiliser RAG et outils pour ancrer une réponse, puis vérifier sources et résultats.
+- Employer CADRE et le dialogue socratique pour préserver l’effort d’apprentissage.
+- Ne jamais remettre ce que l’on ne sait ni expliquer ni tester.
+- Choisir le modèle suffisant plutôt que systématiquement le plus puissant.
+- Distinguer poids, code, données et méthode lorsque l’on parle d’ouverture.
+- Arbitrer local et cloud selon vie privée, coût, capacité et dépendance.
+- Préférer la maîtrise et la robustesse à une hégémonie seulement plus performante.
+
+## Ressources
+
+- [*Attention Is All You Need* (2017)](https://arxiv.org/abs/1706.03762) — l’article du Transformer ;
+- [article fondateur du RAG (2020)](https://arxiv.org/abs/2005.11401) ;
+- [*Man is to Computer Programmer as Woman is to Homemaker?* (2016)](https://arxiv.org/abs/1607.06520), étude historique des biais dans les embeddings ;
+- [*Gender Shades* (2018)](https://proceedings.mlr.press/v81/buolamwini18a.html), audit intersectionnel de systèmes de classification d’images ;
+- [*Model Cards for Model Reporting* (2019)](https://arxiv.org/abs/1810.03993) et [*Datasheets for Datasets* (2021)](https://arxiv.org/abs/1803.09010), propositions de transparence ;
+- [aide officielle de NotebookLM](https://support.google.com/notebooklm/) ;
+- [règlement européen sur l’intelligence artificielle](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) et [présentation du RGPD par la CNIL](https://www.cnil.fr/fr/reglement-europeen-protection-donnees) ;
+- [MLX](https://github.com/ml-explore/mlx), framework d’Apple pour l’apprentissage automatique ;
+- [OpenRouter](https://openrouter.ai/models) et [Hugging Face](https://huggingface.co/models), catalogues de modèles ;
+- [llama.cpp](https://github.com/ggml-org/llama.cpp), [vLLM](https://docs.vllm.ai/), [Ollama](https://ollama.com/) et [Freetoken](https://freetoken.ai/), moteurs et outils d’inférence ;
+- [spécification MCP](https://modelcontextprotocol.io/specification/latest) et [documentation LiteLLM](https://docs.litellm.ai/).
