@@ -1,14 +1,31 @@
 ---
-/** Compatibilité avec les anciens contenus : la visualisation est désormais
- * l'artefact HTML autonome, et non une animation Astro dupliquée. */
-import Artefact from "./Artefact.astro";
 import { pageLocale } from "../lib/locale";
-
-const locale = pageLocale(Astro.url);
-const file = locale === "en" ? "rag-pipeline/index.html" : "chaine-rag/index.html";
-const title = locale === "en"
-  ? "The five stages of a RAG pipeline"
-  : "Les cinq étapes d’une chaîne RAG";
+const en = pageLocale(Astro.url) === "en";
+const steps = en
+  ? [["1", "Question"], ["2", "Embedding"], ["3", "Retrieval"], ["4", "Context"], ["5", "Answer"]]
+  : [["1", "Question"], ["2", "Embedding"], ["3", "Recherche"], ["4", "Contexte"], ["5", "Réponse"]];
+const title = en ? "Follow a request through a RAG pipeline" : "Suivre une requête dans une chaîne RAG";
 ---
 
-<Artefact file={file} title={title} height={520} />
+<figure class="rag" data-rag-flow>
+  <figcaption><strong>{title}</strong></figcaption>
+  <ol>{steps.map(([n, label]) => <li style={`--step:${Number(n) - 1}`}><span>{n}</span><b>{label}</b></li>)}</ol>
+  <button type="button">{en ? "Run the pipeline" : "Lancer la chaîne"}</button>
+</figure>
+<script>
+  document.querySelectorAll<HTMLElement>("[data-rag-flow]").forEach((flow) => flow.querySelector("button")?.addEventListener("click", () => {
+    flow.classList.remove("is-running"); void flow.offsetWidth; flow.classList.add("is-running");
+  }));
+</script>
+<style>
+  .rag { margin: var(--space-5) 0; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+  ol { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-2); padding: 0; list-style: none; }
+  li { position: relative; display: grid; place-items: center; min-height: 5rem; padding: var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); text-align: center; opacity: .55; }
+  li:not(:last-child)::after { content: "→"; position: absolute; right: calc(var(--space-2) * -1); z-index: 1; color: var(--color-accent-text); }
+  li span { color: var(--color-accent-text); font-family: var(--font-mono); }
+  .is-running li { animation: reveal .55s calc(var(--step) * .5s) ease both; }
+  button { border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+  @keyframes reveal { to { opacity: 1; border-color: var(--color-accent); background: var(--color-accent-weak); transform: translateY(-.2rem); } }
+  @media (max-width: 40rem) { ol { grid-template-columns: 1fr; } li:not(:last-child)::after { content: "↓"; right: auto; bottom: calc(var(--space-3) * -1); } }
+  @media (prefers-reduced-motion: reduce) { .is-running li { animation: none; opacity: 1; } }
+</style>
