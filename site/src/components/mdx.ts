@@ -1,6 +1,4 @@
 import VideoEmbed from "./VideoEmbed.astro";
-import NeuralNetworkLab from "./NeuralNetworkLab.astro";
-import RagLab from "./RagLab.astro";
 
 /** Composants disponibles dans TOUT fichier MDX sans import — passés via
     `<Content components={mdxComponents} />` par les pages de rendu.
@@ -59,6 +57,9 @@ export const mdxComponents = {
   NeuralNetworkDemo,
   RagFlow,
 };
+
+import NeuralNetworkLab from "./NeuralNetworkLab.astro";
+import RagLab from "./RagLab.astro";
 
 // Les noms historiques restent valides, mais rendent les artefacts complets.
 Object.assign(mdxComponents, {
