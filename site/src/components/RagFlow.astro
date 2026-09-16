@@ -1,0 +1,14 @@
+---
+/** Compatibilité avec les anciens contenus : la visualisation est désormais
+ * l'artefact HTML autonome, et non une animation Astro dupliquée. */
+import Artefact from "./Artefact.astro";
+import { pageLocale } from "../lib/locale";
+
+const locale = pageLocale(Astro.url);
+const file = locale === "en" ? "rag-pipeline/index.html" : "chaine-rag/index.html";
+const title = locale === "en"
+  ? "The five stages of a RAG pipeline"
+  : "Les cinq étapes d’une chaîne RAG";
+---
+
+<Artefact file={file} title={title} height={520} />

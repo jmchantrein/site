@@ -24,10 +24,9 @@ import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
 import VideoEmbed from "./VideoEmbed.astro";
-
-/* Les anciennes démos LearningLoop, NeuralNetworkDemo et RagFlow ne font pas
-   partie de cette liste : le cours IA utilise désormais les artefacts HTML
-   autonomes via <Artefact>, conformément au cadre d'intégration des animations. */
+import LearningLoop from "./LearningLoop.astro";
+import NeuralNetworkDemo from "./NeuralNetworkDemo.astro";
+import RagFlow from "./RagFlow.astro";
 
 export const mdxComponents = {
   Note,
@@ -53,4 +52,7 @@ export const mdxComponents = {
   WikiImage,
   Artefact,
   VideoEmbed,
+  LearningLoop,
+  NeuralNetworkDemo,
+  RagFlow,
 };
