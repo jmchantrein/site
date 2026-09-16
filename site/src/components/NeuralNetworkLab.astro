@@ -1,0 +1,12 @@
+---
+import Artefact from "./Artefact.astro";
+import { pageLocale } from "../lib/locale";
+
+const en = pageLocale(Astro.url) === "en";
+---
+
+<Artefact
+  file={en ? "neural-network-lab/index.html" : "reseau-neurones-lab/index.html"}
+  title={en ? "Train and inspect a neural network" : "Entraîner et inspecter un réseau de neurones"}
+  height={620}
+/>

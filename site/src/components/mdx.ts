@@ -57,3 +57,12 @@ export const mdxComponents = {
   NeuralNetworkDemo,
   RagFlow,
 };
+
+import NeuralNetworkLab from "./NeuralNetworkLab.astro";
+import RagLab from "./RagLab.astro";
+
+// Les noms historiques restent valides, mais rendent les artefacts complets.
+Object.assign(mdxComponents, {
+  NeuralNetworkDemo: NeuralNetworkLab,
+  RagFlow: RagLab,
+});
