@@ -1,0 +1,283 @@
+---
+title: "Using AI to learn"
+description: "A method for turning AI into a learning partner: question, practise, verify, and retain ownership of your reasoning."
+order: 60
+topics: [sciences, divers]
+duration: 45
+badge: "Method"
+tags: [AI, learning, critical thinking, prompt]
+terminal: false
+status: [construction]
+provenance:
+  by: mixed
+  reviewedBy: human
+  model: "GPT-5.6 Sol"
+  translated: ai
+  aiShare: 80
+---
+
+## How can a learner use AI well?
+
+Recent generative models raise questions about employment and the nature of work. Web development appears particularly exposed, but all skilled service-sector professions are concerned.
+
+In research, these systems already assist mathematics, physics, astrophysics, and medicine—for example through [AlphaFold protein-structure prediction](https://doi.org/10.1038/s41586-021-03819-2). Announcements also attribute increasingly autonomous problem solving to them. A claim as strong as solving the Riemann hypothesis nevertheless requires a published proof verified and accepted by the mathematical community: the precise source mentioned in class must be attached before publication. That caution illustrates the course's argument.
+
+Before entrusting work to these systems, or fearing them, we must understand what they do and verify the respective contributions of machines and people.
+
+The answer does not fit neatly into “good” and “bad” columns. Copying without understanding is poor use; receiving a suitable explanation, being questioned, and then checking the result can be remarkably effective. What matters is how much judgement and effort remain with the learner.
+
+## “AI” is shorthand
+
+In everyday conversation, “AI” often means a chatbot powered by a **large language model** (LLM). This is useful shorthand: artificial intelligence is the overall field; **machine learning** is one family of methods; **deep learning** uses neural networks with many layers; LLMs are language models built using these techniques.
+
+Artificial neurons are old: [McCulloch and Pitts](https://doi.org/10.1007/BF02478259) proposed a mathematical model in 1943, and [Rosenblatt's perceptron](https://doi.org/10.1037/h0042519) dates from 1958. Recent scaling combines algorithms, data, and greater computing power, especially GPUs.
+
+<Note type="info" title="Turing anticipated it on the radio">
+  In the BBC broadcast [*Can Digital Computers Think?*](https://www.turingarchive.org/browse.php/B/5) on 15 May 1951, Alan Turing considered learning machines and anticipated answers becoming difficult to distinguish from human ones. This was not a technical description of LLMs, but the intellectual question long preceded today's hardware.
+</Note>
+
+A neuron receives numbers, multiplies them by **weights**, combines them, and passes on a result. During **training**, the error between prediction and expected result is used to adjust weights. During **inference**, learned weights process new input.
+
+<Artefact file="neural-network/index.html" title="Training and using a neural network" height={520} />
+
+<Note type="info" title="The cat example is deliberately simple">
+  Supervised learning can use pictures labelled “cat” or “not a cat” and adjust the network from its errors. Unsupervised, self-supervised—central to LLMs—and reinforcement learning also exist. A modern model is vastly more complex than this mental sketch.
+</Note>
+
+## Tokens, context, and prediction
+
+An LLM does not necessarily receive “hello world” as two obvious units. A **tokenizer** may produce one token for “hello,” several fragments for a rare word, and another for a space or punctuation; splitting depends on the model. The same text can therefore use different token counts in different models.
+
+From tokens in its **context window**, the model estimates probabilities for the next token, selects one, appends it, and repeats. It generates a plausible response; it does not directly consult “truth.” A confident answer may contain an error or invented reference—an **hallucination**.
+
+The context window contains instructions, conversation, documents, and tool results for the current request. Making it larger does not ensure every detail is used correctly. [*Lost in the Middle*](https://arxiv.org/abs/2307.03172) found that several models used information near the beginning or end of a long context better than information in its middle. Newer architectures improve, but capacity still does not guarantee uniform attention. **Memory** is usually a product feature that stores and later reinjects selected information; it is neither human memory nor necessarily retraining.
+
+## RAG and tools: grounding, not guarantees
+
+A common **retrieval-augmented generation** (RAG) pipeline:
+
+1. splits a corpus into passages;
+2. turns passages and query into **embeddings**, vectors capturing some semantic proximity;
+3. retrieves similar passages, sometimes using keywords, filters, and reranking too;
+4. adds passages to the context;
+5. lets the LLM construct the answer.
+
+Retrieval supplies context; the model writes. It cannot ensure the right passage exists, is true, or is interpreted correctly.
+
+<Artefact file="rag-pipeline/index.html" title="The five stages of a RAG pipeline" height={520} />
+
+<Note type="warning" title="Flat Earth in, flat Earth out">
+  A documentary tool supplied only with texts claiming Earth is flat may answer consistently with those sources. NotebookLM can be useful for questioning a corpus and returning to citations, but its answers remain bounded by the quality, representativeness, and currency of the supplied documents.
+</Note>
+
+With **tool calling**, a model asks its environment to perform a structured action: web search, page reading, calculation, API call, or server command. This reduces some errors caused by missing or stale information but creates others: wrong tool, poor query, bad source, faulty interpretation, or dangerous action. Permissions, verification, and rollback remain essential.
+
+<Note type="danger" title="A source can contain orders too">
+  A **prompt injection** hides instructions in a page, email, or document to divert an agent. Retrieved content must remain **untrusted data**, never authority. Separate instructions from documents, minimise permissions, confirm sensitive actions, and log tool calls. See [OWASP’s guidance](https://genai.owasp.org/llmrisk/llm01-prompt-injection/).
+</Note>
+
+## Bias: models also learn our inequalities
+
+A model learns more than grammar or facts: it absorbs associations found in its data. These reflect history, stereotypes, power relations, and absences in the corpus. Further bias enters through collection, annotation, filtering, the training objective, fine-tuning, evaluator preferences, system instructions, and the product presenting the answer. A model is therefore never a raw or neutral viewpoint on the world.
+
+### The famous analogy—and what it actually shows
+
+In older **word-embedding** models, vector directions enabled analogies such as `king − man + woman ≈ queen`. [Embedding-bias research](https://arxiv.org/abs/1607.06520) also found associations such as `doctor − man + woman ≈ nurse`. They make a stereotype in the corpus measurable.
+
+<Note type="warning" title="This is not RAG">
+  This historical example concerns word embeddings trained on large corpora—including Google News or Wikipedia depending on the experiment—not a RAG pipeline. Modern RAG can nevertheless combine three sources of bias: its corpus, the embedding retrieving passages, and the LLM interpreting them.
+</Note>
+
+Vector similarity proves neither an essence of language nor that every person shares a prejudice: it reveals a statistical regularity in selected texts. Results depend on date, language, corpus, tokenizer, algorithm, and how the analogy is framed. This is exactly why those elements need documentation.
+
+### Bias is not limited to text
+
+In 2018, **Gender Shades** found large skin-type and gender disparities in three commercial gender-classification systems: up to 34.7% errors for darker-skinned women versus at most 0.8% for lighter-skinned men. These historical measurements do not describe current versions. They show why a global average can hide that some groups bear far more errors than others.
+
+Image generators may overrepresent particular genders or appearances for occupations, sexualise people differently, reproduce Western norms, or erase disability. Filters applied later can create exclusions of their own. The useful question is not only “is the image attractive?” but “which people and possibilities does the system make normal, rare, or impossible?”
+
+### Can bias be fixed?
+
+Some effects can be **measured and reduced**; promising a permanently “debiased” model would be misleading. Improving one metric may harm another group, hide a symptom without changing internal representations, or impose the developer's chosen definition of fairness.
+
+Interventions span the entire lifecycle:
+
+1. **before training**: document provenance, identify omissions, balance or reweight data, improve annotation;
+2. **during training and fine-tuning**: change objectives, examples, and evaluation feedback without equating majority preference with justice;
+3. **in RAG**: diversify sources, audit retrieval by group, cite passages, and allow contradiction;
+4. **at output**: apply safeguards and filters while measuring false positives and asymmetric effects;
+5. **in evaluation**: test real scenarios, publish subgroup results, involve affected people, and monitor regressions;
+6. **in documentation**: publish evaluation sets, limits, excluded uses, model cards, and datasheets—and distinguish what is reproducible from what is not.
+
+Learners should vary wording, ask which perspectives are missing, request counterexamples, compare sources, and never use an LLM alone for decisions affecting a person's rights, health, employment, or education.
+
+“Who produced this model?” therefore opens more questions: with which data and rights, in which languages, under which annotation values, with what fine-tuning, evaluations, known incidents, and reproducibility? Missing answers are themselves important evidence when choosing a tool.
+
+## Mapping the tools
+
+| Element | What it provides | Watch out for |
+|---|---|---|
+| **Model** | Predicts an output | Plausible errors, bias, limited context |
+| **Chatbot** | Organises a conversation | Illusion of expertise or stable relationship |
+| **AI-enabled IDE** | Exposes code and project context | Accepting code you do not understand |
+| **Agent harness** | Orchestrates model, context, and tools | Excessive permissions |
+| **Agent** | Chains actions towards a goal | Drift or irreversible actions |
+| **Skill** | Adds a reusable procedure | Outdated or malicious procedure |
+| **Memory** | Reinjects prior information | Sensitive, false, or stale data |
+| **RAG** | Retrieves relevant passages | Incomplete or poor corpus |
+
+Claude Code and OpenCode illustrate development harnesses; Hermes Agent and OpenClaw emphasise autonomy and tools. Skills such as `/learn`, `/grill-me`, or those in Superpowers enforce a method without necessarily changing the underlying model. Categories overlap and products change quickly: inspect what each tool can **read, write, execute, and retain**.
+
+Other layers run or distribute models: **Hugging Face** hosts models, datasets, and applications; **OpenRouter** provides a common API and price catalogue; **LiteLLM** presents many providers through a uniform API and can act as a proxy; **llama.cpp**, **Ollama**, and **Freetoken** support local workflows; **vLLM** targets high-throughput serving. These are catalogues, gateways, platforms, or engines—not models.
+
+The **Model Context Protocol** (MCP) standardises how an application exposes tools, resources, and prompts to a model. It avoids bespoke integration for every client, but does not make a connection safe by magic: an MCP server is software granted capabilities and must be authenticated, constrained, and audited.
+
+## FRAME: asking for help that teaches
+
+The French mnemonic **CADRE**—rendered here as **FRAME**—turns a vague request into a learning contract:
+
+- **F — Foundation**: who am I and what do I already know?
+- **R — Result**: what do I want to understand or achieve?
+- **A — Approach**: how should the AI help me?
+- **M — Mandated limits**: what must it not do?
+- **E — Evaluation**: how will we check the answer?
+
+```text
+Foundation:
+I am new to Linux and only know pwd and ls.
+
+Result:
+I want to understand absolute and relative paths.
+
+Approach:
+Ask one question at a time and adapt to my answers.
+
+Mandated limits:
+Do not give the solution immediately or introduce more than three new commands.
+
+Evaluation:
+Finish with a task I must solve and explain unaided.
+```
+
+Approach and limits preserve productive difficulty. Evaluation returns proof to the learner: can they explain, apply, and correct without copying? This is a [**Socratic conversation**](https://en.wikipedia.org/wiki/Socratic_method): the AI diagnoses, questions, waits, challenges, and offers graded hints instead of immediately delivering a solution.
+
+## More good, more bad
+
+| More harmful | More useful |
+|---|---|
+| Copy without understanding | Rephrase and justify yourself |
+| Ask for the solution immediately | Try, request a hint, try again |
+| Confuse confidence with truth | Seek objections, sources, and tests |
+| Ignore how the LLM works | Know its limits and tools |
+| Always choose the strongest model | Choose a sufficient model |
+| Delegate insignificant output | Spend compute where value warrants it |
+| Depend on an irreplaceable service | Keep data, methods, and fallbacks |
+
+<Note type="success" title="Effort is not a design flaw">
+  Training a model requires substantial computation; lasting human learning requires substantial effort. AI can remove irrelevant barriers and accelerate feedback, but should not replace the recall, problem-solving, and explanation that turn information into usable knowledge. The Micode video embedded below extends this question.
+</Note>
+
+<VideoEmbed id="4xq6bVbS-Pw" title="La fabrique des idiots — Micode (French)" />
+
+## Choosing: performance, cost, and openness
+
+Catalogues and prices change rapidly. Recent families discussed in class included GPT Astra and Sol, Claude Fable, Kimi K3, GLM, and Qwen. Rather than freeze a soon-obsolete price here, consult official pages and compare input, output, and possible cache-token costs for the actual task.
+
+The [public OpenRouter catalogue](https://openrouter.ai/models) supports point-in-time comparison. Any observed price must be dated and tied to the exact provider: one model may have several routes, limits, or promotions. This course therefore does not freeze a table that would become misleading; a later revision can attach a dated snapshot from the `GET /api/v1/models` API.
+
+### A dated snapshot for learning to read prices
+
+The following is an **extract recorded on 15 September 2026** from the OpenRouter view supplied in class. Prices are US dollars per million tokens; discounts may disappear and do not necessarily apply to **ZDR** (*Zero Data Retention*) routes. ZDR means a provider declares it does not retain prompts and responses after processing. This reduces a retention risk but is not, by itself, proof visible to the client: contractual claims, route selection, and subprocessors still require trust. The context window is an advertised maximum, not a promise that every token will be used equally well.
+
+| Model | Input / M tokens | Output / M tokens | Context | Snapshot note |
+|---|---:|---:|---:|---|
+| ReMM SLERP 13B | $0.35 | $0.65 | 6,144 | — |
+| Meta Muse Glimmer 30B | $0.30 | $1.10 | 131,072 | — |
+| Mistral Small 3.1 24B | $0.351 | $0.555 | 128,000 | — |
+| Qwen3 Coder 480B A35B | $0.22 | $1.80 | 262,144 | — |
+| Qwen2.5 72B Instruct | $0.36 | $0.40 | 32,768 | — |
+| GLM 4.6V | $0.30 | $0.90 | 131,072 | — |
+| Qwen3 VL 8B Thinking | $0.18 | $2.10 | 131,072 | — |
+| DeepSeek V3.1 Terminus | $0.27 | $1.00 | 163,840 | — |
+| Xiaomi MiMo-V2.5-Pro | $0.3045 | $0.609 | 1,050,000 | 30% promotion |
+| MiniMax M2.5 | $0.27 | $0.95 | 204,800 | — |
+| Qwen3.5-27B | $0.195 | $1.56 | 262,144 | — |
+| Qwen3.8 27B | $0.15 | $1.875 | 1,000,000 | 25% promotion |
+| MiniMax M3 | $0.23 | $0.96 | 1,048,576 | — |
+| Inception Mercury 2 | $0.25 | $0.75 | 128,000 | — |
+
+This table is **neither a quality ranking nor a recommendation**. It primarily shows that input and output prices differ, and that a large context window is not free when filled. OpenRouter's displayed latency and throughput are variable operational measurements; they are not reproduced here as intrinsic model characteristics.
+
+Estimate a request with:
+
+$$
+\text{cost} = \frac{T_{input} \times P_{input} + T_{output} \times P_{output}}{1\,000\,000}
+$$
+
+For example, at the recorded Qwen3.8 27B price, 100,000 input tokens and 20,000 output tokens would cost approximately $0.0525 before caching or special charges. This says nothing about output quality: it makes the cost of oversized context and needlessly long answers visible.
+
+For a premium model such as Astral, use the same calculation and compare it on a **representative question set**. If Astral costs ten times more but yields no measurable improvement when teaching `pwd`, the extra cost adds nothing to that task. It may be justified where verified results are genuinely better. Choose after a small evaluation, not from overall rank.
+
+Ask: **what is the most economical, controllable model that can answer this task correctly?** The highest-performing model is not always required.
+
+“Open” needs qualification: an **open-weights** model makes parameters downloadable without guaranteeing open code, training data, or method. Open-source software, open weights, open data, and a reproducible recipe are four different properties.
+
+## Local, cloud, and privacy
+
+Local inference keeps control over data and model version, works offline, and prevents a remote update from suddenly changing a tool—or a relationship someone had formed with it. It demands hardware, energy, maintenance, and expertise. Cloud services provide large models with less administration in exchange for dependency and data transfer.
+
+GPU **VRAM** strongly limits local model size and speed. **Quantisation** represents weights with fewer bits—such as 8 or 4 instead of 16—to reduce memory, storage, and sometimes compute time. This compression can reduce accuracy, with effects varying by model, method, and task. Some engines offload layers to slower system RAM. Apple Silicon uses unified memory shared by CPU and GPU, notably exploited by MLX.
+
+Using a US provider may allow US authorities to require access to some data under several laws and procedures; invoking only the PATRIOT Act is too simplistic to determine where and how data is accessible. In the EU, GDPR governs personal data and transfers, while the AI Act imposes other duties depending on actors and risk. Do not transmit secrets, personal data, or confidential documents without an appropriate legal basis and safeguards.
+
+## Keeping perspective: speed, fatigue, and compulsive use
+
+AI shortens the idea–answer–correction loop. This can help, but can also prompt “one more request,” proliferating directions, and a pace too fast to review. A CHI 2025 [study of generative AI and critical thinking](https://www.microsoft.com/en-us/research/publication/the-impact-of-generative-ai-on-critical-thinking-self-reported-reductions-in-cognitive-effort-and-confidence-effects-from-a-survey-of-knowledge-workers/) reports lower self-reported critical effort as trust in AI rises. It does not prove AI alone causes burnout or addiction, but supports preserving control and verification.
+
+A 2025 [longitudinal randomised study of chatbot use](https://arxiv.org/abs/2503.17473) also examines loneliness, emotional dependence, socialisation, and problematic use; associations vary with behaviour and do not justify individual diagnosis.
+
+Subscriptions with quotas and meters add a classic **sunk-cost** pressure: “I paid for these tokens, so I must consume them before reset.” The quota is already paid; sacrificing sleep, time, or quality does not recover it. “Token addiction” describes a possible feeling here, not a medical diagnosis.
+
+Practical safeguards:
+
+- set an objective, duration, and stopping rule before starting;
+- hide meters when unnecessary and never target “100% consumed”;
+- limit concurrent paths and finish verifying before prompting again;
+- preserve screen-free breaks, relationships, and learning without AI;
+- watch for lost sleep, irritability, loss of control, isolation, or inability to work without prompting;
+- for persistent distress, speak to a trusted person and health professional rather than asking a chatbot for diagnosis.
+
+Resilience includes the person: a tool should increase agency, not dictate pace.
+
+## Sufficiency and resilience
+
+A request uses hardware, electricity, cooling, and infrastructure; its footprint varies greatly with model, data centre, load, and electricity mix. Before generating a costly cat video or imaginary island, ask what value it produces and whether a lighter route exists. The point is not to forbid play, but to make the trade-off visible.
+
+A resilient society does not optimise only maximum performance: it retains skills, exportable formats, alternative suppliers, and degraded modes. Not becoming a machine's servant means being able to dispute its answer, take back control, and continue when it disappears. Well-chosen automation can conversely free us from sterile work.
+
+## Summary
+
+- Unpack “AI”: model, interface, and agent are not synonyms.
+- Remember that an LLM predicts tokens; fluency proves nothing.
+- Look for bias in the corpus, retrieval, tuning, and product, asking who bears the errors.
+- Use RAG and tools to ground an answer, then verify sources and results.
+- Use CADRE/FRAME and Socratic dialogue to preserve learning effort.
+- Never submit what you cannot explain or test.
+- Choose the sufficient model rather than automatically the strongest.
+- Distinguish weights, code, data, and method when discussing openness.
+- Balance local and cloud against privacy, cost, capacity, and dependency.
+- Prefer control and resilience to a merely more powerful hegemony.
+
+## Resources
+
+- [*Attention Is All You Need* (2017)](https://arxiv.org/abs/1706.03762), the Transformer paper;
+- [the foundational RAG paper (2020)](https://arxiv.org/abs/2005.11401);
+- [*Man is to Computer Programmer as Woman is to Homemaker?* (2016)](https://arxiv.org/abs/1607.06520), a historical study of embedding bias;
+- [*Gender Shades* (2018)](https://proceedings.mlr.press/v81/buolamwini18a.html), an intersectional audit of image classifiers;
+- [*Model Cards for Model Reporting* (2019)](https://arxiv.org/abs/1810.03993) and [*Datasheets for Datasets* (2021)](https://arxiv.org/abs/1803.09010), transparency proposals;
+- [official NotebookLM help](https://support.google.com/notebooklm/);
+- [the EU Artificial Intelligence Act](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) and [the CNIL overview of GDPR](https://www.cnil.fr/en/gdpr-developers-guide);
+- [MLX](https://github.com/ml-explore/mlx), Apple's machine-learning research framework;
+- [OpenRouter](https://openrouter.ai/models) and [Hugging Face](https://huggingface.co/models), model catalogues;
+- [llama.cpp](https://github.com/ggml-org/llama.cpp), [vLLM](https://docs.vllm.ai/), [Ollama](https://ollama.com/), and [Freetoken](https://freetoken.ai/), inference engines and tools;
+- [MCP specification](https://modelcontextprotocol.io/specification/latest) and [LiteLLM documentation](https://docs.litellm.ai/).

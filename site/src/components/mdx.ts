@@ -23,6 +23,7 @@ import Img from "./Img.astro";
 import G from "./G.astro";
 import WikiImage from "./WikiImage.astro";
 import Artefact from "./Artefact.astro";
+import VideoEmbed from "./VideoEmbed.astro";
 
 export const mdxComponents = {
   Note,
@@ -47,4 +48,5 @@ export const mdxComponents = {
   G,
   WikiImage,
   Artefact,
+  VideoEmbed,
 };

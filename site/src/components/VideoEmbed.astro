@@ -1,0 +1,68 @@
+---
+/**
+ * Intégration YouTube à consentement préalable — exception explicite à la
+ * règle « tout statique et local ». Aucune requête externe avant le clic.
+ */
+interface Props {
+  /** Identifiant YouTube strict (11 caractères), jamais une URL libre. */
+  id: string;
+  /** Titre accessible de la vidéo. */
+  title: string;
+}
+
+const { id, title } = Astro.props;
+if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+  throw new Error(`VideoEmbed: identifiant YouTube invalide « ${id} »`);
+}
+const watchUrl = `https://www.youtube.com/watch?v=${id}`;
+---
+
+<figure class="video-embed" data-video-embed data-video-id={id}>
+  <figcaption>{title}</figcaption>
+  <div class="video-embed__consent">
+    <p data-lang="fr">Cette vidéo est hébergée par YouTube. La charger transmettra notamment votre adresse IP à Google.</p>
+    <p data-lang="en">This video is hosted by YouTube. Loading it will notably disclose your IP address to Google.</p>
+    <button type="button" class="video-embed__load">
+      <span data-lang="fr">Charger la vidéo</span><span data-lang="en">Load video</span>
+    </button>
+    <a href={watchUrl} target="_blank" rel="noopener noreferrer">
+      <span data-lang="fr">Ouvrir sur YouTube ↗</span><span data-lang="en">Open on YouTube ↗</span>
+    </a>
+  </div>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-video-embed]").forEach((root) => {
+    root.querySelector("button")?.addEventListener("click", () => {
+      const id = root.dataset.videoId;
+      if (!id) return;
+      const frame = document.createElement("iframe");
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
+      frame.title = root.querySelector("figcaption")?.textContent ?? "YouTube video";
+      frame.loading = "lazy";
+      frame.referrerPolicy = "strict-origin-when-cross-origin";
+      frame.allow = "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share";
+      frame.allowFullscreen = true;
+      frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+      root.querySelector(".video-embed__consent")?.replaceWith(frame);
+    }, { once: true });
+  });
+</script>
+
+<style>
+  .video-embed {
+    margin: var(--space-5) 0;
+    max-width: var(--measure-wide);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  figcaption { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); font-weight: 700; }
+  .video-embed__consent { display: grid; min-height: 22rem; place-content: center; justify-items: center; gap: var(--space-3); padding: var(--space-6); text-align: center; }
+  .video-embed__consent p { max-width: 52ch; margin: 0; color: var(--color-text-muted); }
+  button { border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+  button:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+  @media print { .video-embed__load { display: none; } }
+</style>
