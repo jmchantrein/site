@@ -1,14 +1,50 @@
 ---
-/** Compatibilité avec les anciens contenus : la visualisation est désormais
- * l'artefact HTML autonome, et non une animation Astro dupliquée. */
-import Artefact from "./Artefact.astro";
 import { pageLocale } from "../lib/locale";
-
-const locale = pageLocale(Astro.url);
-const file = locale === "en" ? "neural-network/index.html" : "reseau-neurones/index.html";
-const title = locale === "en"
-  ? "Training and using a neural network"
-  : "Entraîner puis utiliser un réseau de neurones";
+const en = pageLocale(Astro.url) === "en";
+const t = en
+  ? { title: "A signal crossing a neural network", input: "pixels", layers: "hidden layers", output: "cat: 87%", run: "Propagate", reset: "Reset", note: "The animation illustrates inference, not training: weights are already fixed." }
+  : { title: "Un signal traverse un réseau de neurones", input: "pixels", layers: "couches cachées", output: "chat : 87 %", run: "Propager", reset: "Réinitialiser", note: "L’animation illustre l’inférence, pas l’entraînement : les poids sont déjà fixés." };
+const columns = [[24, [30, 70, 110, 150]], [120, [20, 55, 90, 125, 160]], [220, [35, 75, 115, 155]], [316, [65, 115]]] as const;
 ---
 
-<Artefact file={file} title={title} height={520} />
+<figure class="nn" data-neural-demo>
+  <figcaption><strong>{t.title}</strong><span>{t.note}</span></figcaption>
+  <div class="labels" aria-hidden="true"><span>{t.input}</span><span>{t.layers}</span><span>{t.output}</span></div>
+  <svg viewBox="0 0 340 180" role="img" aria-label={t.title}>
+    <g class="links">
+      {columns.slice(0, -1).flatMap((column, i) => column[1].flatMap((y1) => columns[i + 1][1].map((y2) => (
+        <line x1={column[0]} y1={y1} x2={columns[i + 1][0]} y2={y2} style={`--step:${i}`} />
+      ))))}
+    </g>
+    <g class="nodes">{columns.flatMap(([x, ys], i) => ys.map((y) => <circle cx={x} cy={y} r="8" style={`--step:${i}`} />))}</g>
+  </svg>
+  <div class="actions"><button type="button" data-run>{t.run}</button><button type="button" class="secondary" data-reset>{t.reset}</button></div>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-neural-demo]").forEach((demo) => {
+    demo.querySelector("[data-run]")?.addEventListener("click", () => {
+      demo.classList.remove("is-running");
+      void demo.offsetWidth;
+      demo.classList.add("is-running");
+    });
+    demo.querySelector("[data-reset]")?.addEventListener("click", () => demo.classList.remove("is-running"));
+  });
+</script>
+
+<style>
+  .nn { margin: var(--space-6) 0; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+  figcaption span { display: block; margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); }
+  .labels { display: flex; justify-content: space-between; margin-top: var(--space-4); color: var(--color-text-muted); font: 600 var(--text-xs) var(--font-mono); }
+  svg { display: block; width: 100%; max-height: 18rem; }
+  line { stroke: var(--color-border-strong); stroke-width: 1; opacity: .35; }
+  circle { fill: var(--color-surface-sunken); stroke: var(--color-accent); stroke-width: 2; }
+  .is-running line { animation: pulse .7s calc(var(--step) * .45s) ease both; }
+  .is-running circle { animation: node .55s calc(var(--step) * .45s) ease both; }
+  .actions { display: flex; gap: var(--space-2); }
+  button { border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+  button.secondary { border: 1px solid var(--color-border-strong); background: transparent; color: var(--color-text); }
+  @keyframes pulse { 40% { stroke: var(--color-accent); stroke-width: 3; opacity: 1; } }
+  @keyframes node { 50% { fill: var(--color-accent-weak); transform: scale(1.25); transform-origin: center; } }
+  @media (prefers-reduced-motion: reduce) { .is-running line, .is-running circle { animation: none; } }
+</style>
