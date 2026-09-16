@@ -8,21 +8,11 @@ badge: "Method"
 tags: [AI, learning, critical thinking, prompt]
 terminal: false
 status: [construction]
-provenance:
-  by: mixed
-  reviewedBy: human
-  model: "GPT-5.6 Sol"
-  translated: ai
-  aiShare: 80
 ---
 
 ## How can a learner use AI well?
 
-Recent generative models raise questions about employment and the nature of work. Web development appears particularly exposed, but all skilled service-sector professions are concerned.
-
-In research, these systems already assist mathematics, physics, astrophysics, and medicine—for example through [AlphaFold protein-structure prediction](https://doi.org/10.1038/s41586-021-03819-2). Announcements also attribute increasingly autonomous problem solving to them. A claim as strong as solving the Riemann hypothesis nevertheless requires a published proof verified and accepted by the mathematical community: the precise source mentioned in class must be attached before publication. That caution illustrates the course's argument.
-
-Before entrusting work to these systems, or fearing them, we must understand what they do and verify the respective contributions of machines and people.
+Recent generative models raise questions about web development and, more broadly, skilled service-sector work. They already assist research in mathematics, physics, astrophysics, and medicine—for example through [AlphaFold protein-structure prediction](https://doi.org/10.1038/s41586-021-03819-2)—without warranting claims that AI autonomously solved a major scientific problem. Before entrusting work to these systems, or fearing them, we must understand what they do and verify the respective contributions of machines and people.
 
 The answer does not fit neatly into “good” and “bad” columns. Copying without understanding is poor use; receiving a suitable explanation, being questioned, and then checking the result can be remarkably effective. What matters is how much judgement and effort remain with the learner.
 
@@ -38,7 +28,7 @@ Artificial neurons are old: [McCulloch and Pitts](https://doi.org/10.1007/BF0247
 
 A neuron receives numbers, multiplies them by **weights**, combines them, and passes on a result. During **training**, the error between prediction and expected result is used to adjust weights. During **inference**, learned weights process new input.
 
-<Artefact file="neural-network/index.html" title="Training and using a neural network" height={520} />
+<NeuralNetworkDemo />
 
 <Note type="info" title="The cat example is deliberately simple">
   Supervised learning can use pictures labelled “cat” or “not a cat” and adjust the network from its errors. Unsupervised, self-supervised—central to LLMs—and reinforcement learning also exist. A modern model is vastly more complex than this mental sketch.
@@ -64,7 +54,7 @@ A common **retrieval-augmented generation** (RAG) pipeline:
 
 Retrieval supplies context; the model writes. It cannot ensure the right passage exists, is true, or is interpreted correctly.
 
-<Artefact file="rag-pipeline/index.html" title="The five stages of a RAG pipeline" height={520} />
+<RagFlow />
 
 <Note type="warning" title="Flat Earth in, flat Earth out">
   A documentary tool supplied only with texts claiming Earth is flat may answer consistently with those sources. NotebookLM can be useful for questioning a corpus and returning to citations, but its answers remain bounded by the quality, representativeness, and currency of the supplied documents.
@@ -174,10 +164,8 @@ Approach and limits preserve productive difficulty. Evaluation returns proof to 
 | Depend on an irreplaceable service | Keep data, methods, and fallbacks |
 
 <Note type="success" title="Effort is not a design flaw">
-  Training a model requires substantial computation; lasting human learning requires substantial effort. AI can remove irrelevant barriers and accelerate feedback, but should not replace the recall, problem-solving, and explanation that turn information into usable knowledge. The Micode video embedded below extends this question.
+  Training a model requires substantial computation; lasting human learning requires substantial effort. AI can remove irrelevant barriers and accelerate feedback, but should not replace the recall, problem-solving, and explanation that turn information into usable knowledge. Micode’s video [*La fabrique des idiots*](https://www.youtube.com/watch?v=4xq6bVbS-Pw) extends this question.
 </Note>
-
-<VideoEmbed id="4xq6bVbS-Pw" title="La fabrique des idiots — Micode (French)" />
 
 ## Choosing: performance, cost, and openness
 
