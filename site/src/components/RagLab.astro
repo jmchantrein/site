@@ -1,0 +1,12 @@
+---
+import Artefact from "./Artefact.astro";
+import { pageLocale } from "../lib/locale";
+
+const en = pageLocale(Astro.url) === "en";
+---
+
+<Artefact
+  file={en ? "rag-pipeline-lab/index.html" : "chaine-rag-lab/index.html"}
+  title={en ? "Inspect a RAG pipeline" : "Inspecter une chaîne RAG"}
+  height={620}
+/>
