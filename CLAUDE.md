@@ -20,7 +20,12 @@ Mayer), WCAG AA (corps AAA).
   de cours via `<WikiImage>` (images libres, attribution liée vers la page
   Commons) — sont affichées depuis Commons (pas d'images à héberger ni de
   licences à gérer dans le dépôt), avec repli silencieux `onerror`. C'est
-  la seule ressource externe autorisée.
+  une ressource externe autorisée.
+  **Seconde exception explicite** (décision auteur, septembre 2026) : les
+  vidéos YouTube citées dans un cours peuvent être intégrées uniquement via
+  le composant `<VideoEmbed>`. Celui-ci affiche d'abord un écran local et ne
+  contacte le domaine `youtube-nocookie.com` qu'après consentement explicite
+  du lecteur. Aucun iframe YouTube ne doit être écrit directement dans le MDX.
 - **KISS / DRY** : préférer la simplicité ; un composant se définit une fois
   (`site/src/components/` + `site/src/styles/components.css`), les pages ne
   font qu'instancier.

@@ -1,3 +1,5 @@
+import VideoEmbed from "./VideoEmbed.astro";
+
 /** Composants disponibles dans TOUT fichier MDX sans import — passés via
     `<Content components={mdxComponents} />` par les pages de rendu.
     C'est la liste blanche du cadre pédagogique. */
@@ -28,6 +30,7 @@ import NeuralNetworkDemo from "./NeuralNetworkDemo.astro";
 import RagFlow from "./RagFlow.astro";
 
 export const mdxComponents = {
+  VideoEmbed,
   Note,
   Exercise,
   Cmd,
