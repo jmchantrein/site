@@ -45,7 +45,7 @@ test("la vidéo du cours IA garde sa vignette locale avant consentement", async 
 
     assert.ok(embed, "le lecteur vidéo doit être rendu");
     assert.match(embed, /data-video-id="4xq6bVbS-Pw"/);
-    assert.match(embed, /src="\/site\/images\/videos\/la-fabrique-des-idiots\.svg"/);
+    assert.match(embed, /src="\/site\/images\/videos\/4xq6bVbS-Pw\.svg"/);
     assert.doesNotMatch(embed, /<iframe\b/);
     assert.doesNotMatch(embed, /href="https:\/\/www\.youtube\.com/);
   }

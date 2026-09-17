@@ -8,20 +8,22 @@ interface Props {
   id: string;
   /** Titre accessible de la vidéo. */
   title: string;
-  /** Vignette locale affichée avant consentement. */
+  /** Vignette locale affichée avant consentement (par défaut : /images/videos/<id>.svg). */
   poster?: string;
 }
 
-const { id, title, poster } = Astro.props;
+const { id, title, poster: posterProp } = Astro.props;
 if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
   throw new Error(`VideoEmbed: identifiant YouTube invalide « ${id} »`);
 }
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+const poster = posterProp ?? `${base}images/videos/${id}.svg`;
 ---
 
 <figure class="video-embed" data-video-embed data-video-id={id}>
   <figcaption>{title}</figcaption>
   <div class="video-embed__consent">
-    {poster && <img src={poster} alt="" loading="lazy" />}
+    <img src={poster} alt="" loading="lazy" />
     <div class="video-embed__prompt">
       <p data-lang="fr">Cette vidéo est hébergée par YouTube. La lire transmettra notamment votre adresse IP à Google.</p>
       <p data-lang="en">This video is hosted by YouTube. Playing it will notably disclose your IP address to Google.</p>
