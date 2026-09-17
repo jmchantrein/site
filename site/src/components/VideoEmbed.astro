@@ -8,26 +8,30 @@ interface Props {
   id: string;
   /** Titre accessible de la vidéo. */
   title: string;
+  /** Vignette locale affichée avant consentement (par défaut : /images/videos/<id>.svg). */
+  poster?: string;
 }
 
-const { id, title } = Astro.props;
+const { id, title, poster: posterProp } = Astro.props;
 if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
   throw new Error(`VideoEmbed: identifiant YouTube invalide « ${id} »`);
 }
-const watchUrl = `https://www.youtube.com/watch?v=${id}`;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+const poster = posterProp ?? `${base}images/videos/${id}.svg`;
 ---
 
 <figure class="video-embed" data-video-embed data-video-id={id}>
   <figcaption>{title}</figcaption>
   <div class="video-embed__consent">
-    <p data-lang="fr">Cette vidéo est hébergée par YouTube. La charger transmettra notamment votre adresse IP à Google.</p>
-    <p data-lang="en">This video is hosted by YouTube. Loading it will notably disclose your IP address to Google.</p>
-    <button type="button" class="video-embed__load">
-      <span data-lang="fr">Charger la vidéo</span><span data-lang="en">Load video</span>
-    </button>
-    <a href={watchUrl} target="_blank" rel="noopener noreferrer">
-      <span data-lang="fr">Ouvrir sur YouTube ↗</span><span data-lang="en">Open on YouTube ↗</span>
-    </a>
+    <img src={poster} alt="" loading="lazy" />
+    <div class="video-embed__prompt">
+      <p data-lang="fr">Cette vidéo est hébergée par YouTube. La lire transmettra notamment votre adresse IP à Google.</p>
+      <p data-lang="en">This video is hosted by YouTube. Playing it will notably disclose your IP address to Google.</p>
+      <button type="button" class="video-embed__load">
+        <span aria-hidden="true">▶</span>
+        <span data-lang="fr">Lire la vidéo</span><span data-lang="en">Play video</span>
+      </button>
+    </div>
   </div>
 </figure>
 
@@ -52,16 +56,19 @@ const watchUrl = `https://www.youtube.com/watch?v=${id}`;
 <style>
   .video-embed {
     margin: var(--space-5) 0;
-    max-width: var(--measure-wide);
+    width: 100%;
+    box-sizing: border-box;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;
   }
   figcaption { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); font-weight: 700; }
-  .video-embed__consent { display: grid; min-height: 22rem; place-content: center; justify-items: center; gap: var(--space-3); padding: var(--space-6); text-align: center; }
-  .video-embed__consent p { max-width: 52ch; margin: 0; color: var(--color-text-muted); }
-  button { border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+  .video-embed__consent { position: relative; display: grid; aspect-ratio: 16 / 9; place-items: center; overflow: hidden; background: var(--color-surface-sunken); text-align: center; }
+  .video-embed__consent img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .video-embed__prompt { position: relative; display: grid; justify-items: center; gap: var(--space-3); max-width: min(34rem, calc(100% - 2 * var(--space-4))); padding: var(--space-4); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-surface) 92%, transparent); box-shadow: var(--shadow-2); }
+  .video-embed__prompt p { margin: 0; color: var(--color-text-muted); }
+  button { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
   button:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
   @media print { .video-embed__load { display: none; } }

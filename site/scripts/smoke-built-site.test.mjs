@@ -38,6 +38,19 @@ test("une page de cours conserve ses parcours interactifs essentiels", async () 
   assert.match(html, /href="\/site\/en\/cours\/bash-bases\/?"/);
 });
 
+test("la vidéo du cours IA garde sa vignette locale avant consentement", async () => {
+  for (const page of ["cours/ia-apprentissage/index.html", "en/cours/ia-apprentissage/index.html"]) {
+    const html = await output(page);
+    const embed = html.match(/<figure class="video-embed"[\s\S]*?<\/figure>/)?.[0];
+
+    assert.ok(embed, "le lecteur vidéo doit être rendu");
+    assert.match(embed, /data-video-id="4xq6bVbS-Pw"/);
+    assert.match(embed, /src="\/site\/images\/videos\/4xq6bVbS-Pw\.svg"/);
+    assert.doesNotMatch(embed, /<iframe\b/);
+    assert.doesNotMatch(embed, /href="https:\/\/www\.youtube\.com/);
+  }
+});
+
 test("le sommaire mobile est navigable dans le HTML rendu au build", async () => {
   const html = await output("cours/bash-bases/index.html");
   const mobileToc = html.match(/<details class="toc-m"[^>]*>[\s\S]*?<\/details>/)?.[0];
