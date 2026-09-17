@@ -28,19 +28,15 @@ const u0 = units[0];
 const featuredCourse = !u0 ? null : u0.kind === "serie"
   ? { href: `${cpfx}/cours/serie/${u0.serie}/`, title: SERIES[u0.serie][locale], desc: SERIES[u0.serie].desc[locale], meta: `${u0.modules.length} modules` }
   : { href: `${cpfx}/cours/${slug(u0.entry.id)}/`, title: u0.entry.data.title, desc: u0.entry.data.description, meta: u0.entry.data.duration ? `≈ ${u0.entry.data.duration} min` : "" };
-const recommended = !u0 ? null : u0.kind === "serie"
-  ? {
-      href: `${cpfx}/cours/${slug(u0.modules[0].id)}/`,
-      title: u0.modules[0].data.title,
-      duration: u0.modules.reduce((sum, module) => sum + (module.data.duration ?? 0), 0),
-      modules: u0.modules.length,
-    }
-  : {
-      href: `${cpfx}/cours/${slug(u0.entry.id)}/`,
-      title: u0.entry.data.title,
-      duration: u0.entry.data.duration ?? 0,
-      modules: 1,
-    };
+// Point de départ éditorial explicite : apprendre à travailler avec l'IA.
+// Ne pas le faire dépendre de l'ordre du catalogue, qui peut évoluer.
+const recommendedEntry = cours.find((entry) => slug(entry.id) === "ia-apprentissage");
+const recommended = recommendedEntry ? {
+  href: `${cpfx}/cours/ia-apprentissage/`,
+  title: recommendedEntry.data.title,
+  duration: recommendedEntry.data.duration ?? 0,
+  modules: 1,
+} : null;
 
 const articles = await getCollection("miscelanea", ({ data, id }) =>
   !data.draft && (locale === "en" ? id.startsWith("en/") : !id.startsWith("en/")));

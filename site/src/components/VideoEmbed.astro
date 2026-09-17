@@ -1,5 +1,6 @@
 ---
-/** Lecteur YouTube embarqué, à la largeur de sa colonne. */
+/** Lecteur YouTube embarqué, à la largeur de sa colonne, avec plein écran local. */
+import Icon from "./Icon.astro";
 interface Props {
   /** Identifiant strict d'une vidéo, ou identifiant d'une playlist. */
   id?: string;
@@ -24,7 +25,13 @@ const src = id
 ---
 
 <figure class="video-embed" data-video-id={id} data-playlist-id={playlistId}>
-  <figcaption>{title}</figcaption>
+  <figcaption>
+    <span>{title}</span>
+    <button class="video-embed__fullscreen" type="button" data-video-fullscreen aria-label={`Afficher « ${title} » en plein écran`} title="Plein écran">
+      <Icon name="expand" />
+      <span data-lang="fr">Plein écran</span><span data-lang="en">Full screen</span>
+    </button>
+  </figcaption>
   <iframe
     src={src}
     title={title}
@@ -36,6 +43,17 @@ const src = id
   ></iframe>
 </figure>
 
+<script>
+  document.querySelectorAll("[data-video-fullscreen]").forEach((button) => {
+    if (button.getAttribute("data-ready")) return;
+    button.setAttribute("data-ready", "true");
+    button.addEventListener("click", () => {
+      const frame = button.closest(".video-embed");
+      if (frame?.requestFullscreen) frame.requestFullscreen();
+    });
+  });
+</script>
+
 <style>
   .video-embed {
     margin: var(--space-5) 0;
@@ -46,7 +64,13 @@ const src = id
     background: var(--color-surface);
     overflow: hidden;
   }
-  figcaption { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); font-weight: 700; }
+  figcaption { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); font-weight: 700; }
+  .video-embed__fullscreen { display: inline-flex; align-items: center; gap: var(--space-2); flex: none; padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); cursor: pointer; font-size: var(--text-xs); }
+  .video-embed__fullscreen:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+  .video-embed__fullscreen :global(svg) { width: 1rem; height: 1rem; }
+  .video-embed:fullscreen { display: grid; align-content: center; width: 100vw; height: 100vh; border: 0; border-radius: 0; background: #000; }
+  .video-embed:fullscreen figcaption { background: var(--color-surface); }
+  .video-embed:fullscreen iframe { width: 100vw; max-height: calc(100vh - 3rem); }
   iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
   @media print { iframe { display: none; } }
 </style>

@@ -1,49 +1,27 @@
 ---
 /**
- * DOCK — lanceur des deux outils de l'en-tête (terminal et Pomodoro).
- * Le registre vit dans src/data/dock.ts ; le comportement (fenêtres,
- * minuterie de lecture active et modes du terminal) dans
+ * DOCK — lanceur direct du terminal dans l'en-tête.
+ * Le comportement de la fenêtre et les modes du terminal vivent dans
  * src/scripts/dock.js. La fenêtre terminal embarque un vrai composant
  * Terminal (mode émulé) câblé par site.js au chargement.
  */
 import Icon from "./Icon.astro";
 import Terminal from "./Terminal.astro";
-import { DOCK_APPS } from "../data/dock";
 
 interface Props {
   locale?: "fr" | "en";
 }
 const { locale = "fr" } = Astro.props;
 const T = {
-  fr: { tools: "Outils", dock: "Applications", opts: "Options :", grow: "Agrandir", fs: "Plein écran", min: "Minimiser", close: "Fermer", comment: "# terminal du dock — tapez « help »" },
-  en: { tools: "Tools", dock: "Applications", opts: "Options:", grow: "Enlarge", fs: "Full screen", min: "Minimise", close: "Close", comment: "# dock terminal — type “help”" },
+  fr: { terminal: "Ouvrir le terminal", grow: "Agrandir", fs: "Plein écran", min: "Minimiser", close: "Fermer", comment: "# terminal du dock — tapez « help »" },
+  en: { terminal: "Open the terminal", grow: "Enlarge", fs: "Full screen", min: "Minimise", close: "Close", comment: "# dock terminal — type “help”" },
 }[locale];
 ---
-<details class="dock" data-dock-context="idle">
-  <summary class="dock__trigger"><Icon name="settings" class="dock__trigger-icon" />{T.tools}</summary>
-  <div class="dock__apps" role="toolbar" aria-label={T.dock}>
-  {DOCK_APPS.map((app) => (
-    <span class="dock__item">
-      <button
-        class="dock__btn"
-        type="button"
-        data-dock-app={app.id}
-        aria-pressed="false"
-        aria-label={app[locale]}
-      >
-        <Icon name={app.icon} class="dock__icon" />
-        <span class="dock__state" aria-hidden="true"></span>
-        <span class="util-btn__label"><span data-lang="fr">{app.fr}</span><span data-lang="en">{app.en}</span></span>
-      </button>
-      {app.options && (
-        <button class="dock__opts" type="button" data-dock-opts={app.id} aria-haspopup="menu" aria-expanded="false" aria-label={`${T.opts} ${app[locale]}`}>
-          <Icon name="ellipsis-vertical" />
-        </button>
-      )}
-    </span>
-  ))}
-  </div>
-</details>
+<div class="dock" data-dock-context="idle">
+  <button class="dock__trigger dock__terminal-trigger" type="button" data-dock-app="terminal" aria-pressed="false" aria-label={T.terminal} title={T.terminal}>
+    <Icon name="square-terminal" class="dock__trigger-icon" />
+  </button>
+</div>
 
 {/* Fenêtres du dock (gérées par dock.js). La fenêtre terminal est pré-rendue
     pour que site.js câble son terminal émulé au chargement. */}

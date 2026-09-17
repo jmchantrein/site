@@ -15,6 +15,10 @@ html {
 html[data-motion="off"] { scroll-behavior: auto; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
+/* Les ancres doivent rester visibles sous l'en-tête collant. Cette règle
+   couvre les titres MDX comme les sections des pages de documentation. */
+:where([id]) { scroll-margin-top: 6rem; }
+
 body {
   font-family: var(--font-sans);
   font-size: var(--text-base);                  /* 18px plancher */
@@ -59,8 +63,11 @@ p { text-wrap: pretty; }
 .kicker--bar::before { content: ""; width: 28px; height: 2px; background: var(--color-accent); }
 
 /* Espacement vertical : segmentation (charge cognitive extrinsèque ↓) */
-.prose > * + * { margin-top: var(--space-4); }
-.prose > h2 + *, .prose > h3 + * { margin-top: var(--space-3); }
+.prose > * + * { margin-top: var(--space-5); }
+.prose > h2 { margin-top: var(--space-8); }
+.prose > h3 { margin-top: var(--space-7); }
+.prose > h4 { margin-top: var(--space-6); }
+.prose > h2 + *, .prose > h3 + *, .prose > h4 + * { margin-top: var(--space-4); }
 .prose ul, .prose ol { padding-left: var(--space-5); }
 .prose li + li { margin-top: var(--space-2); }
 .prose li { padding-left: var(--space-1); }

@@ -1,4 +1,4 @@
-/** DOCK — registre des deux outils disponibles dans l'en-tête. */
+/** DOCK — registre des outils disponibles dans l'en-tête. */
 export interface DockApp {
   id: string;
   icon: string; // nom dans src/components/Icon.astro
@@ -10,5 +10,4 @@ export interface DockApp {
 
 export const DOCK_APPS: DockApp[] = [
   { id: "terminal", icon: "square-terminal", fr: "Terminal", en: "Terminal", options: true },
-  { id: "pomodoro", icon: "timer", fr: "Pomodoro", en: "Pomodoro" },
 ];
