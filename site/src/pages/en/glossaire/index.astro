@@ -3,7 +3,7 @@ import Reading from "../../../layouts/Reading.astro";
 import { getCollection } from "astro:content";
 import VideoEmbed from "../../../components/VideoEmbed.astro";
 import { GLOSSAIRE } from "../../../data/glossaire.mjs";
-import { contentResources } from "../../../lib/content-index.mjs";
+import { contentResources, glossaryMentions } from "../../../lib/content-index.mjs";
 
 /* GLOSSARY INDEX (EN) — generated from the single source of truth
    (src/data/glossaire.mjs), like the FR page. */
@@ -15,7 +15,9 @@ const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b)
 );
 const contents = await getCollection("cours", ({ id, data }) => id.startsWith("en/") && !data.draft);
 const articles = await getCollection("miscelanea", ({ id, data }) => id.startsWith("en/") && !data.draft);
-const resources = contentResources([...contents, ...articles]);
+const publishedContent = [...contents, ...articles];
+const resources = contentResources(publishedContent);
+const citationsBySlug = new Map(GLOSSAIRE.map((entry) => [entry.slug, glossaryMentions(entry, publishedContent, "en")]));
 ---
 <Reading
   title="Glossary"
@@ -35,6 +37,7 @@ const resources = contentResources([...contents, ...articles]);
         <a href={`${base}/en/glossaire/${e.slug}/`}>{e.en}</a>
         {e.en.toLowerCase() !== e.fr.toLowerCase() && <em> · fr&nbsp;: {e.fr}</em>}
         — {e.brefEn}
+        {(citationsBySlug.get(e.slug)?.length ?? 0) > 0 && <span class="resource-uses"> — cited in {citationsBySlug.get(e.slug)?.map((item, index) => <>{index > 0 && ", "}<a href={`${base}/en/${item.collection === "cours" ? "cours" : "miscelanea"}/${item.id.slice(3)}/`}>{item.data.title}</a></>)}</span>}
       </li>
     ))}
   </ul>
@@ -44,6 +47,7 @@ const resources = contentResources([...contents, ...articles]);
     {personnages.map((e) => (
       <li>
         <a href={`${base}/en/glossaire/${e.slug}/`}>{e.en}</a> — {e.brefEn}
+        {(citationsBySlug.get(e.slug)?.length ?? 0) > 0 && <span class="resource-uses"> — cited in {citationsBySlug.get(e.slug)?.map((item, index) => <>{index > 0 && ", "}<a href={`${base}/en/${item.collection === "cours" ? "cours" : "miscelanea"}/${item.id.slice(3)}/`}>{item.data.title}</a></>)}</span>}
       </li>
     ))}
   </ul>
