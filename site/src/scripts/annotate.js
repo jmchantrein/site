@@ -246,6 +246,7 @@
     '<span class="sub">' + T("surlignages & questions", "highlights & questions") + '</span></div>' +
     '<button class="annot-rail__close" type="button" aria-label="' + T("Fermer", "Close") + '">✕</button></div>' +
     '<div class="annot-rail__id">' +
+    '<p class="annot-rail__storage">' + T("Ces notes sont stockées uniquement dans ce navigateur, sur cet appareil. Elles ne sont ni synchronisées ni envoyées au site : exportez-les avant de changer de navigateur, d’appareil ou d’effacer les données du site.", "These notes are stored only in this browser, on this device. They are neither synced nor sent to the site: export them before changing browser or device, or clearing site data.") + '</p>' +
     '<label for="annot-id-name">' + T("Votre nom ou pseudonyme", "Your name or pseudonym") + '</label>' +
     '<input id="annot-id-name" type="text" data-annot-id-name autocomplete="name" placeholder="' + T("ex. Camille D. — attaché à vos notes", "e.g. Camille D. — attached to your notes") + '">' +
     '</div>' +

@@ -26,8 +26,10 @@ interface Props {
   /** Libellé de la vue « à plat » (ex. « Par cours », « Par article »). */
   flatLabel: string;
   locale?: "fr" | "en";
+  /** Vue initiale : les index éditoriaux privilégient la liste des contenus. */
+  defaultView?: "topic" | "flat";
 }
-const { items, flatLabel, locale = "fr" } = Astro.props;
+const { items, flatLabel, locale = "fr", defaultView = "flat" } = Astro.props;
 /* Attributs (aria-label…) : localisés via la prop, comme ContentBadges —
    le doublon data-lang ne vaut que pour le contenu d'élément. */
 const A11Y = {
@@ -54,14 +56,14 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
       ))}
     </div>
     <div class="view-toggle" role="group" aria-label={A11Y.view}>
-      <button data-view="topic" type="button" aria-pressed="true"><span data-lang="fr">Par thématique</span><span data-lang="en">By topic</span></button>
-      <button data-view="flat" type="button" aria-pressed="false">{flatLabel}</button>
+      <button data-view="topic" type="button" aria-pressed={defaultView === "topic"}><span data-lang="fr">Par thématique</span><span data-lang="en">By topic</span></button>
+      <button data-view="flat" type="button" aria-pressed={defaultView === "flat"}>{flatLabel}</button>
     </div>
   </div>
   )}
 
   {topicIds.filter((t) => (counts.get(t) ?? 0) > 0).map((t) => (
-    <section class="theme-block" data-topic-block={t}>
+    <section class="theme-block" data-topic-block={t} hidden={defaultView === "flat"}>
       <div class="theme-block__head">
         <h2>{TOPICS[t]}</h2>
         <span class="theme-block__count">{counts.get(t)} <span data-lang="fr">entrée(s)</span><span data-lang="en">item(s)</span></span>
@@ -87,7 +89,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
     </section>
   ))}
 
-  <div class="topic-flat" data-topic-flat hidden>
+  <div class="topic-flat" data-topic-flat hidden={defaultView !== "flat"}>
     <div class="card-grid">
       {items.map((it) => (
         <a class="module-card" href={it.href} data-topics={it.topics.join(" ")}>
@@ -119,7 +121,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
     const flat = box.querySelector("[data-topic-flat]");
     const flatCards = flat ? flat.querySelectorAll(".module-card") : [];
     let filter = "all";
-    let view = "topic";
+    let view = box.querySelector('.view-toggle button[aria-pressed="true"]')?.getAttribute("data-view") || "flat";
     function render() {
       blocks.forEach((b) => {
         b.hidden = view !== "topic" || (filter !== "all" && b.getAttribute("data-topic-block") !== filter);

@@ -21,11 +21,12 @@ test("les pages représentatives contiennent le chrome et les scripts interactif
   }
 });
 
-test("le dock ne propose que le terminal et le Pomodoro", async () => {
+test("l'en-tête propose directement le terminal, sans menu d'outils ni Pomodoro", async () => {
   const html = await output("index.html");
   const apps = [...html.matchAll(/data-dock-app="([^"]+)"/g)].map((match) => match[1]);
 
-  assert.deepEqual([...new Set(apps)].sort(), ["pomodoro", "terminal"]);
+  assert.deepEqual([...new Set(apps)].sort(), ["terminal"]);
+  assert.doesNotMatch(html, /Pomodoro|>Outils<|>Tools</);
   assert.doesNotMatch(html, /data-pastime/);
 });
 
