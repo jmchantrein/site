@@ -4,6 +4,7 @@ import Reading from "../../layouts/Reading.astro";
 import { mdxComponents } from "../../components/mdx";
 import { GLOSSAIRE } from "../../data/glossaire.mjs";
 import { wikiUrl, wikiImg } from "../../data/glossaire-wiki.mjs";
+import { glossaryMentions } from "../../lib/content-index.mjs";
 
 /* FICHE DU GLOSSAIRE — la page complète d'une entrée. Le contenu long est
    FACULTATIF (collection glossaire) : sans fiche MDX, la page affiche le
@@ -21,6 +22,11 @@ const Content = fiche ? (await render(fiche)).Content : null;
 // Modules (« enseigné dans ») — le lien inter-modules systématique.
 const coursIds = Array.isArray(entry.cours) ? entry.cours : entry.cours ? [entry.cours] : [];
 const cours = await getCollection("cours", ({ id }) => coursIds.includes(id));
+const contenus = [
+  ...await getCollection("cours", ({ id, data }) => !id.startsWith("en/") && !data.draft),
+  ...await getCollection("miscelanea", ({ id, data }) => !id.startsWith("en/") && !data.draft),
+];
+const citations = glossaryMentions(entry, contenus, "fr");
 const badges = [
   entry.type === "personnage" ? "Personnage" : "Terme",
   ...(entry.angl ? ["Anglicisme"] : []),
@@ -48,6 +54,10 @@ const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
     </figure>
   )}
   {Content ? <Content components={mdxComponents} /> : null}
+  {citations.length > 0 && <section class="gloss-citations" aria-labelledby="cite-dans">
+    <h2 id="cite-dans">Cité dans le site</h2>
+    <ul>{citations.map((item) => <li><a href={`${base}/${item.collection === "cours" ? "cours" : "miscelanea"}/${item.id}/`}>{item.data.title}</a></li>)}</ul>
+  </section>}
   <p class="gloss-fiche__liens">
     {cours.length > 0 && (
       <span>Notion enseignée dans : {cours.map((c, i) => (
@@ -60,6 +70,7 @@ const img = entry.type === "personnage" ? wikiImg(entry.slug, 320) : undefined;
 
 <style>
   .gloss-fiche__liens { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .gloss-citations { clear: both; }
   .gloss-portrait { float: right; margin: 0 0 var(--space-3) var(--space-4); max-width: 12rem; }
   .gloss-portrait img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
   .gloss-portrait figcaption { font-size: var(--text-xs); color: var(--color-text-muted, inherit); }

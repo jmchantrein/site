@@ -38,17 +38,36 @@ test("une page de cours conserve ses parcours interactifs essentiels", async () 
   assert.match(html, /href="\/site\/en\/cours\/bash-bases\/?"/);
 });
 
-test("la vidéo du cours IA garde sa vignette locale avant consentement", async () => {
+test("les vidéos sont embarquées directement à la largeur de leur colonne", async () => {
   for (const page of ["cours/ia-apprentissage/index.html", "en/cours/ia-apprentissage/index.html"]) {
     const html = await output(page);
     const embed = html.match(/<figure class="video-embed"[\s\S]*?<\/figure>/)?.[0];
 
     assert.ok(embed, "le lecteur vidéo doit être rendu");
     assert.match(embed, /data-video-id="4xq6bVbS-Pw"/);
-    assert.match(embed, /src="\/site\/images\/videos\/4xq6bVbS-Pw\.svg"/);
-    assert.doesNotMatch(embed, /<iframe\b/);
+    assert.match(embed, /<iframe[^>]+src="https:\/\/www\.youtube-nocookie\.com\/embed\/4xq6bVbS-Pw\?rel=0"/);
     assert.doesNotMatch(embed, /href="https:\/\/www\.youtube\.com/);
   }
+});
+
+test("chaque page de cours affiche sa jauge de provenance humain / IA", async () => {
+  for (const locale of ["", "en/"]) {
+    const root = path.join(DIST, locale, "cours");
+    const entries = await (await import("node:fs/promises")).readdir(root, { withFileTypes: true });
+    for (const entry of entries.filter((item) => item.isDirectory() && item.name !== "serie")) {
+      const html = await readFile(path.join(root, entry.name, "index.html"), "utf8");
+      assert.match(html, /class="prov__gauge"/, `${locale}cours/${entry.name} doit afficher une jauge`);
+    }
+  }
+});
+
+test("le glossaire expose sa navigation, ses ressources et les liens retour", async () => {
+  const [index, entry] = await Promise.all([output("glossaire/index.html"), output("glossaire/alan-turing/index.html")]);
+  assert.match(index, /aria-label="Sections du glossaire"/);
+  assert.match(index, /id="videos"/);
+  assert.match(index, /id="ressources"/);
+  assert.match(entry, /id="cite-dans"/);
+  assert.match(entry, /cours\/ia-apprentissage\//);
 });
 
 test("le sommaire mobile est navigable dans le HTML rendu au build", async () => {

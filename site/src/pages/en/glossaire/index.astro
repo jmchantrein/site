@@ -1,6 +1,9 @@
 ---
 import Reading from "../../../layouts/Reading.astro";
+import { getCollection } from "astro:content";
+import VideoEmbed from "../../../components/VideoEmbed.astro";
 import { GLOSSAIRE } from "../../../data/glossaire.mjs";
+import { contentResources } from "../../../lib/content-index.mjs";
 
 /* GLOSSARY INDEX (EN) — generated from the single source of truth
    (src/data/glossaire.mjs), like the FR page. */
@@ -10,6 +13,9 @@ const termes = GLOSSAIRE.filter((e) => e.type === "terme").sort((a, b) => coll.c
 const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b) =>
   coll.compare(a.en.split(" ").at(-1) ?? a.en, b.en.split(" ").at(-1) ?? b.en),
 );
+const contents = await getCollection("cours", ({ id, data }) => id.startsWith("en/") && !data.draft);
+const articles = await getCollection("miscelanea", ({ id, data }) => id.startsWith("en/") && !data.draft);
+const resources = contentResources([...contents, ...articles]);
 ---
 <Reading
   title="Glossary"
@@ -19,6 +25,9 @@ const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b)
   locale="en"
   altUrl={`${base}/glossaire/`}
 >
+  <nav class="gloss-nav" aria-label="Glossary sections">
+    <a href="#terms">Terms</a><a href="#figures">People</a><a href="#videos">Videos</a><a href="#resources">External resources</a>
+  </nav>
   <h2 id="terms">Technical terms</h2>
   <ul class="gloss-index">
     {termes.map((e) => (
@@ -38,9 +47,23 @@ const personnages = GLOSSAIRE.filter((e) => e.type === "personnage").sort((a, b)
       </li>
     ))}
   </ul>
+
+  <h2 id="videos">Video resources</h2>
+  <div class="gloss-videos">
+    {resources.videos.map((video) => <VideoEmbed {...video} />)}
+  </div>
+
+  <h2 id="resources">Other external resources</h2>
+  <ul class="gloss-index resources-list">
+    {resources.links.map((resource) => <li><a href={resource.url} rel="external noopener">{resource.title}</a></li>)}
+  </ul>
 </Reading>
 
 <style>
   .gloss-index { display: grid; gap: var(--space-2); padding-left: 1.2em; }
   .gloss-index em { color: var(--color-text-muted, inherit); }
+  .gloss-nav { position: sticky; top: var(--space-2); z-index: 2; display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .gloss-nav a { padding: var(--space-1) var(--space-2); }
+  .gloss-videos { display: grid; gap: var(--space-4); }
+  .resources-list a { overflow-wrap: anywhere; }
 </style>
