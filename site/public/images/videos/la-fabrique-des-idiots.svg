@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">La fabrique des idiots</title>
+  <desc id="desc">Vignette locale de la vidéo de Micode consacrée aux effets de l’intelligence artificielle sur l’apprentissage.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#172033"/>
+      <stop offset="1" stop-color="#3b1d4a"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#f4b860" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#f4b860" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#background)"/>
+  <circle cx="1020" cy="150" r="410" fill="url(#glow)"/>
+  <g fill="none" stroke="#f4b860" stroke-width="7" opacity=".72">
+    <path d="M930 134c-94 0-170 70-170 157 0 52 27 98 69 127v73h202v-73c42-29 69-75 69-127 0-87-76-157-170-157Z"/>
+    <path d="M838 265c44-51 140-51 184 0M839 337c43 49 139 49 182 0M930 136v280M808 301h244M866 491v49h128v-49"/>
+  </g>
+  <text x="86" y="250" fill="#f4b860" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="8">MICODE</text>
+  <text x="80" y="345" fill="#fff" font-family="Arial, sans-serif" font-size="76" font-weight="800">LA FABRIQUE</text>
+  <text x="80" y="438" fill="#fff" font-family="Arial, sans-serif" font-size="76" font-weight="800">DES IDIOTS</text>
+  <text x="84" y="508" fill="#d5d9e2" font-family="Arial, sans-serif" font-size="27">Intelligence artificielle et apprentissage</text>
+</svg>
