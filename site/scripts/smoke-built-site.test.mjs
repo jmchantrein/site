@@ -63,10 +63,18 @@ test("chaque page de cours affiche sa jauge de provenance humain / IA", async ()
 });
 
 test("le glossaire expose sa navigation, ses ressources et les liens retour", async () => {
-  const [index, entry] = await Promise.all([output("glossaire/index.html"), output("glossaire/alan-turing/index.html")]);
+  const [index, englishIndex, entry] = await Promise.all([
+    output("glossaire/index.html"),
+    output("en/glossaire/index.html"),
+    output("glossaire/alan-turing/index.html"),
+  ]);
   assert.match(index, /aria-label="Sections du glossaire"/);
   assert.match(index, /id="videos"/);
   assert.match(index, /id="ressources"/);
+  assert.match(index, /glossaire\/ia-generative\/[\s\S]*?cité dans[\s\S]*?cours\/ia-apprentissage\//);
+  assert.match(index, /glossaire\/alan-turing\/[\s\S]*?cité dans[\s\S]*?cours\/ia-apprentissage\//);
+  assert.match(englishIndex, /glossaire\/ia-generative\/[\s\S]*?cited in[\s\S]*?en\/cours\/ia-apprentissage\//);
+  assert.match(englishIndex, /glossaire\/alan-turing\/[\s\S]*?cited in[\s\S]*?en\/cours\/ia-apprentissage\//);
   assert.match(entry, /id="cite-dans"/);
   assert.match(entry, /cours\/ia-apprentissage\//);
 });
