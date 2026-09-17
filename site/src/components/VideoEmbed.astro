@@ -1,57 +1,40 @@
 ---
-/**
- * Intégration YouTube à consentement préalable — exception explicite à la
- * règle « tout statique et local ». Aucune requête externe avant le clic.
- */
+/** Lecteur YouTube embarqué, à la largeur de sa colonne. */
 interface Props {
-  /** Identifiant YouTube strict (11 caractères), jamais une URL libre. */
-  id: string;
+  /** Identifiant strict d'une vidéo, ou identifiant d'une playlist. */
+  id?: string;
+  playlistId?: string;
   /** Titre accessible de la vidéo. */
   title: string;
-  /** Vignette locale affichée avant consentement (par défaut : /images/videos/<id>.svg). */
-  poster?: string;
 }
 
-const { id, title, poster: posterProp } = Astro.props;
-if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+const { id, playlistId, title } = Astro.props;
+if ((id ? 1 : 0) + (playlistId ? 1 : 0) !== 1) {
+  throw new Error("VideoEmbed: fournissez exactement `id` ou `playlistId`");
+}
+if (id && !/^[A-Za-z0-9_-]{11}$/.test(id)) {
   throw new Error(`VideoEmbed: identifiant YouTube invalide « ${id} »`);
 }
-const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
-const poster = posterProp ?? `${base}images/videos/${id}.svg`;
+if (playlistId && !/^[A-Za-z0-9_-]+$/.test(playlistId)) {
+  throw new Error(`VideoEmbed: identifiant de playlist YouTube invalide « ${playlistId} »`);
+}
+const src = id
+  ? `https://www.youtube-nocookie.com/embed/${id}?rel=0`
+  : `https://www.youtube-nocookie.com/embed/videoseries?list=${playlistId}`;
 ---
 
-<figure class="video-embed" data-video-embed data-video-id={id}>
+<figure class="video-embed" data-video-id={id} data-playlist-id={playlistId}>
   <figcaption>{title}</figcaption>
-  <div class="video-embed__consent">
-    <img src={poster} alt="" loading="lazy" />
-    <div class="video-embed__prompt">
-      <p data-lang="fr">Cette vidéo est hébergée par YouTube. La lire transmettra notamment votre adresse IP à Google.</p>
-      <p data-lang="en">This video is hosted by YouTube. Playing it will notably disclose your IP address to Google.</p>
-      <button type="button" class="video-embed__load">
-        <span aria-hidden="true">▶</span>
-        <span data-lang="fr">Lire la vidéo</span><span data-lang="en">Play video</span>
-      </button>
-    </div>
-  </div>
+  <iframe
+    src={src}
+    title={title}
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+    sandbox="allow-scripts allow-same-origin allow-presentation"
+  ></iframe>
 </figure>
-
-<script>
-  document.querySelectorAll<HTMLElement>("[data-video-embed]").forEach((root) => {
-    root.querySelector("button")?.addEventListener("click", () => {
-      const id = root.dataset.videoId;
-      if (!id) return;
-      const frame = document.createElement("iframe");
-      frame.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
-      frame.title = root.querySelector("figcaption")?.textContent ?? "YouTube video";
-      frame.loading = "lazy";
-      frame.referrerPolicy = "strict-origin-when-cross-origin";
-      frame.allow = "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share";
-      frame.allowFullscreen = true;
-      frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
-      root.querySelector(".video-embed__consent")?.replaceWith(frame);
-    }, { once: true });
-  });
-</script>
 
 <style>
   .video-embed {
@@ -64,12 +47,6 @@ const poster = posterProp ?? `${base}images/videos/${id}.svg`;
     overflow: hidden;
   }
   figcaption { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); font-weight: 700; }
-  .video-embed__consent { position: relative; display: grid; aspect-ratio: 16 / 9; place-items: center; overflow: hidden; background: var(--color-surface-sunken); text-align: center; }
-  .video-embed__consent img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .video-embed__prompt { position: relative; display: grid; justify-items: center; gap: var(--space-3); max-width: min(34rem, calc(100% - 2 * var(--space-4))); padding: var(--space-4); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-surface) 92%, transparent); box-shadow: var(--shadow-2); }
-  .video-embed__prompt p { margin: 0; color: var(--color-text-muted); }
-  button { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: 700; cursor: pointer; }
-  button:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
-  @media print { .video-embed__load { display: none; } }
+  @media print { iframe { display: none; } }
 </style>
