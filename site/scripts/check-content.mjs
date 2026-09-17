@@ -23,6 +23,12 @@ function field(block, name) {
   return block.match(new RegExp(`^${name}:\\s*["']?([^"'\\n]+)`, "m"))?.[1]?.trim();
 }
 
+function checkConflictMarkers(source, file) {
+  if (/^(?:<{7}|={7}|>{7})(?: .*)?$/m.test(source)) {
+    errors.push(`${file}: marqueur de conflit Git non résolu`);
+  }
+}
+
 const errors = [];
 
 for (const collection of COLLECTIONS) {
@@ -42,6 +48,8 @@ for (const collection of COLLECTIONS) {
       readFile(path.join(frDir, file), "utf8"),
       readFile(path.join(enDir, file), "utf8"),
     ]);
+    checkConflictMarkers(frSource, `${collection}/${file}`);
+    checkConflictMarkers(enSource, `${collection}/en/${file}`);
     const fr = frontmatter(frSource, `${collection}/${file}`);
     const en = frontmatter(enSource, `${collection}/en/${file}`);
 
