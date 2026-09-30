@@ -2,7 +2,7 @@
    DOCK — lanceur d'applications de l'en-tête + fenêtres flottantes.
    Le dock ne contient que le terminal et le compteur Pomodoro.
    ============================================================================= */
-.dock { position: relative; margin-left: auto; }
+.dock { position: relative; margin-left: auto; display: flex; align-items: center; }
 .dock__trigger { list-style: none; display: flex; align-items: center; justify-content: center; gap: var(--space-2); cursor: pointer; width: 42px; height: 42px; padding: var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .dock__trigger::-webkit-details-marker { display: none; }
 .dock__trigger:hover, .dock__trigger:focus-visible { border-color: var(--color-accent); background: var(--color-accent-weak); }
@@ -100,6 +100,12 @@
    colonne d'un cours et la fenêtre. Sa barre de pane iframe ne sert qu'en
    colonne (la fenêtre a déjà sa propre barre). */
 .term-host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.term-keys { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px var(--space-2); overflow-x: auto; background: var(--term-bar); border-bottom: 1px solid var(--term-border); }
+.term-keys button { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: 27px; padding: 2px 6px; cursor: pointer; color: var(--term-fg); background: var(--term-bg); border: 1px solid var(--term-border); border-radius: var(--radius-sm); }
+.term-keys button:hover, .term-keys button[data-active] { color: var(--term-accent); border-color: var(--term-accent); transform: translateY(1px); }
+.term-keys kbd { padding: 0; color: inherit; background: transparent; border: 0; box-shadow: none; font-size: 11px; }
+.term-keys__echo { min-width: 48px; color: var(--term-dim); font: 11px var(--font-mono); opacity: 0; transition: opacity 160ms; }
+.term-keys__echo[data-active] { opacity: 1; color: var(--term-accent); }
 .term-host__framebar { display: none; }
 .dockwin [data-term-pane="emulated"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .dockwin [data-term-pane="emulated"] .terminal { flex: 1; min-height: 0; }
@@ -121,6 +127,23 @@
 body.dockwin-dragging iframe { pointer-events: none; }
 .dockwin__help { padding: var(--space-2) var(--space-3) var(--space-3); font-size: var(--text-sm); }
 .dockwin__help ol { padding-left: var(--space-5); margin: var(--space-2) 0 0; }
+.companion { flex: 1; min-height: 0; background: var(--term-bg); color: var(--term-fg); }
+.companion__setup { padding: var(--space-3); display: grid; gap: var(--space-2); border-bottom: 1px solid var(--term-border); }
+.companion__setup label { font-size: var(--text-xs); color: var(--term-dim); }
+.companion__setup p { margin: 0; font-size: var(--text-xs); color: var(--term-dim); }
+.companion__setup a { color: var(--term-accent); }
+.companion__connect { display: flex; gap: var(--space-2); }
+.companion__connect input { flex: 1; min-width: 0; font: var(--text-xs) var(--font-mono); padding: var(--space-2); }
+.companion__connect button { cursor: pointer; padding-inline: var(--space-3); }
+.companion__terminal { min-height: 240px; height: 100%; display: flex; flex-direction: column; }
+.companion__terminal[hidden] { display: none; }
+.companion__terminal [data-companion-screen] { flex: 1; min-height: 0; padding: var(--space-2); }
+.companion__terminal .xterm { height: 100%; }
+.alpine-vm { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--term-bg); }
+.alpine-vm__loader { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-2); color: var(--term-dim); font-size: var(--text-xs); border-bottom: 1px solid var(--term-border); }
+.alpine-vm__loader progress { width: min(180px, 35%); }
+.alpine-vm [data-alpine-screen] { flex: 1; min-height: 240px; padding: var(--space-2); }
+.alpine-vm .xterm { height: 100%; }
 
 /* Corps générique des applis */
 .dockapp { padding: var(--space-4); display: grid; gap: var(--space-3); justify-items: center; }

@@ -21,6 +21,9 @@ const T = {
   <button class="dock__trigger dock__terminal-trigger" type="button" data-dock-app="terminal" aria-pressed="false" aria-label={T.terminal} title={T.terminal}>
     <Icon name="square-terminal" class="dock__trigger-icon" />
   </button>
+  <button class="dock__opts" type="button" data-dock-opts="terminal" aria-expanded="false" aria-label={locale === "en" ? "Choose the terminal mode" : "Choisir le mode du terminal"}>
+    <Icon name="ellipsis-vertical" />
+  </button>
 </div>
 
 {/* Fenêtres du dock (gérées par dock.js). La fenêtre terminal est pré-rendue
@@ -40,6 +43,21 @@ const T = {
         unité (pane émulé + pane iframe) qui se déplace telle quelle entre la
         colonne d'un cours et cette fenêtre flottante. */}
     <div class="term-host" data-term-host>
+    <div class="term-keys" data-term-keys aria-label={locale === "en" ? "Send a key or keyboard shortcut" : "Envoyer une touche ou un raccourci clavier"}>
+      <span class="term-keys__echo" data-term-key-echo aria-live="polite"></span>
+      <button type="button" data-term-key="ctrl-a"><kbd>Ctrl</kbd><span>+</span><kbd>A</kbd></button>
+      <button type="button" data-term-key="ctrl-e"><kbd>Ctrl</kbd><span>+</span><kbd>E</kbd></button>
+      <button type="button" data-term-key="ctrl-r"><kbd>Ctrl</kbd><span>+</span><kbd>R</kbd></button>
+      <button type="button" data-term-key="ctrl-c"><kbd>Ctrl</kbd><span>+</span><kbd>C</kbd></button>
+      <button type="button" data-term-key="ctrl-d"><kbd>Ctrl</kbd><span>+</span><kbd>D</kbd></button>
+      <button type="button" data-term-key="ctrl-l"><kbd>Ctrl</kbd><span>+</span><kbd>L</kbd></button>
+      <button type="button" data-term-key="tab"><kbd>Tab</kbd></button>
+      <button type="button" data-term-key="escape"><kbd>Esc</kbd></button>
+      <button type="button" data-term-key="up" aria-label={locale === "en" ? "Up arrow" : "Flèche haute"}><kbd>↑</kbd></button>
+      <button type="button" data-term-key="down" aria-label={locale === "en" ? "Down arrow" : "Flèche basse"}><kbd>↓</kbd></button>
+      <button type="button" data-term-key="left" aria-label={locale === "en" ? "Left arrow" : "Flèche gauche"}><kbd>←</kbd></button>
+      <button type="button" data-term-key="right" aria-label={locale === "en" ? "Right arrow" : "Flèche droite"}><kbd>→</kbd></button>
+    </div>
     <div data-term-pane="emulated">
       <Terminal id="term-dock" title="bash — terminal" comment={T.comment} />
     </div>
@@ -57,6 +75,28 @@ const T = {
           <li><span data-lang="fr">lancez</span><span data-lang="en">run</span> <code>ttyd --writable -p 7681 bash</code> ;</li>
           <li><span data-lang="fr">le cadre ci-dessus se connecte à</span><span data-lang="en">the frame above connects to</span> <code>http://localhost:7681</code>.</li>
         </ol>
+      </div>
+    </div>
+    <div class="alpine-vm" data-term-pane="alpine" hidden>
+      <div class="alpine-vm__loader" data-alpine-loader>
+        <button type="button" data-alpine-start><span data-lang="fr">Démarrer Alpine</span><span data-lang="en">Start Alpine</span></button>
+        <progress data-alpine-progress value="0" max="100"></progress>
+        <span data-alpine-status role="status"><span data-lang="fr">Image locale — téléchargée une fois puis mise en cache.</span><span data-lang="en">Local image — downloaded once, then cached.</span></span>
+      </div>
+      <div data-alpine-screen aria-label={locale === "en" ? "Alpine virtual machine terminal" : "Terminal de la machine virtuelle Alpine"}></div>
+    </div>
+    <div class="companion" data-term-pane="companion" hidden>
+      <div class="companion__setup">
+        <label for="companion-url"><span data-lang="fr">Adresse d’appairage</span><span data-lang="en">Pairing address</span></label>
+        <div class="companion__connect">
+          <input id="companion-url" data-companion-url type="url" spellcheck="false" autocomplete="off" placeholder="wss://localhost:43827/?token=…" />
+          <button type="button" data-companion-connect><span data-lang="fr">Connecter</span><span data-lang="en">Connect</span></button>
+        </div>
+        <p data-companion-status role="status"><span data-lang="fr">Lancez le compagnon local, puis collez son adresse.</span><span data-lang="en">Start the local companion, then paste its address.</span></p>
+        <p><a href={`${import.meta.env.BASE_URL}terminal/install-iadmin-terminal.sh`} download><span data-lang="fr">Télécharger la recette d’installation</span><span data-lang="en">Download the installation recipe</span></a></p>
+      </div>
+      <div class="companion__terminal" data-companion-terminal hidden>
+        <div data-companion-screen aria-label={locale === "en" ? "Connected interactive terminal" : "Terminal interactif connecté"}></div>
       </div>
     </div>
     </div>

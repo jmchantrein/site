@@ -6,6 +6,7 @@ import VideoEmbed from "./VideoEmbed.astro";
 import Note from "./Note.astro";
 import Exercise from "./Exercise.astro";
 import Cmd from "./Cmd.astro";
+import TermKey from "./TermKey.astro";
 import TermLine from "./TermLine.astro";
 import Slides from "./Slides.astro";
 import Slide from "./Slide.astro";
@@ -34,6 +35,7 @@ export const mdxComponents = {
   Note,
   Exercise,
   Cmd,
+  TermKey,
   TermLine,
   Slides,
   Slide,

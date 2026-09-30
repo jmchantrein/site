@@ -166,6 +166,18 @@
 .cmd[data-done="true"] .cmd__hint { color: var(--term-ok); }
 .cmd-out { display: none; }
 
+/* Touche/raccourci cliquable placé dans la colonne pédagogique. */
+.term-key-callout {
+  display: inline-flex; align-items: center; gap: 4px; vertical-align: baseline;
+  margin: 0 2px; padding: 3px 7px; cursor: pointer;
+  color: var(--color-text); background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm);
+  font: inherit; font-size: var(--text-sm);
+}
+.term-key-callout:hover, .term-key-callout:focus-visible, .term-key-callout[data-active] { border-color: var(--color-accent); color: var(--color-accent-text); }
+.term-key-callout kbd { font-size: .8em; }
+.term-key-callout__hint { color: var(--color-text-muted); font-size: var(--text-xs); margin-left: 3px; }
+
 /* -----------------------------------------------------------------------------
    TERMINAL SOMBRE — blanc cassé sur quasi-noir (jamais #fff sur #000)
    --------------------------------------------------------------------------- */

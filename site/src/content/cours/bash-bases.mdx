@@ -23,6 +23,12 @@ Objectifs de ce module :
 
 Les gestes élémentaires (`pwd`, `ls`, `cd`, `cat`, `man`…) sont supposés acquis — ils sont couverts par [Premiers pas dans le shell](../intro-shell/).
 
+### Éditer la ligne sans quitter le clavier
+
+Dans le terminal, commencez à saisir une commande sans la valider, puis envoyez les raccourcis directement depuis le cours : <TermKey stroke="ctrl-a" /> ramène le curseur au début, <TermKey stroke="ctrl-e" /> à la fin et <TermKey stroke="ctrl-r" /> recherche dans l'historique. Les touches <TermKey stroke="left" /> et <TermKey stroke="right" /> déplacent le curseur d'un caractère ; <TermKey stroke="ctrl-c" /> abandonne la ligne ou interrompt la commande en cours.
+
+Ces boutons envoient de **vraies séquences terminal** au mode actif : essayez-les dans la simulation, puis dans un shell local ou SSH connecté.
+
 ## Les trois flux standards
 
 Tout processus naît avec trois canaux :

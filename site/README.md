@@ -62,6 +62,7 @@ Les composants sont disponibles **sans import** (liste blanche dans
 - `<Note type="info|success|warning|danger" title="…">` — admonition (signalement) ;
 - `<Exercise id="unique" level={1|2|3}>` énoncé + `<Fragment slot="solution">` — solution repliable, verrouillée tant que le champ réponse est vide (effet de test) ;
 - `<Cmd cmd="…">` + `<TermLine type="out|ok|warn" tag="…">` — commande cliquable exécutée dans le terminal ;
+- `<TermKey stroke="ctrl-r|left|…">` — touche ou raccourci cliquable envoyé au terminal actif ;
 - `<Slides title="…">` + `<Slide>` (ou `<Slide media>` pour un PDF/iframe) — diaporama ;
 - `<Bypass title="…">` — gabarit d'îlot applicatif : une appli JS pédagogique dans un cadre standard (étiquette, titre, plein écran) ;
 - `<Duo>` prose + `<Fragment slot="media">` — figure **en regard** du texte qu'elle illustre (contiguïté spatiale de Mayer) ; réservé aux figures verticales/compactes (ArchiStack, LayerStack…), repli en pile quand la colonne est étroite (container query) et à l'impression ;

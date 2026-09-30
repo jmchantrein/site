@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { GLOSSAIRE, GLOSSAIRE_BY_SLUG } from "../src/data/glossaire.mjs";
+import { TERMINAL_KEYS } from "../src/data/terminal-keys.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "src", "content");
 const COLLECTIONS = ["cours", "miscelanea", "glossaire"];
@@ -59,6 +60,9 @@ for (const collection of COLLECTIONS) {
     for (const [source, label] of [[frSource, `${collection}/${file}`], [enSource, `${collection}/en/${file}`]]) {
       for (const match of source.matchAll(/<G\s+[^>]*?t=["']([^"']+)["']/g)) {
         if (!GLOSSAIRE_BY_SLUG[match[1]]) errors.push(`${label}: <G> pointe vers le slug inconnu « ${match[1]} »`);
+      }
+      for (const match of source.matchAll(/<TermKey\s+[^>]*?stroke=["']([^"']+)["']/g)) {
+        if (!TERMINAL_KEYS[match[1]]) errors.push(`${label}: <TermKey> utilise la touche inconnue « ${match[1]} »`);
       }
     }
 
