@@ -23,6 +23,12 @@ Goals of this module:
 
 The elementary moves (`pwd`, `ls`, `cd`, `cat`, `man`…) are assumed — they are covered by [First steps in the shell](../intro-shell/).
 
+### Editing the line without leaving the keyboard
+
+In the terminal, start typing a command without submitting it, then send shortcuts directly from the course: <TermKey stroke="ctrl-a" /> moves the cursor to the beginning, <TermKey stroke="ctrl-e" /> to the end, and <TermKey stroke="ctrl-r" /> searches command history. The <TermKey stroke="left" /> and <TermKey stroke="right" /> keys move one character; <TermKey stroke="ctrl-c" /> abandons the line or interrupts the running command.
+
+These buttons send **real terminal sequences** to the active mode: try them in the simulation, then in a connected local or SSH shell.
+
 ## The three standard streams
 
 Every process is born with three channels:

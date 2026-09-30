@@ -194,6 +194,24 @@ sortie est décrite **uniquement** avec des `<TermLine>` (jamais de HTML brut).
 > Pour un simple transcript **non interactif** (pas de bouton), utilise un bloc
 > de code clôturé classique (` ```console ` ou ` ```bash `), pas `<Cmd>`.
 
+### `<TermKey>` — touche ou raccourci cliquable
+
+À utiliser dans un cours avec `terminal: true` pour envoyer une vraie séquence
+de contrôle au terminal actif, exactement comme `<Cmd>` y envoie une commande.
+Le composant reste dans la prose : aucune sortie ou explication technique n'est
+ajoutée dans l'écran du terminal.
+
+```mdx
+<TermKey stroke="ctrl-a" />
+<TermKey stroke="ctrl-r" />
+<TermKey stroke="left" />
+```
+
+Valeurs disponibles : `ctrl-a`, `ctrl-b`, `ctrl-c`, `ctrl-d`, `ctrl-e`,
+`ctrl-f`, `ctrl-k`, `ctrl-l`, `ctrl-n`, `ctrl-p`, `ctrl-r`, `ctrl-u`,
+`ctrl-w`, `ctrl-z`, `tab`, `enter`, `escape`, `up`, `down`, `left`, `right`,
+`home`, `end`, `delete`, `pageup`, `pagedown`.
+
 ### `<Slides>` + `<Slide>` — diaporama
 
 Carrousel avec navigation, points, compteur, clavier ←/→, vue étendue et plein

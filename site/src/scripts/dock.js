@@ -1,11 +1,16 @@
 /* =============================================================================
    DOCK.JS — dock de l'en-tête : fenêtres flottantes (terminal, Pomodoro),
    comptage de la lecture active et modes du terminal
-   (émulé / JSLinux / LinuxOnTab / local ttyd / distant).
+   (simulé / Alpine WebAssembly / compagnon local ou SSH).
    Registre des applis : src/data/dock.ts.
    Persistance : clés `site-astro-` → couvertes par l'export global.
    ============================================================================= */
 "use strict";
+
+import { Terminal as XTerm } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import "@xterm/xterm/css/xterm.css";
+import { TERMINAL_KEYS as TERM_KEYS } from "../data/terminal-keys.mjs";
 
 const lang = () => (document.documentElement.getAttribute("lang") === "en" ? "en" : "fr");
 const T = (fr, en) => (lang() === "en" ? en : fr);
@@ -244,15 +249,17 @@ function mountPomodoro(body) {
 
 /* ---- TERMINAL — fenêtre pré-rendue + modes -------------------------------------- */
 const TERM_MODE_KEY = "site-astro-dockterm-mode-v1";
-const TERM_REMOTE_KEY = "site-astro-dockterm-remote-v1";
 const TERM_MODES = {
   emulated: { fr: "Émulé (démo du site)", en: "Emulated (site demo)", src: null },
-  jslinux: { fr: "JSLinux (bellard.org)", en: "JSLinux (bellard.org)", src: "https://bellard.org/jslinux/vm.html?url=alpine-x86.cfg&mem=192" },
-  linuxontab: { fr: "LinuxOnTab", en: "LinuxOnTab", src: "https://linuxontab.com/shell/" },
-  local: { fr: "Mon terminal local (ttyd)", en: "My local terminal (ttyd)", src: "http://localhost:7681" },
-  remote: { fr: "Distant (URL ttyd/wetty)", en: "Remote (ttyd/wetty URL)", src: "" },
+  alpine: { fr: "Alpine local (WebAssembly)", en: "Local Alpine (WebAssembly)", src: null },
+  companion: { fr: "Local ou SSH (compagnon)", en: "Local or SSH (companion)", src: null },
 };
-function termMode() { try { return localStorage.getItem(TERM_MODE_KEY) || "emulated"; } catch (e) { return "emulated"; } }
+function termMode() {
+  try {
+    const mode = localStorage.getItem(TERM_MODE_KEY) || "emulated";
+    return TERM_MODES[mode] ? mode : "emulated";
+  } catch (e) { return "emulated"; }
+}
 function termWin() { return document.querySelector('[data-dock-window="terminal"]'); }
 /* L'hôte de terminal : la « classe mère » de tous les modes. Une seule unité
    (pane émulé + pane iframe) qui vit soit dans la colonne du cours, soit dans
@@ -266,6 +273,8 @@ function applyTermMode() {
   const mode = termMode();
   const emu = host.querySelector('[data-term-pane="emulated"]');
   const frame = host.querySelector('[data-term-pane="frame"]');
+  const companion = host.querySelector('[data-term-pane="companion"]');
+  const alpine = host.querySelector('[data-term-pane="alpine"]');
   const iframe = host.querySelector("[data-term-frame]");
   const link = host.querySelector("[data-term-frame-link]");
   const help = host.querySelector("[data-term-help]");
@@ -274,18 +283,11 @@ function applyTermMode() {
   });
   document.querySelectorAll(".dock__menu [data-mode]").forEach((b) =>
     b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === mode)));
-  if (mode === "emulated") { emu.hidden = false; frame.hidden = true; iframe.src = "about:blank"; return; }
-  let src = TERM_MODES[mode].src;
-  if (mode === "remote") { try { src = localStorage.getItem(TERM_REMOTE_KEY) || ""; } catch (e) { src = ""; } }
-  emu.hidden = true; frame.hidden = false;
-  help.hidden = mode !== "local";
-  // Charger l'iframe seulement si l'hôte est visible (colonne affichée / fenêtre ouverte).
-  const win = termWin();
-  const visible = hostInAside()
-    ? !host.closest(".course")?.hasAttribute("data-term-off")
-    : !!win && !win.hidden;
-  if (src && visible && iframe.src !== src) iframe.src = src;
-  if (link) link.href = src || "#";
+  emu.hidden = mode !== "emulated";
+  frame.hidden = true;
+  companion.hidden = mode !== "companion";
+  alpine.hidden = mode !== "alpine";
+  iframe.src = "about:blank"; help.hidden = true; if (link) link.href = "#";
 }
 /* Quand un module embarque son terminal, sa colonne est l'emplacement par
    défaut : l'icône du dock affiche/masque CETTE colonne (pas un 2e terminal).
@@ -386,16 +388,10 @@ function buildTermMenu(host) {
     html += '<button type="button" role="menuitemradio" data-mode="' + m + '" aria-checked="' + String(termMode() === m) + '">' +
       (lang() === "en" ? TERM_MODES[m].en : TERM_MODES[m].fr) + "</button>";
   }
-  html += '<input type="url" data-remote-url placeholder="https://mon-hote:7681" aria-label="URL du terminal distant" />';
   html += '<p class="dock__menu-note">' +
-    T("JSLinux et LinuxOnTab sont téléchargés depuis leur site puis exécutés localement dans le navigateur.",
-      "JSLinux and LinuxOnTab are downloaded from their site, then run locally in the browser.") + "</p>";
+    T("Alpine et son moteur WebAssembly sont servis par ce site puis conservés dans le cache du navigateur.",
+      "Alpine and its WebAssembly engine are served by this site, then retained in the browser cache.") + "</p>";
   menu.innerHTML = html;
-  try { menu.querySelector("[data-remote-url]").value = localStorage.getItem(TERM_REMOTE_KEY) || ""; } catch (e) {}
-  menu.querySelector("[data-remote-url]").addEventListener("change", (e) => {
-    try { localStorage.setItem(TERM_REMOTE_KEY, e.target.value.trim()); } catch (err) {}
-    if (termMode() === "remote") applyTermMode();
-  });
   menu.addEventListener("click", (e) => {
     const act = e.target.closest("[data-act]");
     if (act && act.getAttribute("data-act") === "detach") {
@@ -432,6 +428,150 @@ function buildTermMenu(host) {
   return menu;
 }
 
+/* ---- COMPAGNON LOCAL / SSH -------------------------------------------------- */
+let companionSocket = null;
+let companionTerminal = null;
+let companionFit = null;
+let alpineEmulator = null;
+let alpineTerminal = null;
+let alpineFit = null;
+let alpineReady = false;
+let alpineSerial = "";
+const alpinePending = [];
+function companionSend(message) {
+  if (!companionSocket || companionSocket.readyState !== WebSocket.OPEN) return false;
+  companionSocket.send(JSON.stringify(message));
+  return true;
+}
+
+const VM_BASE = document.documentElement.getAttribute("data-base") || "/site";
+let v86Loader = null;
+function loadV86() {
+  if (window.V86) return Promise.resolve(window.V86);
+  if (v86Loader) return v86Loader;
+  v86Loader = new Promise((resolve, reject) => {
+    const script = document.createElement("script"); script.src = `${VM_BASE}/vm/libv86.js`;
+    script.onload = () => resolve(window.V86); script.onerror = reject; document.head.appendChild(script);
+  });
+  return v86Loader;
+}
+async function cachedAsset(url, progress) {
+  const cache = await caches.open("iadmin-vm-v1");
+  const cached = await cache.match(url);
+  if (cached) { progress(1, 1, true); return cached.arrayBuffer(); }
+  const response = await fetch(url);
+  if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+  const total = Number(response.headers.get("content-length")) || 0;
+  const reader = response.body.getReader(); const chunks = []; let loaded = 0;
+  while (true) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); loaded += value.length; progress(loaded, total, false); }
+  const blob = new Blob(chunks); await cache.put(url, new Response(blob, { headers: { "content-type": response.headers.get("content-type") || "application/octet-stream" } }));
+  return blob.arrayBuffer();
+}
+function wireAlpine() {
+  const pane = document.querySelector('[data-term-pane="alpine"]');
+  const screen = document.querySelector("[data-alpine-screen]");
+  const start = document.querySelector("[data-alpine-start]");
+  const bar = document.querySelector("[data-alpine-progress]");
+  const status = document.querySelector("[data-alpine-status]");
+  if (!pane || !screen || !start || !bar || !status) return;
+  alpineTerminal = new XTerm({ cursorBlink: true, fontFamily: '"IBM Plex Mono", monospace', fontSize: 13, theme: { background: "#0d1720", foreground: "#e7edf2" } });
+  alpineFit = new FitAddon(); alpineTerminal.loadAddon(alpineFit); alpineTerminal.open(screen);
+  alpineTerminal.onData((data) => alpineEmulator?.serial0_send(data));
+  new ResizeObserver(() => { if (!pane.hidden) alpineFit.fit(); }).observe(screen);
+  start.addEventListener("click", async () => {
+    if (alpineEmulator) { alpineTerminal.focus(); return; }
+    start.disabled = true; status.textContent = T("Téléchargement de l’image Alpine…", "Downloading the Alpine image…");
+    try {
+      const isoUrl = `${VM_BASE}/vm/alpine/alpine-virt-3.21.3-x86.iso`;
+      const [V86, iso] = await Promise.all([loadV86(), cachedAsset(isoUrl, (loaded, total, cached) => { bar.value = cached ? 100 : total ? Math.round(loaded * 100 / total) : 0; status.textContent = cached ? T("Image chargée depuis le cache.", "Image loaded from cache.") : `${bar.value}%`; })]);
+      status.textContent = T("Démarrage de la VM…", "Starting the VM…");
+      alpineEmulator = new V86({ wasm_path: `${VM_BASE}/vm/v86.wasm`, bios: { url: `${VM_BASE}/vm/seabios.bin` }, vga_bios: { url: `${VM_BASE}/vm/vgabios.bin` }, cdrom: { buffer: iso }, memory_size: 256 * 1024 * 1024, autostart: true });
+      alpineEmulator.add_listener("serial0-output-byte", (byte) => {
+        const char = String.fromCharCode(byte); alpineTerminal.write(char); alpineSerial = (alpineSerial + char).slice(-256);
+        if (alpineSerial.endsWith("localhost login: ")) alpineEmulator.serial0_send("root\n");
+        if (!alpineReady && /localhost:~# $/.test(alpineSerial)) {
+          alpineReady = true; status.textContent = T("Alpine prête — session conservée lors des changements de mode.", "Alpine ready — session retained across mode changes.");
+          while (alpinePending.length) alpineEmulator.serial0_send(alpinePending.shift());
+        }
+      });
+      alpineEmulator.add_listener("emulator-started", () => { status.textContent = T("Alpine démarre — connexion root sans mot de passe.", "Alpine is starting — log in as root with no password."); setTimeout(() => alpineEmulator.serial0_send("\n"), 1200); alpineFit.fit(); alpineTerminal.focus(); });
+    } catch (error) { start.disabled = false; status.textContent = T("Échec du chargement de la VM.", "Failed to load the VM."); }
+  });
+  document.addEventListener("terminal:command", (event) => { if (termMode() === "alpine") { event.preventDefault(); const data = event.detail.command + "\n"; if (alpineReady) alpineEmulator.serial0_send(data); else { alpinePending.push(data); start.click(); } } });
+}
+function companionStatus(fr, en) {
+  const node = document.querySelector("[data-companion-status]");
+  if (node) node.textContent = T(fr, en);
+}
+function wireCompanion() {
+  const url = document.querySelector("[data-companion-url]");
+  const connect = document.querySelector("[data-companion-connect]");
+  const terminal = document.querySelector("[data-companion-terminal]");
+  const screen = document.querySelector("[data-companion-screen]");
+  if (!url || !connect || !terminal || !screen) return;
+  companionTerminal = new XTerm({
+    cursorBlink: true,
+    convertEol: false,
+    fontFamily: '"IBM Plex Mono", monospace',
+    fontSize: 13,
+    theme: { background: "#0d1720", foreground: "#e7edf2", cursor: "#68d391" },
+  });
+  companionFit = new FitAddon();
+  companionTerminal.loadAddon(companionFit);
+  companionTerminal.open(screen);
+  companionTerminal.onData((data) => companionSend({ type: "input", data }));
+  const resize = () => {
+    if (terminal.hidden) return;
+    companionFit.fit();
+    companionSend({ type: "resize", cols: companionTerminal.cols, rows: companionTerminal.rows });
+  };
+  new ResizeObserver(resize).observe(screen);
+  connect.addEventListener("click", () => {
+    const target = url.value.trim();
+    if (!/^wss?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\//i.test(target)) {
+      companionStatus("Adresse refusée : le compagnon doit écouter sur cette machine.", "Address rejected: the companion must listen on this machine.");
+      return;
+    }
+    if (companionSocket) companionSocket.close();
+    companionStatus("Connexion…", "Connecting…");
+    companionSocket = new WebSocket(target);
+    companionSocket.addEventListener("open", () => {
+      terminal.hidden = false;
+      url.value = "";
+      companionStatus("Terminal connecté.", "Terminal connected.");
+      requestAnimationFrame(() => { resize(); companionTerminal.focus(); });
+    });
+    companionSocket.addEventListener("message", (event) => {
+      let msg; try { msg = JSON.parse(event.data); } catch (e) { return; }
+      if (msg.type !== "output" || typeof msg.data !== "string") return;
+      companionTerminal.write(msg.data);
+    });
+    companionSocket.addEventListener("close", () => companionStatus("Terminal déconnecté.", "Terminal disconnected."));
+    companionSocket.addEventListener("error", () => companionStatus("Connexion impossible. Vérifiez l’adresse et le certificat local.", "Connection failed. Check the address and local certificate."));
+  });
+  document.addEventListener("terminal:command", (event) => {
+    if (termMode() !== "companion") return;
+    event.preventDefault();
+    if (!companionSend({ type: "input", data: event.detail.command + "\n" })) {
+      companionStatus("Connectez d’abord le compagnon.", "Connect the companion first.");
+    }
+  });
+}
+
+function wireTerminalKeys() {
+  const echo = document.querySelector("[data-term-key-echo]");
+  document.querySelectorAll("[data-term-key]").forEach((button) => button.addEventListener("click", () => {
+    const key = TERM_KEYS[button.getAttribute("data-term-key")];
+    if (!key) return;
+    if (echo) { echo.textContent = key.label; echo.setAttribute("data-active", ""); setTimeout(() => echo.removeAttribute("data-active"), 450); }
+    button.setAttribute("data-active", ""); setTimeout(() => button.removeAttribute("data-active"), 180);
+    const mode = termMode();
+    if (mode === "companion") companionSend({ type: "input", data: key.data });
+    else if (mode === "alpine") { if (alpineReady) alpineEmulator.serial0_send(key.data); else { alpinePending.push(key.data); document.querySelector("[data-alpine-start]")?.click(); } }
+    else if (mode === "emulated") document.dispatchEvent(new CustomEvent("terminal:simulated-key", { detail: { key: button.getAttribute("data-term-key"), data: key.data } }));
+  }));
+}
+
 /* Contrôles communs à tous les modes (barre du terminal émulé ET barre du
    pane iframe) : détacher/rattacher (⧉) et minimiser (−). */
 function makeDetachBtn() {
@@ -457,6 +597,9 @@ function makeMinBtn(course) {
 
 /* ---- INIT ---------------------------------------------------------------------- */
 function init() {
+  wireCompanion();
+  wireAlpine();
+  wireTerminalKeys();
   // Atelier du cours : l'hôte de terminal adopte le terminal du module et
   // s'installe dans la colonne (emplacement par défaut). Le terminal
   // générique du dock est parqué : une seule session par page.

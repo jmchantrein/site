@@ -28,6 +28,13 @@ test("l'en-tête propose directement le terminal, sans menu d'outils ni Pomodoro
   assert.deepEqual([...new Set(apps)].sort(), ["terminal"]);
   assert.doesNotMatch(html, /Pomodoro|>Outils<|>Tools</);
   assert.doesNotMatch(html, /data-pastime/);
+  assert.match(html, /data-dock-opts="terminal"/);
+  assert.match(html, /data-term-pane="companion"/);
+  assert.match(html, /data-term-pane="alpine"/);
+  assert.match(html, /data-alpine-progress/);
+  assert.match(html, /data-term-key="ctrl-c"/);
+  assert.match(html, /data-term-key="tab"/);
+  assert.match(html, /terminal\/install-iadmin-terminal\.sh/);
 });
 
 test("une page de cours conserve ses parcours interactifs essentiels", async () => {
@@ -36,6 +43,8 @@ test("une page de cours conserve ses parcours interactifs essentiels", async () 
   assert.match(html, /data-exercise-answer/);
   assert.match(html, /class="exercise__solution"/);
   assert.match(html, /data-term-host/);
+  assert.match(html, /class="term-key-callout"[^>]+data-term-key="ctrl-a"/);
+  assert.match(html, /data-term-key="ctrl-r"/);
   assert.match(html, /href="\/site\/en\/cours\/bash-bases\/?"/);
 });
 

@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "check": "npm run check:content && npm run build && npm run test:smoke",
+    "build": "npm run prepare:vm && astro build",
+    "check": "npm run check:content && npm run test:terminal && npm run test:vm && npm run build && npm run test:smoke",
     "check:content": "node scripts/check-content.mjs",
     "test:smoke": "node --test scripts/smoke-built-site.test.mjs",
+    "test:terminal": "python3 scripts/test-terminal-companion.py",
+    "test:vm": "npm run prepare:vm && node scripts/test-vm-assets.mjs && node scripts/test-vm-boot.mjs",
+    "prepare:vm": "node scripts/prepare-vm-assets.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
@@ -20,10 +23,13 @@
     "@fontsource/opendyslexic": "^5.2.5",
     "@fontsource/public-sans": "^5.2.7",
     "@fontsource/source-serif-4": "^5.2.9",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "astro": "^6.4.5",
     "katex": "^0.17.0",
     "lucide-static": "^1.17.0",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "v86": "^0.5.462"
   }
 }

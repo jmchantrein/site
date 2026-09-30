@@ -1,0 +1,20 @@
+---
+import { TERMINAL_KEYS } from "../data/terminal-keys.mjs";
+import { pageLocale } from "../lib/locale";
+
+interface Props {
+  /** Stable key identifier from src/data/terminal-keys.mjs. */
+  stroke: keyof typeof TERMINAL_KEYS;
+}
+const { stroke } = Astro.props;
+const key = TERMINAL_KEYS[stroke];
+if (!key) throw new Error(`Unknown terminal keystroke: ${stroke}`);
+const locale = pageLocale(Astro.url);
+const label = locale === "en" && key.labelEn ? key.labelEn : key.label;
+const description = locale === "en" ? key.en : key.fr;
+const parts = label.includes("+") ? label.split("+") : [label];
+---
+<button class="term-key-callout" type="button" data-term-key={stroke} title={description} aria-label={`${label} — ${description}`}>
+  {parts.map((part, index) => <>{index > 0 && <span aria-hidden="true">+</span>}<kbd>{part}</kbd></>)}
+  <span class="term-key-callout__hint">{description}</span>
+</button>

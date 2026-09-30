@@ -298,6 +298,9 @@ function revealOutput(screen, html, done) {
 }
 
 function runCommand(cmd) {
+  const command = cmd.getAttribute("data-cmd") || (cmd.querySelector("code") ? cmd.querySelector("code").textContent : "");
+  const routed = new CustomEvent("terminal:command", { cancelable: true, detail: { command } });
+  if (!document.dispatchEvent(routed)) return;
   const term = getTerminal(cmd); if (!term) return;
   // Atelier masqué (dock) → le rouvrir : la commande doit se voir s'exécuter.
   const course = term.closest(".course[data-term-off]");
@@ -319,7 +322,7 @@ function runCommand(cmd) {
   const r = term.getBoundingClientRect();
   if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
   const screen = term.querySelector(".terminal__screen");
-  const text = cmd.getAttribute("data-cmd") || (cmd.querySelector("code") ? cmd.querySelector("code").textContent : "");
+  const text = command;
   // La sortie est LE template qui suit CE bouton (Cmd.astro les émet
   // adjacents) — jamais le premier du parent : avec plusieurs <Cmd> dans
   // une même section, chaque bouton doit rejouer SA sortie.
@@ -472,7 +475,12 @@ function wireTermInput() {
       screen.scrollTop = screen.scrollHeight;
     });
     input.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowUp") {
+      if (e.ctrlKey && e.key.toLowerCase() === "r") {
+        const query = input.value;
+        const found = hist.slice(0, hi || hist.length).findLast((item) => !query || item.includes(query));
+        if (found) { input.value = found; hi = hist.lastIndexOf(found); moveCaretEnd(input); }
+        e.preventDefault();
+      } else if (e.key === "ArrowUp") {
         if (hi > 0) { hi--; input.value = hist[hi]; e.preventDefault(); moveCaretEnd(input); }
       } else if (e.key === "ArrowDown") {
         if (hi < hist.length - 1) { hi++; input.value = hist[hi]; }
@@ -487,6 +495,33 @@ function wireTermInput() {
     });
   });
 }
+
+document.addEventListener("terminal:simulated-key", (event) => {
+  const term = document.querySelector("[data-term-pane=\"emulated\"]:not([hidden]) .terminal:not([data-parked])") || document.querySelector(".terminal:not([data-parked])");
+  if (!term) return;
+  const input = term.querySelector("[data-term-input] input");
+  const screen = term.querySelector(".terminal__screen");
+  if (event.detail.key === "ctrl-l") { screen.innerHTML = ""; return; }
+  if (event.detail.key === "ctrl-c") {
+    const line = document.createElement("div"); line.className = "term-line term-line--cmd";
+    line.textContent = (input.value ? "$ " + input.value : "$ ") + "^C"; screen.appendChild(line); input.value = ""; return;
+  }
+  const value = input.value, start = input.selectionStart ?? value.length, end = input.selectionEnd ?? start;
+  if (event.detail.key === "ctrl-a" || event.detail.key === "home") input.setSelectionRange(0, 0);
+  else if (event.detail.key === "ctrl-e" || event.detail.key === "end") input.setSelectionRange(value.length, value.length);
+  else if (event.detail.key === "ctrl-b" || event.detail.key === "left") input.setSelectionRange(Math.max(0, start - 1), Math.max(0, start - 1));
+  else if (event.detail.key === "ctrl-f" || event.detail.key === "right") input.setSelectionRange(Math.min(value.length, end + 1), Math.min(value.length, end + 1));
+  else if (event.detail.key === "ctrl-u") { input.value = value.slice(start); input.setSelectionRange(0, 0); }
+  else if (event.detail.key === "ctrl-k") input.value = value.slice(0, start);
+  else if (event.detail.key === "ctrl-w") { const cut = value.slice(0, start).replace(/\s*\S+\s*$/, ""); input.value = cut + value.slice(end); input.setSelectionRange(cut.length, cut.length); }
+  else {
+    const names = { tab: "Tab", escape: "Escape", up: "ArrowUp", down: "ArrowDown", "ctrl-p": "ArrowUp", "ctrl-n": "ArrowDown" };
+    const name = names[event.detail.key];
+    if (event.detail.key === "ctrl-r") input.dispatchEvent(new KeyboardEvent("keydown", { key: "r", ctrlKey: true, bubbles: true }));
+    else if (name) input.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true }));
+  }
+  input.focus();
+});
 function moveCaretEnd(el) { const v = el.value; el.value = ""; el.value = v; }
 
 /* ---- EXERCICE : verrou de la solution tant que la réponse est vide --------- */
