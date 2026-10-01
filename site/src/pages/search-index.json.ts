@@ -44,11 +44,13 @@ export const GET: APIRoute = async () => {
     { p: "Accueil", t: "Accueil", page: `${base}/` },
     { p: "Cours", t: "Index des cours", page: `${base}/cours/` },
     { p: "Articles", t: "Index des articles", page: `${base}/miscelanea/` },
+    { p: "Recommandations", t: "Quelques recommandations", page: `${base}/explorer/` },
     { p: "Aide", t: "Guide d'utilisation", page: `${base}/aide/` },
     { p: "Système", t: "Système de design", page: `${base}/systeme/` },
     { p: "Home", t: "Home", page: `${base}/en/` },
     { p: "Courses", t: "Course index", page: `${base}/en/cours/` },
     { p: "Articles", t: "Article index", page: `${base}/en/miscelanea/` },
+    { p: "Recommendations", t: "A few recommendations", page: `${base}/en/explorer/` },
     { p: "Help", t: "User guide", page: `${base}/en/aide/` },
     { p: "System", t: "Design system", page: `${base}/en/systeme/` },
   );
@@ -73,6 +75,21 @@ export const GET: APIRoute = async () => {
     index.push({ p: a.data.title, t: a.data.title, page, b: a.data.description });
     for (const h of sectionsOf(a.body ?? "")) {
       index.push({ p: a.data.title, t: h.text, page, hash: h.slug, b: h.body });
+    }
+  }
+
+  const ressources = await getCollection("ressources", ({ data }) => !data.draft);
+  for (const resource of ressources) {
+    const english = resource.id.startsWith("en/");
+    const slug = english ? resource.id.slice(3) : resource.id;
+    index.push({
+      p: resource.data.title,
+      t: resource.data.title,
+      page: `${base}${english ? "/en" : ""}/explorer/${slug}/`,
+      b: [resource.data.summary, resource.data.kind, ...resource.data.languages, ...resource.data.topics].filter(Boolean).join(" "),
+    });
+    for (const h of sectionsOf(resource.body ?? "")) {
+      index.push({ p: resource.data.title, t: h.text, page: `${base}${english ? "/en" : ""}/explorer/${slug}/`, hash: h.slug, b: h.body });
     }
   }
 

@@ -5,7 +5,7 @@
  * « Par thématique / Par entrée », cartes filtrables. Une entrée
  * multi-thématique apparaît dans chaque bloc, sans duplication de contenu.
  */
-import { TOPICS, type TopicId } from "../data/topics";
+import { TOPICS, topicLabel, type TopicId } from "../data/topics";
 import ContentBadges from "./ContentBadges.astro";
 import type { Provenance } from "../data/provenance";
 import type { Status } from "../data/status";
@@ -39,7 +39,7 @@ const A11Y = {
 
 const counts = new Map<TopicId, number>();
 for (const it of items) for (const t of it.topics) counts.set(t, (counts.get(t) ?? 0) + 1);
-const topicIds = (Object.keys(TOPICS) as TopicId[]).filter((t) => counts.has(t) || t === "divers");
+const topicIds = (Object.keys(TOPICS) as TopicId[]).filter((t) => counts.has(t));
 const weight = (n: number) => (n >= 3 ? 3 : n);
 ---
 <div data-topic-index>
@@ -52,7 +52,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
       <span class="tag-cloud__label"><span data-lang="fr">Naviguer par thématique</span><span data-lang="en">Browse by topic</span></span>
       <button class="tag-chip" data-filter="all" data-weight="3" type="button" aria-pressed="true"><span data-lang="fr">Toutes</span><span data-lang="en">All</span> <span class="n">{items.length}</span></button>
       {topicIds.map((t) => (
-        <button class="tag-chip" data-filter={t} data-weight={weight(counts.get(t) ?? 0)} type="button" aria-pressed="false">{TOPICS[t]} <span class="n">{counts.get(t) ?? 0}</span></button>
+        <button class="tag-chip" data-filter={t} data-weight={weight(counts.get(t) ?? 0)} type="button" aria-pressed="false">{topicLabel(t, locale)} <span class="n">{counts.get(t) ?? 0}</span></button>
       ))}
     </div>
     <div class="view-toggle" role="group" aria-label={A11Y.view}>
@@ -65,7 +65,7 @@ const weight = (n: number) => (n >= 3 ? 3 : n);
   {topicIds.filter((t) => (counts.get(t) ?? 0) > 0).map((t) => (
     <section class="theme-block" data-topic-block={t} hidden={defaultView === "flat"}>
       <div class="theme-block__head">
-        <h2>{TOPICS[t]}</h2>
+        <h2>{topicLabel(t, locale)}</h2>
         <span class="theme-block__count">{counts.get(t)} <span data-lang="fr">entrée(s)</span><span data-lang="en">item(s)</span></span>
       </div>
       <div class="card-grid">

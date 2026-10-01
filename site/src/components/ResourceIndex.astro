@@ -1,0 +1,157 @@
+---
+import Icon from "./Icon.astro";
+import { RESOURCE_KIND_META, RESOURCE_KINDS, resourceKindLabel, type ResourceKind } from "../data/resources";
+import { TOPICS, topicLabel, type TopicId } from "../data/topics";
+
+export interface ResourceItem {
+  href: string;
+  title: string;
+  summary?: string;
+  kind: ResourceKind;
+  topics: TopicId[];
+  languages: string[];
+  added: Date;
+  year?: number;
+  duration?: number;
+  image?: { src: string; alt: string; caption?: string };
+}
+interface Props { items: ResourceItem[]; locale?: "fr" | "en" }
+const { items, locale = "fr" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const usedKinds = RESOURCE_KINDS.filter((kind) => items.some((item) => item.kind === kind));
+const usedTopics = (Object.keys(TOPICS) as TopicId[]).filter((topic) => items.some((item) => item.topics.includes(topic)));
+const dateLabel = (date: Date) => date.toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { year: "numeric", month: "short", day: "numeric" });
+const langName = (code: string) => {
+  try { return new Intl.DisplayNames([locale], { type: "language" }).of(code) ?? code; }
+  catch { return code.toUpperCase(); }
+};
+---
+<section class="resource-index" data-resource-index data-locale={locale}>
+  {items.length === 0 ? (
+    <p class="lead">{locale === "en" ? "Nothing here yet — the selection will grow with new discoveries." : "Rien ici pour l’instant — la sélection grandira au fil des découvertes."}</p>
+  ) : (
+    <>
+      <div class="resource-controls">
+        <fieldset>
+          <legend>{locale === "en" ? "Formats" : "Formats"}</legend>
+          <div class="filter-row" data-kind-filters>
+            {usedKinds.map((kind) => <button type="button" class="tag-chip" data-kind={kind} aria-pressed="false">{resourceKindLabel(kind, locale)}</button>)}
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>{locale === "en" ? "Topics" : "Thématiques"}</legend>
+          <div class="filter-row" data-topic-filters>
+            {usedTopics.map((topic) => <button type="button" class="tag-chip" data-topic={topic} aria-pressed="false">{topicLabel(topic, locale)}</button>)}
+          </div>
+        </fieldset>
+        <fieldset class="match-control" data-match-control hidden>
+          <legend>{locale === "en" ? "Topic matching" : "Correspondance des thématiques"}</legend>
+          <div class="view-toggle">
+            <button type="button" data-match="any" aria-pressed="true">{locale === "en" ? "Any (OR)" : "Au moins une (OU)"}</button>
+            <button type="button" data-match="all" aria-pressed="false">{locale === "en" ? "All (AND)" : "Toutes (ET)"}</button>
+          </div>
+        </fieldset>
+        <fieldset class="order-control">
+          <legend>{locale === "en" ? "Order" : "Ordre"}</legend>
+          <div class="view-toggle">
+            <button type="button" data-order="latest" aria-pressed="true">{locale === "en" ? "Latest additions" : "Derniers ajouts"}</button>
+            <button type="button" data-order="shuffle" aria-pressed="false">{locale === "en" ? "Shuffle" : "Mélanger"} ↻</button>
+          </div>
+        </fieldset>
+      </div>
+      <p class="results-count" data-results-count aria-live="polite"></p>
+      <div class="card-grid resource-grid" data-resource-grid>
+        {items.map((item, index) => (
+          <a class="module-card resource-card" href={item.href} data-kind={item.kind} data-topics={item.topics.join(" ")} data-latest={index}>
+            {item.image && <img class="resource-card__image" src={`${base}/${item.image.src}`} alt={item.image.alt} loading="lazy" />}
+            <div class="module-card__top">
+              <span class="resource-kind"><Icon name={RESOURCE_KIND_META[item.kind].icon} class="resource-kind__icon" />{resourceKindLabel(item.kind, locale)}</span>
+              <span class="module-card__meta">{dateLabel(item.added)}</span>
+            </div>
+            <h2 class="module-card__title">{item.title}</h2>
+            {item.summary && <p class="module-card__desc">{item.summary}</p>}
+            <p class="resource-meta">{[item.year, item.duration ? `≈ ${item.duration} min` : null, item.languages.map(langName).join(", ")].filter(Boolean).join(" · ")}</p>
+            <ul class="module-card__tags">
+              {item.topics.map((topic) => <li>{topicLabel(topic, locale)}</li>)}
+            </ul>
+            <span class="module-card__cta">{locale === "en" ? "Open recommendation" : "Ouvrir la recommandation"} →</span>
+          </a>
+        ))}
+      </div>
+      <p class="resource-empty" data-resource-empty hidden>{locale === "en" ? "No recommendation matches these filters. Try “Any” or remove a filter." : "Aucune recommandation ne correspond à ces filtres. Essayez « Au moins une » ou retirez un filtre."}</p>
+    </>
+  )}
+</section>
+
+<script>
+  document.querySelectorAll("[data-resource-index]").forEach((root) => {
+    const grid = root.querySelector("[data-resource-grid]");
+    if (!grid) return;
+    const cards = [...grid.querySelectorAll(".resource-card")];
+    const kindButtons = [...root.querySelectorAll("[data-kind-filters] [data-kind]")];
+    const topicButtons = [...root.querySelectorAll("[data-topic-filters] [data-topic]")];
+    const matchButtons = [...root.querySelectorAll("[data-match]")];
+    const orderButtons = [...root.querySelectorAll("[data-order]")];
+    const matchControl = root.querySelector("[data-match-control]");
+    const empty = root.querySelector("[data-resource-empty]");
+    const count = root.querySelector("[data-results-count]");
+    const locale = root.getAttribute("data-locale") || "fr";
+    let match = "any";
+    let order = "latest";
+
+    const selected = (buttons, attribute) => buttons.filter((button) => button.getAttribute("aria-pressed") === "true").map((button) => button.getAttribute(attribute));
+    const shuffle = (values) => {
+      for (let i = values.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [values[i], values[j]] = [values[j], values[i]];
+      }
+    };
+    const render = (reshuffle = false) => {
+      const kinds = selected(kindButtons, "data-kind");
+      const topics = selected(topicButtons, "data-topic");
+      if (matchControl) matchControl.hidden = topics.length < 2;
+      const visible = cards.filter((card) => {
+        const cardTopics = (card.getAttribute("data-topics") || "").split(" ");
+        const kindOK = kinds.length === 0 || kinds.includes(card.getAttribute("data-kind"));
+        const topicOK = topics.length === 0 || (match === "all" ? topics.every((topic) => cardTopics.includes(topic)) : topics.some((topic) => cardTopics.includes(topic)));
+        card.hidden = !(kindOK && topicOK);
+        return kindOK && topicOK;
+      });
+      if (order === "latest") cards.sort((a, b) => Number(a.getAttribute("data-latest")) - Number(b.getAttribute("data-latest")));
+      else if (reshuffle) shuffle(visible);
+      const ordered = order === "shuffle" ? [...visible, ...cards.filter((card) => !visible.includes(card))] : cards;
+      ordered.forEach((card) => grid.append(card));
+      if (empty) empty.hidden = visible.length !== 0;
+      if (count) count.textContent = locale === "en" ? `${visible.length} recommendation${visible.length === 1 ? "" : "s"}` : `${visible.length} recommandation${visible.length === 1 ? "" : "s"}`;
+    };
+    [...kindButtons, ...topicButtons].forEach((button) => button.addEventListener("click", () => {
+      button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true")); render(order === "shuffle");
+    }));
+    matchButtons.forEach((button) => button.addEventListener("click", () => {
+      match = button.getAttribute("data-match") || "any";
+      matchButtons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      render(order === "shuffle");
+    }));
+    orderButtons.forEach((button) => button.addEventListener("click", () => {
+      order = button.getAttribute("data-order") || "latest";
+      orderButtons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      render(order === "shuffle");
+    }));
+    render();
+  });
+</script>
+
+<style>
+  .resource-controls { display: grid; gap: var(--space-4); padding-block: var(--space-5); border-block: 1px solid var(--color-border); }
+  fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  legend { width: 100%; margin-bottom: var(--space-2); color: var(--color-text-muted); font: 600 var(--text-xs)/1.4 var(--font-mono); letter-spacing: .07em; text-transform: uppercase; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .match-control[hidden], .resource-card[hidden], .resource-empty[hidden] { display: none; }
+  .results-count { margin-block: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+  .resource-kind { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-accent-text); font: 600 var(--text-xs)/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
+  .resource-kind__icon { width: 18px; height: 18px; }
+  .resource-kind__icon :global(svg) { width: 100%; height: 100%; }
+  .resource-meta { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+  .resource-card__image { width: calc(100% + 2 * var(--space-5)); max-width: none; height: 11rem; margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-2); object-fit: cover; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .resource-empty { padding: var(--space-6); border: 1px dashed var(--color-border-strong); border-radius: var(--radius-lg); text-align: center; }
+</style>

@@ -4,6 +4,7 @@ import { TOPIC_IDS } from "./data/topics";
 import { SERIE_IDS } from "./data/series";
 import { PROV_BY, PROV_REVIEW } from "./data/provenance";
 import { STATUS_VALUES } from "./data/status";
+import { RESOURCE_KINDS } from "./data/resources";
 
 /* Le contenu vit dans src/content/ en MDX pur : frontmatter + composants
    pédagogiques — jamais de HTML/CSS à la main. */
@@ -109,4 +110,36 @@ const glossaire = defineCollection({
   }),
 });
 
-export const collections = { cours, miscelanea, glossaire };
+const ressources = defineCollection({
+  loader: glob({ pattern: "**/*.mdx", base: "./src/content/ressources" }),
+  schema: z.object({
+    title: z.string(),
+    summary: z.string().optional(),
+    kind: z.enum(RESOURCE_KINDS),
+    added: z.coerce.date(),
+    year: z.number().int().min(1000).max(3000).optional(),
+    duration: z.number().positive().optional(),
+    languages: z.array(z.string().min(2)).min(1),
+    subtitles: z.array(z.string().min(2)).default([]),
+    translations: z.array(z.string().min(2)).default([]),
+    topics: z.array(z.enum(TOPIC_IDS)).min(1),
+    editorialStatus: z.enum(["minimal", "reviewed"]).default("minimal"),
+    youtubeId: z.string().regex(/^[A-Za-z0-9_-]{11}$/).optional(),
+    playlistId: z.string().regex(/^[A-Za-z0-9_-]+$/).optional(),
+    channel: z.string().optional(),
+    playlists: z.array(z.string()).default([]),
+    related: z.array(z.string()).default([]),
+    links: z.array(z.object({
+      role: z.enum(["official", "publisher", "library", "reference", "watch", "read", "play"]),
+      label: z.string(),
+      url: z.string().url(),
+    })).default([]),
+    image: z.object({ src: z.string(), alt: z.string(), caption: z.string().optional() }).optional(),
+    wikiImage: z.object({ file: z.string(), alt: z.string(), caption: z.string().optional(), width: z.number().positive().optional() }).optional(),
+    draft: z.boolean().default(false),
+  })
+    .refine((d) => !(d.youtubeId && d.playlistId), { message: "Une ressource ne peut pas être à la fois une vidéo et une playlist YouTube." })
+    .refine((d) => !(d.image && d.wikiImage), { message: "Choisissez une image locale ou Wikimedia, pas les deux." }),
+});
+
+export const collections = { cours, miscelanea, glossaire, ressources };

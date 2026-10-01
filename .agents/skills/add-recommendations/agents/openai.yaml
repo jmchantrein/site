@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ajouter des recommandations"
+  short_description: "Ajoute des ressources externes au catalogue bilingue."
+  default_prompt: "Ajoute cette ressource ou ce lot de ressources au catalogue du site, publie le minimum vérifié puis propose les enrichissements facultatifs."

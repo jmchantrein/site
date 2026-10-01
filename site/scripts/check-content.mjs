@@ -1,11 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { load as parseYaml } from "js-yaml";
 import { GLOSSAIRE, GLOSSAIRE_BY_SLUG } from "../src/data/glossaire.mjs";
 import { TERMINAL_KEYS } from "../src/data/terminal-keys.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "src", "content");
-const COLLECTIONS = ["cours", "miscelanea", "glossaire"];
+const COLLECTIONS = ["cours", "miscelanea", "glossaire", "ressources"];
 
 async function mdxFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -91,7 +92,50 @@ for (const collection of COLLECTIONS) {
         }
       }
     }
+
+    if (collection === "ressources") {
+      const frData = parseYaml(fr);
+      const enData = parseYaml(en);
+      const structural = ["kind", "added", "year", "duration", "languages", "subtitles", "translations", "topics", "editorialStatus", "youtubeId", "playlistId", "channel", "playlists", "related", "draft"];
+      for (const name of structural) {
+        if (JSON.stringify(frData[name] ?? null) !== JSON.stringify(enData[name] ?? null)) {
+          errors.push(`${collection}/${file}: champ structurel « ${name} » différent entre FR et EN`);
+        }
+      }
+      const frLinks = (frData.links ?? []).map(({ role, url }) => ({ role, url }));
+      const enLinks = (enData.links ?? []).map(({ role, url }) => ({ role, url }));
+      if (JSON.stringify(frLinks) !== JSON.stringify(enLinks)) {
+        errors.push(`${collection}/${file}: URLs ou rôles des liens différents entre FR et EN`);
+      }
+    }
   }
+}
+
+const resourceDir = path.join(ROOT, "ressources");
+const resourceFiles = await mdxFiles(resourceDir);
+const resources = new Map();
+const externalKeys = new Map();
+for (const file of resourceFiles) {
+  const source = await readFile(path.join(resourceDir, file), "utf8");
+  const data = parseYaml(frontmatter(source, `ressources/${file}`));
+  const slug = file.replace(/\.mdx$/, "");
+  resources.set(slug, data);
+  const keys = [
+    data.youtubeId && `youtube:${data.youtubeId}`,
+    data.playlistId && `playlist:${data.playlistId}`,
+    ...(data.links ?? []).map(({ url }) => `url:${url}`),
+  ].filter(Boolean);
+  for (const key of keys) {
+    if (externalKeys.has(key)) errors.push(`ressources/${file}: ressource externe déjà utilisée par « ${externalKeys.get(key)} » (${key})`);
+    else externalKeys.set(key, slug);
+  }
+}
+for (const [slug, data] of resources) {
+  const refs = [data.channel, ...(data.playlists ?? []), ...(data.related ?? [])].filter(Boolean);
+  for (const ref of refs) if (!resources.has(ref)) errors.push(`ressources/${slug}: relation vers le slug inconnu « ${ref} »`);
+  if (data.channel && resources.get(data.channel)?.kind !== "channel") errors.push(`ressources/${slug}: « channel » doit pointer vers une chaîne`);
+  for (const ref of data.playlists ?? []) if (resources.get(ref)?.kind !== "playlist") errors.push(`ressources/${slug}: « playlists » doit pointer vers une playlist`);
+  if ((data.related ?? []).includes(slug) || data.channel === slug || (data.playlists ?? []).includes(slug)) errors.push(`ressources/${slug}: relation circulaire directe`);
 }
 
 for (const entry of GLOSSAIRE) {
@@ -111,5 +155,5 @@ if (errors.length) {
   for (const error of errors) console.error(`- ${error}`);
   process.exitCode = 1;
 } else {
-  console.log("Contenus cohérents : parité FR/EN, glossaire, liens retour et provenance des cours contrôlés.");
+  console.log("Contenus cohérents : parité FR/EN, glossaire, recommandations, liens retour et provenance des cours contrôlés.");
 }

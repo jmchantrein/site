@@ -1,0 +1,12 @@
+---
+import { getCollection } from "astro:content";
+import ResourcePage from "../../../components/pages/ResourcePage.astro";
+export async function getStaticPaths() {
+  const all = await getCollection("ressources", ({ data }) => !data.draft);
+  const entries = all.filter((item) => item.id.startsWith("en/"));
+  const frIds = new Set(all.filter((item) => !item.id.startsWith("en/")).map((item) => item.id));
+  return entries.map((entry) => ({ params: { slug: entry.id.slice(3) }, props: { entry, entries, hasAlternate: frIds.has(entry.id.slice(3)) } }));
+}
+const { entry, entries, hasAlternate } = Astro.props;
+---
+<ResourcePage entry={entry} entries={entries} locale="en" hasAlternate={hasAlternate} />
