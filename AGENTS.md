@@ -119,6 +119,14 @@ Mayer), WCAG AA (corps AAA).
 4. Source PDF ambiguë (maths cassées, structure incertaine) : **signaler
    explicitement au lieu de deviner**.
 
+## Ajout de recommandations externes
+
+Toute demande d'ajout, d'import ou d'enrichissement d'une ressource dans
+l'onglet « À explorer… » suit le skill local
+`.agents/skills/add-recommendations/SKILL.md`. Une demande formulée avec
+« ajoute » autorise l'agent à écrire immédiatement le minimum publiable
+bilingue, puis à proposer une revue éditoriale facultative.
+
 ## Corrigés testables (mécanisme imposé)
 
 Tout corrigé de code doit être **exécutable et testé**, jamais seulement

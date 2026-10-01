@@ -64,6 +64,7 @@ const cpfx = locale === "en" ? `${base}/en` : base; // sections traduites
 const nav = [
   { href: `${cpfx}/cours/`, fr: "Cours", en: "Courses" },
   { href: `${cpfx}/miscelanea/`, fr: "Articles", en: "Articles" },
+  { href: `${cpfx}/explorer/`, fr: "À explorer…", en: "Explore…" },
   { href: `${cpfx}/glossaire/`, fr: "Glossaire", en: "Glossary" },
 ];
 const isCurrent = (href: string) =>
@@ -169,6 +170,7 @@ const isCurrent = (href: string) =>
           <h2><span data-lang="fr">Explorer</span><span data-lang="en">Explore</span></h2>
           <a href={`${cpfx}/cours/`}><span data-lang="fr">Cours</span><span data-lang="en">Courses</span></a>
           <a href={`${cpfx}/miscelanea/`}><span data-lang="fr">Articles</span><span data-lang="en">Articles</span></a>
+          <a href={`${cpfx}/explorer/`}><span data-lang="fr">À explorer</span><span data-lang="en">Explore</span></a>
           <a href={`${cpfx}/glossaire/`}><span data-lang="fr">Glossaire</span><span data-lang="en">Glossary</span></a>
         </section>
         <section>

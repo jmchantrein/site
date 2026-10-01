@@ -1,0 +1,28 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../../layouts/Base.astro";
+import ResourceIndex from "../../../components/ResourceIndex.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const resources = (await getCollection("ressources", ({ data, id }) => !data.draft && id.startsWith("en/")))
+  .sort((a, b) => b.data.added.getTime() - a.data.added.getTime() || a.data.title.localeCompare(b.data.title, "en"));
+const items = resources.map((entry) => ({ href: `${base}/en/explorer/${entry.id.slice(3)}/`, ...entry.data }));
+---
+<Base title="A few recommendations" description="A personal, non-exhaustive selection of resources of all kinds that deserve to be better known." locale="en" altUrl={`${base}/explorer/`}>
+  <main id="main" class="wrap">
+    <div class="page-hero resource-hero">
+      <p class="kicker">A cabinet of digital curiosities</p>
+      <h1>A few recommendations</h1>
+      <p class="lead"><strong>A personal, non-exhaustive selection of resources of all kinds that deserve to be better known.</strong></p>
+      <p>It is obviously highly unlikely that you would get bored during my classes ;-). Still, just in case, here are a few resources that seem more worthwhile to explore than scrolling and wandering endlessly around the Web. Eternity is long, especially towards the end.</p>
+      <p class="ai-note">The choices presented here are personal. Factual notes may have been prepared with AI assistance; personal opinions are identified as such and are never generated without guidance from the author.</p>
+    </div>
+    <ResourceIndex items={items} locale="en" />
+  </main>
+</Base>
+<style>
+  .page-hero { padding-block: var(--space-7) var(--space-5); }
+  .page-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); }
+  .resource-hero > p { max-width: var(--measure); }
+  .ai-note { padding-left: var(--space-4); border-left: 3px solid var(--color-border-strong); color: var(--color-text-muted); font-size: var(--text-sm); }
+</style>

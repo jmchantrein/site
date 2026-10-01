@@ -2,7 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Reading from "../../../layouts/Reading.astro";
 import { mdxComponents } from "../../../components/mdx";
-import { TOPICS } from "../../../data/topics";
+import { topicLabel } from "../../../data/topics";
 
 export async function getStaticPaths() {
   const articles = await getCollection("miscelanea", ({ data, id }) => !data.draft && id.startsWith("en/"));
@@ -28,7 +28,7 @@ const toc = headings.filter((h) => h.depth === 2).map((h) => ({ slug: h.slug, te
   description={d.description}
   crumb={{ href: `${base}/en/miscelanea/`, label: "Articles" }}
   badges={d.duration ? [`≈ ${d.duration} min`] : []}
-  topics={d.topics.map((t) => TOPICS[t])}
+  topics={d.topics.map((t) => topicLabel(t, "en"))}
   lead={d.description}
   provenance={d.provenance}
   dates={dates}

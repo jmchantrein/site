@@ -115,6 +115,36 @@ test("les métadonnées bilingues pointent vers les routes correspondantes", asy
   assert.match(en, /hreflang="fr" href="https:\/\/jmchantrein\.github\.io\/site\/cours\/bash-bases\/?"/);
 });
 
+test("le catalogue de recommandations est bilingue, filtrable et sans persistance", async () => {
+  const [fr, en, detail, feed, skill] = await Promise.all([
+    output("explorer/index.html"),
+    output("en/explorer/index.html"),
+    output("explorer/la-fabrique-des-idiots/index.html"),
+    output("explorer/rss.xml"),
+    output("add-recommendations-skill.txt"),
+  ]);
+  assert.match(fr, /À explorer…/);
+  assert.match(fr, /Quelques recommandations/);
+  assert.match(fr, /data-resource-index/);
+  assert.match(fr, /data-match="any"/);
+  assert.match(fr, /data-match="all"/);
+  assert.match(fr, /data-order="shuffle"/);
+  assert.doesNotMatch(fr, /(?:localStorage|sessionStorage)[^\n]{0,120}resource/i);
+  assert.match(en, /A few recommendations/);
+  assert.match(en, /href="\/site\/explorer\/"/);
+  assert.match(detail, /youtube-nocookie\.com\/embed\/4xq6bVbS-Pw/);
+  assert.doesNotMatch(detail, /Pourquoi je la recommande/);
+  assert.match(feed, /La fabrique des idiots/);
+  assert.match(skill, /name: add-recommendations/);
+});
+
+test("la page Système publie le skill d’ajout depuis sa source unique", async () => {
+  const [fr, en] = await Promise.all([output("systeme/index.html"), output("en/systeme/index.html")]);
+  assert.match(fr, /data-prompt-url="\/site\/add-recommendations-skill\.txt"/);
+  assert.match(fr, /Ajouter des recommandations/);
+  assert.match(en, /Add recommendations/);
+});
+
 test("la navigation anglaise reste dans son espace localisé", async () => {
   const [home, course] = await Promise.all([
     output("en/index.html"),

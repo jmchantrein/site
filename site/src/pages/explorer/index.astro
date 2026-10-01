@@ -1,0 +1,28 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import ResourceIndex from "../../components/ResourceIndex.astro";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const resources = (await getCollection("ressources", ({ data, id }) => !data.draft && !id.startsWith("en/")))
+  .sort((a, b) => b.data.added.getTime() - a.data.added.getTime() || a.data.title.localeCompare(b.data.title, "fr"));
+const items = resources.map((entry) => ({ href: `${base}/explorer/${entry.id}/`, ...entry.data }));
+---
+<Base title="Quelques recommandations" description="Une sélection toute personnelle et non exhaustive de ressources en tous genres qui gagneraient à être mieux connues." altUrl={`${base}/en/explorer/`}>
+  <main id="main" class="wrap">
+    <div class="page-hero resource-hero">
+      <p class="kicker">Cabinet de curiosités numériques</p>
+      <h1>Quelques recommandations</h1>
+      <p class="lead"><strong>Une sélection toute personnelle et non exhaustive de ressources en tous genres qui gagneraient à être mieux connues.</strong></p>
+      <p>Il est évidemment très improbable que tu t’ennuies pendant mes cours ;-). Mais, à toutes fins utiles, voici quelques ressources qui me paraissent plus intéressantes à découvrir que de scroller et d’errer indéfiniment sur le Web. L’éternité, c’est long, surtout à la fin.</p>
+      <p class="ai-note">Les choix présentés ici sont personnels. Les notices factuelles peuvent avoir été préparées avec l’aide d’une IA ; les appréciations personnelles sont signalées comme telles et ne sont jamais générées sans indication de l’auteur.</p>
+    </div>
+    <ResourceIndex items={items} />
+  </main>
+</Base>
+<style>
+  .page-hero { padding-block: var(--space-7) var(--space-5); }
+  .page-hero h1 { font-size: clamp(2rem, 4.5vw, var(--text-2xl)); }
+  .resource-hero > p { max-width: var(--measure); }
+  .ai-note { padding-left: var(--space-4); border-left: 3px solid var(--color-border-strong); color: var(--color-text-muted); font-size: var(--text-sm); }
+</style>
