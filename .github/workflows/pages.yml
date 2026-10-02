@@ -39,7 +39,9 @@ jobs:
           sudo apt-get install -y debootstrap cpio
           sudo site/scripts/build-debian-vm.sh
       - name: Tester le démarrage de Debian
-        run: node scripts/test-debian-vm-boot.mjs
+        run: |
+          npm run prepare:vm
+          node scripts/test-debian-vm-boot.mjs
         working-directory: site
       - name: Construire le site
         run: npm run build
