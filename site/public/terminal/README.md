@@ -6,6 +6,13 @@ checks the website origin and uses a single-use random pairing token.
 
 ## Recommended installation
 
+On a fresh Debian system, install the installer's own prerequisites first:
+
+```sh
+curl -fLO https://jmchantrein.github.io/site/terminal/install-companion-prerequisites-debian.sh
+sh install-companion-prerequisites-debian.sh
+```
+
 ```sh
 curl -fLO https://jmchantrein.github.io/site/terminal/install-iadmin-terminal.sh
 less install-iadmin-terminal.sh
@@ -24,6 +31,19 @@ safer:
 
 ```sh
 curl -fsSL https://jmchantrein.github.io/site/terminal/install-iadmin-terminal.sh | sh
+```
+
+## Optional Debian course toolbox
+
+The companion uses the programs installed on the local Debian computer. The
+published bootstrap installs the selected command-line course tools while
+deliberately excluding Docker, OpenSSH, WireGuard, Ansible, Bats, nginx,
+TeX Live, KVM and Qt:
+
+```sh
+curl -fLO https://jmchantrein.github.io/site/terminal/bootstrap-course-tools-debian.sh
+less bootstrap-course-tools-debian.sh
+sh bootstrap-course-tools-debian.sh
 ```
 
 ## Usage

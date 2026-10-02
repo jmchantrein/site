@@ -44,6 +44,8 @@ test("la recette du compagnon est publiée dans le site en français et en angla
   assert.match(en, /Connect your terminal/);
   for (const html of [fr, en]) {
     assert.match(html, /install-iadmin-terminal\.sh/);
+    assert.match(html, /install-companion-prerequisites-debian\.sh/);
+    assert.match(html, /bootstrap-course-tools-debian\.sh/);
     assert.match(html, /iadmin-terminal\.py/);
     assert.match(html, /--with-local-ca/);
   }

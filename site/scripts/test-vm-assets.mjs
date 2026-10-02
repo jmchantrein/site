@@ -4,10 +4,14 @@ import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..", "public", "vm");
-const iso = path.join(root, "alpine", "alpine-virt-3.21.3-x86.iso");
-const expected = (await readFile(`${iso}.sha256`, "utf8")).trim().split(/\s+/)[0];
-const bytes = await readFile(iso);
-assert.equal(createHash("sha256").update(bytes).digest("hex"), expected);
+const alpine = path.join(root, "alpine");
+const sums = await readFile(path.join(alpine, "SHA256SUMS"), "utf8");
+for (const line of sums.trim().split("\n")) {
+  const [expected, name] = line.trim().split(/\s+/);
+  const bytes = await readFile(path.join(alpine, name));
+  assert.equal(createHash("sha256").update(bytes).digest("hex"), expected);
+  assert.ok(bytes.length > 1_000_000);
+}
 assert.ok((await stat(path.join(root, "v86.wasm"))).size > 1_000_000);
 assert.ok((await stat(path.join(root, "libv86.js"))).size > 100_000);
 assert.ok((await stat(path.join(root, "seabios.bin"))).size > 100_000);

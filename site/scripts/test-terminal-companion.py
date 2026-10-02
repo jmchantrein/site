@@ -12,6 +12,16 @@ import time
 from pathlib import Path
 
 COMPANION = Path(__file__).parents[1] / "public/terminal/iadmin-terminal.py"
+TERMINAL_DIR = COMPANION.parent
+
+course_bootstrap = (TERMINAL_DIR / "bootstrap-course-tools-debian.sh").read_text()
+prerequisite_installer = (TERMINAL_DIR / "install-companion-prerequisites-debian.sh").read_text()
+for excluded in ("docker", "openssh", "wireguard", "ansible", "bats", "nginx", "texlive", "qemu", "qt6"):
+    assert not re.search(rf"^[^#\n]*\b{excluded}\S*", course_bootstrap, re.MULTILINE | re.IGNORECASE)
+for required in ("pandoc", "shellcheck", "git", "jq", "yq", "yamllint", "tmux", "tmuxp"):
+    assert re.search(rf"^[^#\n]*\b{required}\b", course_bootstrap, re.MULTILINE)
+for required in ("ca-certificates", "curl", "python3", "mkcert"):
+    assert re.search(rf"^[^#\n]*\b{required}\b", prerequisite_installer, re.MULTILINE)
 
 
 def masked_message(message):

@@ -472,7 +472,7 @@ function wireAlpine() {
   alpineTerminal.onData((data) => alpineEmulator?.serial0_send(data));
   new ResizeObserver(() => { if (!pane.hidden) alpineFit.fit(); }).observe(screen);
   if ("caches" in window) {
-    caches.open("iadmin-vm-v1").then((cache) => cache.match(`${VM_BASE}/vm/alpine/alpine-virt-3.21.3-x86.iso`)).then((cached) => {
+    caches.open("iadmin-vm-v2").then((cache) => cache.match(`${VM_BASE}/vm/alpine/initrd.gz`)).then((cached) => {
       if (cached && !alpineEmulator) status.textContent = T("Image déjà téléchargée et disponible dans le cache.", "Image already downloaded and available in the cache.");
     }).catch(() => {});
   }
@@ -480,19 +480,20 @@ function wireAlpine() {
     if (alpineEmulator) { alpineTerminal.focus(); return; }
     start.disabled = true; status.textContent = T("Téléchargement de l’image Alpine…", "Downloading the Alpine image…");
     try {
-      const isoUrl = `${VM_BASE}/vm/alpine/alpine-virt-3.21.3-x86.iso`;
-      const [V86, iso] = await Promise.all([loadV86(), cachedAsset(isoUrl, (loaded, total, cached) => { bar.value = cached ? 100 : total ? Math.round(loaded * 100 / total) : 0; status.textContent = cached ? T("Image chargée depuis le cache.", "Image loaded from cache.") : `${bar.value}%`; })]);
+      const kernelUrl = `${VM_BASE}/vm/alpine/bzImage`;
+      const initrdUrl = `${VM_BASE}/vm/alpine/initrd.gz`;
+      const progress = (loaded, total, cached) => { bar.value = cached ? 100 : total ? Math.round(loaded * 100 / total) : 0; status.textContent = cached ? T("Image chargée depuis le cache.", "Image loaded from cache.") : `${bar.value}%`; };
+      const [V86, kernel, initrd] = await Promise.all([loadV86(), cachedAsset(kernelUrl, progress), cachedAsset(initrdUrl, progress)]);
       status.textContent = T("Démarrage de la VM…", "Starting the VM…");
-      alpineEmulator = new V86({ wasm_path: `${VM_BASE}/vm/v86.wasm`, bios: { url: `${VM_BASE}/vm/seabios.bin` }, vga_bios: { url: `${VM_BASE}/vm/vgabios.bin` }, cdrom: { buffer: iso }, memory_size: 256 * 1024 * 1024, autostart: true });
+      alpineEmulator = new V86({ wasm_path: `${VM_BASE}/vm/v86.wasm`, bios: { url: `${VM_BASE}/vm/seabios.bin` }, vga_bios: { url: `${VM_BASE}/vm/vgabios.bin` }, bzimage: { buffer: kernel }, initrd: { buffer: initrd }, cmdline: "console=ttyS0,115200 rdinit=/init", memory_size: 512 * 1024 * 1024, autostart: true });
       alpineEmulator.add_listener("serial0-output-byte", (byte) => {
         const char = String.fromCharCode(byte); alpineTerminal.write(char); alpineSerial = (alpineSerial + char).slice(-256);
-        if (alpineSerial.endsWith("localhost login: ")) alpineEmulator.serial0_send("root\n");
-        if (!alpineReady && /localhost:~# $/.test(alpineSerial)) {
+        if (!alpineReady && alpineSerial.includes("IADMIN_ALPINE_READY")) {
           alpineReady = true; status.textContent = T("Alpine prête — session conservée lors des changements de mode.", "Alpine ready — session retained across mode changes.");
           while (alpinePending.length) alpineEmulator.serial0_send(alpinePending.shift());
         }
       });
-      alpineEmulator.add_listener("emulator-started", () => { status.textContent = T("Alpine démarre — connexion root sans mot de passe.", "Alpine is starting — log in as root with no password."); setTimeout(() => alpineEmulator.serial0_send("\n"), 1200); alpineFit.fit(); alpineTerminal.focus(); });
+      alpineEmulator.add_listener("emulator-started", () => { status.textContent = T("Alpine démarre — outils disponibles hors ligne.", "Alpine is starting — tools are available offline."); alpineFit.fit(); alpineTerminal.focus(); });
     } catch (error) { start.disabled = false; status.textContent = T("Échec du chargement de la VM.", "Failed to load the VM."); }
   });
   document.addEventListener("terminal:command", (event) => { if (termMode() === "alpine") { event.preventDefault(); const data = event.detail.command + "\n"; if (alpineReady) alpineEmulator.serial0_send(data); else { alpinePending.push(data); start.click(); } } });
