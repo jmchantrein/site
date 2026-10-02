@@ -34,12 +34,25 @@ const en = locale === "en";
       ? "The HTTPS site requires a secure WebSocket. The option uses mkcert to create and trust a certificate limited to localhost."
       : "Le site HTTPS exige un WebSocket sécurisé. L’option utilise mkcert pour créer et approuver un certificat limité à localhost."}</p>
 
+    <h2>{en ? "Where should it be installed?" : "Où faut-il l’installer ?"}</h2>
+    <p>{en
+      ? "Always install and run the companion on the computer where your browser is open. That computer needs Python 3 and curl or wget; using the public HTTPS site also requires mkcert during installation. The browser connects only to its own localhost, so installing the companion on an SSH server would not work."
+      : "Installe et lance toujours le compagnon sur l’ordinateur où le navigateur est ouvert. Cet ordinateur doit disposer de Python 3 et de curl ou wget ; l’utilisation du site public en HTTPS nécessite aussi mkcert pendant l’installation. Le navigateur se connecte uniquement à son propre localhost : installer le compagnon sur un serveur SSH ne fonctionnerait pas."}</p>
+
     <h2>{en ? "3. Start a session" : "3. Démarrer une session"}</h2>
     <pre><code>{`# Local shell
 iadmin-terminal local
 
 # Remote shell through your installed SSH client
 iadmin-terminal ssh user@example.org`}</code></pre>
+    <h3>{en ? "Local mode" : "Mode local"}</h3>
+    <p>{en
+      ? "Choose local when the course commands must use the browser computer’s files, programs and permissions. No remote computer or SSH server is involved."
+      : "Choisis le mode local lorsque les commandes du cours doivent utiliser les fichiers, logiciels et permissions de l’ordinateur du navigateur. Aucun ordinateur distant ni serveur SSH n’intervient."}</p>
+    <h3>{en ? "Remote mode via SSH" : "Mode distant via SSH"}</h3>
+    <p>{en
+      ? "Choose SSH when commands must run on another machine. The companion starts the SSH client already installed on the browser computer, using its usual keys, agent and ~/.ssh/config. The remote machine only needs a reachable SSH server and your user account; do not install the companion there. First make sure the same ssh user@host command works in a normal local terminal."
+      : "Choisis SSH lorsque les commandes doivent s’exécuter sur une autre machine. Le compagnon lance le client SSH déjà installé sur l’ordinateur du navigateur, avec ses clés, son agent et son fichier ~/.ssh/config habituels. La machine distante a seulement besoin d’un serveur SSH joignable et de ton compte utilisateur ; n’y installe pas le compagnon. Vérifie d’abord que la même commande ssh utilisateur@hôte fonctionne dans un terminal local ordinaire."}</p>
     <p>{en
       ? "Copy the one-time wss://localhost address printed by the command, return to the terminal panel, choose “Local or SSH (companion)”, paste it and connect."
       : "Copie l’adresse temporaire wss://localhost affichée par la commande, reviens au panneau terminal, choisis « Local ou SSH (compagnon) », colle-la puis connecte-toi."}</p>

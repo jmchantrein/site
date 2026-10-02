@@ -316,7 +316,39 @@ function wireExercises() {
 
 /* ---- BARRE DE PROGRESSION de lecture --------------------------------------- */
 const PROGRESS_KEY = "site-astro-progress-v1";
+const RECENT_COURSES_KEY = "site-astro-recent-courses-v1";
 function loadProgress() { try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); } catch (e) { return {}; } }
+function coursePath() {
+  const match = location.pathname.match(/^(.*\/cours\/)(?!serie\/)([^/]+)\/$/);
+  return match ? location.pathname : null;
+}
+function rememberCurrentCourse() {
+  const path = coursePath();
+  if (!path) return;
+  try {
+    const previous = JSON.parse(localStorage.getItem(RECENT_COURSES_KEY) || "[]");
+    const recent = [path, ...previous.filter((item) => item !== path)].slice(0, 20);
+    localStorage.setItem(RECENT_COURSES_KEY, JSON.stringify(recent));
+  } catch (e) {}
+}
+function wireRecentCourses() {
+  const section = document.querySelector("[data-recent-courses]");
+  if (!section) return;
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem(RECENT_COURSES_KEY) || "[]"); } catch (e) {}
+  const cards = new Map([...section.querySelectorAll("[data-recent-course]")]
+    .map((card) => [card.getAttribute("data-recent-course"), card]));
+  let shown = 0;
+  recent.some((path) => {
+    const card = cards.get(path);
+    if (!card) return false;
+    card.hidden = false;
+    card.parentNode.appendChild(card);
+    shown += 1;
+    return shown === 3;
+  });
+  section.hidden = shown === 0;
+}
 function wireReadingProgress() {
   const bar = document.querySelector("[data-read-progress]");
   if (!bar) return;
@@ -337,6 +369,13 @@ function wireReadingProgress() {
     document.dispatchEvent(new CustomEvent("sa:read-progress", { detail: { p } }));
   }
   update();
+  if (new URLSearchParams(location.search).get("resume") === "1" && saved > 0) {
+    requestAnimationFrame(() => {
+      const rect = article.getBoundingClientRect();
+      const total = Math.max(0, rect.height - window.innerHeight);
+      window.scrollTo({ top: window.scrollY + rect.top + total * saved, behavior: "auto" });
+    });
+  }
   window.addEventListener("scroll", update, { passive: true });
   window.addEventListener("resize", update);
 }
@@ -916,6 +955,8 @@ function wireCopyPrompt() {
 
 function init() {
   apply();
+  rememberCurrentCourse();
+  wireRecentCourses();
   wireMobileNav();
   wirePanel();
   wireTerminals();

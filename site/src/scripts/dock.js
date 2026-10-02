@@ -644,6 +644,7 @@ function init() {
     const course = document.querySelector(".course");
     if (course) course.removeAttribute("data-term-off");
     if (hostInAside()) setDockState("terminal", "open");
+    else openTerminalWindow();
   });
   wireCompanion();
   wireAlpine();
