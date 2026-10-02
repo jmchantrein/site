@@ -48,6 +48,9 @@ cp "${kernel[0]}" "$OUT/bzImage"
 
 (cd "$WORK/rootfs" && find . -xdev -print0 | cpio --null -o --format=newc --quiet | gzip -9) > "$OUT/initrd.gz"
 sha256sum "$OUT/bzImage" "$OUT/initrd.gz" > "$OUT/SHA256SUMS"
+if [[ -n "${SUDO_UID:-}" && -n "${SUDO_GID:-}" ]]; then
+  chown -R "$SUDO_UID:$SUDO_GID" "$OUT"
+fi
 rm -rf "$WORK"
 trap - EXIT
 printf 'Debian VM ready: '; du -h "$OUT/bzImage" "$OUT/initrd.gz" | tr '\n' ' '; echo
