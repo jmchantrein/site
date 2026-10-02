@@ -46,7 +46,15 @@ kernel=("$WORK/rootfs"/boot/vmlinuz-*)
 [[ -f "${kernel[0]}" ]] || { echo "Debian kernel not found" >&2; exit 1; }
 cp "${kernel[0]}" "$OUT/bzImage"
 
+# v86 receives the kernel separately. Keeping a second kernel and its complete
+# module tree inside the initramfs wastes more than 150 MB of guest RAM and can
+# make unpacking fail before /init ever runs. The teaching shell only needs
+# drivers compiled into Debian's kernel (serial console, devtmpfs and proc/sys).
+rm -rf "$WORK/rootfs/boot" "$WORK/rootfs/lib/modules" "$WORK/rootfs/usr/lib/modules"
+
 (cd "$WORK/rootfs" && find . -xdev -print0 | cpio --null -o --format=newc --quiet | gzip -9) > "$OUT/initrd.gz"
+initrd_size=$(stat -c %s "$OUT/initrd.gz")
+(( initrd_size < 128 * 1024 * 1024 )) || { echo "Debian initramfs is unexpectedly large: $initrd_size bytes" >&2; exit 1; }
 sha256sum "$OUT/bzImage" "$OUT/initrd.gz" > "$OUT/SHA256SUMS"
 if [[ -n "${SUDO_UID:-}" && -n "${SUDO_GID:-}" ]]; then
   chown -R "$SUDO_UID:$SUDO_GID" "$OUT"

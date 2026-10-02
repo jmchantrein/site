@@ -7,13 +7,13 @@ const emulator = new V86({
   vga_bios: { url: path.join(root, "vgabios.bin") },
   bzimage: { url: path.join(root, "debian", "bzImage") },
   initrd: { url: path.join(root, "debian", "initrd.gz") },
-  cmdline: "console=ttyS0,115200 init=/init quiet",
-  memory_size: 256 * 1024 * 1024, autostart: true,
+  cmdline: "console=ttyS0,115200 rdinit=/init",
+  memory_size: 512 * 1024 * 1024, autostart: true,
 });
 let output = "";
 const timeout = setTimeout(() => {
   emulator.destroy();
-  throw new Error("Debian did not expose its teaching shell within 90 seconds");
+  throw new Error(`Debian did not expose its teaching shell within 90 seconds. Last serial output:\n${output || "(none)"}`);
 }, 90_000);
 emulator.add_listener("serial0-output-byte", (byte) => {
   output = (output + String.fromCharCode(byte)).slice(-4096);

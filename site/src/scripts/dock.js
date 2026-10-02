@@ -527,7 +527,7 @@ function wireDebian() {
         wasm_path: `${VM_BASE}/vm/v86.wasm`,
         bios: { url: `${VM_BASE}/vm/seabios.bin` }, vga_bios: { url: `${VM_BASE}/vm/vgabios.bin` },
         bzimage: { buffer: kernel }, initrd: { buffer: initrd },
-        cmdline: "console=ttyS0,115200 init=/init quiet", memory_size: 256 * 1024 * 1024, autostart: true,
+        cmdline: "console=ttyS0,115200 rdinit=/init", memory_size: 512 * 1024 * 1024, autostart: true,
       });
       debianEmulator.add_listener("serial0-output-byte", (byte) => {
         const char = String.fromCharCode(byte); debianTerminal.write(char);
