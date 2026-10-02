@@ -96,20 +96,10 @@
 .dockwin__tool svg { width: 15px; height: 15px; }
 .dockwin__body { overflow: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; }
 .dockwin__body > * { min-height: 0; }
-/* Hôte de terminal (pane émulé + pane iframe) : l'unité déplacée entre la
-   colonne d'un cours et la fenêtre. Sa barre de pane iframe ne sert qu'en
-   colonne (la fenêtre a déjà sa propre barre). */
+/* Hôte des terminaux réels, déplacé entre le cours et la fenêtre. */
 .term-host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.term-keys { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px var(--space-2); overflow-x: auto; background: var(--term-bar); border-bottom: 1px solid var(--term-border); }
-.term-keys button { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: 27px; padding: 2px 6px; cursor: pointer; color: var(--term-fg); background: var(--term-bg); border: 1px solid var(--term-border); border-radius: var(--radius-sm); }
-.term-keys button:hover, .term-keys button[data-active] { color: var(--term-accent); border-color: var(--term-accent); transform: translateY(1px); }
-.term-keys kbd { padding: 0; color: inherit; background: transparent; border: 0; box-shadow: none; font-size: 11px; }
-.term-keys__echo { min-width: 48px; color: var(--term-dim); font: 11px var(--font-mono); opacity: 0; transition: opacity 160ms; }
-.term-keys__echo[data-active] { opacity: 1; color: var(--term-accent); }
 .term-host__framebar { display: none; }
-.dockwin [data-term-pane="emulated"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.dockwin [data-term-pane="emulated"] .terminal { flex: 1; min-height: 0; }
-.dockwin [data-term-pane="frame"] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.course__aside .term-host__framebar { display: flex; }
 /* Plein écran */
 .dockwin--fs { inset: 0 !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100dvh !important; max-height: none !important; border-radius: 0; z-index: var(--z-fullscreen) !important; }
 /* Poignée de redimensionnement (coin bas-droit) */
@@ -117,16 +107,7 @@
 .dockwin__resize::before { content: ""; position: absolute; right: 4px; bottom: 4px; width: 8px; height: 8px; border-right: 2px solid var(--color-border-strong); border-bottom: 2px solid var(--color-border-strong); border-radius: 0 0 3px 0; }
 .dockwin__resize:hover::before { border-color: var(--color-accent); }
 .dockwin--fs .dockwin__resize { display: none; }
-.dockwin__body .terminal { border: none; border-radius: 0; box-shadow: none; max-height: none; }
-.dockwin__framenote { font-size: var(--text-xs); color: var(--color-text-muted); padding: var(--space-2) var(--space-3); margin: 0; display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
-.dockwin__framenote a { display: inline-flex; align-items: center; gap: 4px; }
-.dockwin__framenote svg { width: 12px; height: 12px; }
-/* L'iframe de terminal est défini une seule fois (components.css) ; en fenêtre,
-   seule sa hauteur minimale change. */
-.dockwin iframe[data-term-frame] { min-height: 240px; }
 body.dockwin-dragging iframe { pointer-events: none; }
-.dockwin__help { padding: var(--space-2) var(--space-3) var(--space-3); font-size: var(--text-sm); }
-.dockwin__help ol { padding-left: var(--space-5); margin: var(--space-2) 0 0; }
 .companion { flex: 1; min-height: 0; background: var(--term-bg); color: var(--term-fg); }
 .companion__setup { padding: var(--space-3); display: grid; gap: var(--space-2); border-bottom: 1px solid var(--term-border); }
 .companion__setup label { font-size: var(--text-xs); color: var(--term-dim); }
@@ -141,6 +122,9 @@ body.dockwin-dragging iframe { pointer-events: none; }
 .companion__terminal .xterm { height: 100%; }
 .alpine-vm { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--term-bg); }
 .alpine-vm__loader { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-2); color: var(--term-dim); font-size: var(--text-xs); border-bottom: 1px solid var(--term-border); }
+.alpine-vm__loader button { padding: var(--space-2) var(--space-3); border: 1px solid var(--term-accent); border-radius: var(--radius-sm); color: var(--term-bg); background: var(--term-accent); font-weight: 700; cursor: pointer; }
+.alpine-vm__loader button:hover { filter: brightness(1.1); }
+.alpine-vm__loader button:disabled { cursor: progress; opacity: .65; }
 .alpine-vm__loader progress { width: min(180px, 35%); }
 .alpine-vm [data-alpine-screen] { flex: 1; min-height: 240px; padding: var(--space-2); }
 .alpine-vm .xterm { height: 100%; }

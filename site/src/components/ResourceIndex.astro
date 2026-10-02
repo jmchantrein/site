@@ -1,5 +1,6 @@
 ---
 import Icon from "./Icon.astro";
+import VideoEmbed from "./VideoEmbed.astro";
 import { RESOURCE_KIND_META, RESOURCE_KINDS, resourceKindLabel, type ResourceKind } from "../data/resources";
 import { TOPICS, topicLabel, type TopicId } from "../data/topics";
 
@@ -14,6 +15,10 @@ export interface ResourceItem {
   year?: number;
   duration?: number;
   image?: { src: string; alt: string; caption?: string };
+  youtubeId?: string;
+  playlistId?: string;
+  /** La fiche n'est proposée que lorsqu'elle apporte réellement un complément. */
+  hasDetails?: boolean;
 }
 interface Props { items: ResourceItem[]; locale?: "fr" | "en" }
 const { items, locale = "fr" } = Astro.props;
@@ -62,8 +67,10 @@ const langName = (code: string) => {
       <p class="results-count" data-results-count aria-live="polite"></p>
       <div class="card-grid resource-grid" data-resource-grid>
         {items.map((item, index) => (
-          <a class="module-card resource-card" href={item.href} data-kind={item.kind} data-topics={item.topics.join(" ")} data-latest={index}>
+          <article class="module-card resource-card" data-kind={item.kind} data-topics={item.topics.join(" ")} data-latest={index}>
             {item.image && <img class="resource-card__image" src={`${base}/${item.image.src}`} alt={item.image.alt} loading="lazy" />}
+            {item.youtubeId && <VideoEmbed id={item.youtubeId} title={item.title} />}
+            {item.playlistId && <VideoEmbed playlistId={item.playlistId} title={item.title} />}
             <div class="module-card__top">
               <span class="resource-kind"><Icon name={RESOURCE_KIND_META[item.kind].icon} class="resource-kind__icon" />{resourceKindLabel(item.kind, locale)}</span>
               <span class="module-card__meta">{dateLabel(item.added)}</span>
@@ -74,8 +81,8 @@ const langName = (code: string) => {
             <ul class="module-card__tags">
               {item.topics.map((topic) => <li>{topicLabel(topic, locale)}</li>)}
             </ul>
-            <span class="module-card__cta">{locale === "en" ? "Open recommendation" : "Ouvrir la recommandation"} →</span>
-          </a>
+            {item.hasDetails && <a class="module-card__cta" href={item.href}>{locale === "en" ? "More information" : "Plus d’informations"} →</a>}
+          </article>
         ))}
       </div>
       <p class="resource-empty" data-resource-empty hidden>{locale === "en" ? "No recommendation matches these filters. Try “Any” or remove a filter." : "Aucune recommandation ne correspond à ces filtres. Essayez « Au moins une » ou retirez un filtre."}</p>
@@ -153,5 +160,6 @@ const langName = (code: string) => {
   .resource-kind__icon :global(svg) { width: 100%; height: 100%; }
   .resource-meta { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
   .resource-card__image { width: calc(100% + 2 * var(--space-5)); max-width: none; height: 11rem; margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-2); object-fit: cover; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .resource-card :global(.video-embed) { width: calc(100% + 2 * var(--space-5)); margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-2); border-width: 0 0 1px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
   .resource-empty { padding: var(--space-6); border: 1px dashed var(--color-border-strong); border-radius: var(--radius-lg); text-align: center; }
 </style>

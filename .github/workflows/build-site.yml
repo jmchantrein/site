@@ -29,6 +29,14 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
         working-directory: site
+      - name: Construire la VM Debian minimale
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debootstrap cpio
+          sudo site/scripts/build-debian-vm.sh
+      - name: Tester le démarrage de Debian
+        run: node scripts/test-debian-vm-boot.mjs
+        working-directory: site
       - name: Vérifier les contenus, construire et tester le site généré
         run: npm run check
         working-directory: site

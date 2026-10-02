@@ -7,7 +7,6 @@
  * Navigation précédent/suivant en pied. Le contenu arrive par <slot/>.
  */
 import Base from "./Base.astro";
-import Terminal from "../components/Terminal.astro";
 import TocList from "../components/TocList.astro";
 import SerieTimeline from "../components/SerieTimeline.astro";
 import ProvBadge from "../components/ProvBadge.astro";
@@ -133,7 +132,6 @@ const dateLine = [pub, upd].filter(Boolean).join(" · ");
                 <span class="pane-grip__edge b" data-pane-grip aria-hidden="true"></span>
                 <span class="pane-grip__edge l" data-pane-grip aria-hidden="true"></span>
               </span>
-              <Terminal id="term-1" title={terminalTitle} comment={terminalComment} />
             </aside>
           </div>
         ) : (

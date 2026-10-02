@@ -138,7 +138,7 @@
 
 /* -----------------------------------------------------------------------------
    COMMANDE CLIQUABLE  →  apprentissage actif, couplée au terminal
-   Clic = exécution simulée dans le panneau terminal associé.
+   Clic = exécution dans le terminal réel actif.
    --------------------------------------------------------------------------- */
 .cmd {
   display: inline-flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap;
@@ -449,9 +449,6 @@ html[data-motion="off"] .term-cursor { animation: none; opacity: 1; }
 }
 /* Iframe de terminal — définition UNIQUE, partagée avec la fenêtre du dock
    (dock.css n'ajuste que sa min-height). */
-iframe[data-term-frame] { width: 100%; flex: 1; border: 0; background: var(--term-bg); display: block; }
-.course__aside iframe[data-term-frame] { min-height: 0; }
-.course__aside .dockwin__framenote, .course__aside .dockwin__help { color: var(--term-dim); }
 
 /* Terminal déplacé à gauche (drag) */
 .course[data-term-side="left"] { grid-template-columns: clamp(320px, var(--term-col, 440px), 56vw) 18px minmax(0, 1fr); }
