@@ -26,9 +26,10 @@ Le runtime partagé (`src/scripts/site.js`) câble : tiroirs Accessibilité /
 Paramètres (persistants), langue FR/EN, terminal interactif, verrou des
 exercices, sommaires, ancres, recherche Ctrl+K, diaporamas.
 Le **dock** de l'en-tête (`src/data/dock.ts` + `src/scripts/dock.js`) porte
-deux outils : le terminal (5 modes via ⋮ : émulé, JSLinux, LinuxOnTab,
-ttyd local, distant) et un Pomodoro qui comptabilise uniquement la lecture
-active avant de proposer une pause après 25 minutes.
+le terminal : une vraie VM Alpine légère, une VM Debian minimale construite
+par `scripts/build-debian-vm.sh`, ou le compagnon pour ouvrir un PTY local / SSH.
+Les images et le moteur v86 sont servis localement puis mis en cache par le
+navigateur ; aucun interpréteur de commandes simulé n'est maintenu.
 
 ## Écrire un cours (MDX)
 

@@ -9,8 +9,8 @@
 
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import "@xterm/xterm/css/xterm.css";
 import { TERMINAL_KEYS as TERM_KEYS } from "../data/terminal-keys.mjs";
+import "@xterm/xterm/css/xterm.css";
 
 const lang = () => (document.documentElement.getAttribute("lang") === "en" ? "en" : "fr");
 const T = (fr, en) => (lang() === "en" ? en : fr);
@@ -250,44 +250,36 @@ function mountPomodoro(body) {
 /* ---- TERMINAL — fenêtre pré-rendue + modes -------------------------------------- */
 const TERM_MODE_KEY = "site-astro-dockterm-mode-v1";
 const TERM_MODES = {
-  emulated: { fr: "Émulé (démo du site)", en: "Emulated (site demo)", src: null },
   alpine: { fr: "Alpine local (WebAssembly)", en: "Local Alpine (WebAssembly)", src: null },
+  debian: { fr: "Debian minimale (WebAssembly)", en: "Minimal Debian (WebAssembly)", src: null },
   companion: { fr: "Local ou SSH (compagnon)", en: "Local or SSH (companion)", src: null },
 };
 function termMode() {
   try {
-    const mode = localStorage.getItem(TERM_MODE_KEY) || "emulated";
-    return TERM_MODES[mode] ? mode : "emulated";
-  } catch (e) { return "emulated"; }
+    const mode = localStorage.getItem(TERM_MODE_KEY) || "alpine";
+    return TERM_MODES[mode] ? mode : "alpine";
+  } catch (e) { return "alpine"; }
 }
 function termWin() { return document.querySelector('[data-dock-window="terminal"]'); }
-/* L'hôte de terminal : la « classe mère » de tous les modes. Une seule unité
-   (pane émulé + pane iframe) qui vit soit dans la colonne du cours, soit dans
-   la fenêtre flottante — détacher/rattacher déplace l'hôte entier, donc TOUS
-   les modes se comportent de la même manière. */
+/* Une seule unité vit dans la colonne du cours ou dans la fenêtre flottante :
+   détacher/rattacher conserve donc la VM et le compagnon en place. */
 function termHost() { return document.querySelector("[data-term-host]"); }
 function hostInAside() { const h = termHost(); return !!(h && h.closest(".course__aside")); }
 
 function applyTermMode() {
   const host = termHost(); if (!host) return;
   const mode = termMode();
-  const emu = host.querySelector('[data-term-pane="emulated"]');
-  const frame = host.querySelector('[data-term-pane="frame"]');
   const companion = host.querySelector('[data-term-pane="companion"]');
   const alpine = host.querySelector('[data-term-pane="alpine"]');
-  const iframe = host.querySelector("[data-term-frame]");
-  const link = host.querySelector("[data-term-frame-link]");
-  const help = host.querySelector("[data-term-help]");
+  const debian = host.querySelector('[data-term-pane="debian"]');
   document.querySelectorAll("[data-term-mode-label]").forEach((l) => {
     l.textContent = lang() === "en" ? TERM_MODES[mode].en : TERM_MODES[mode].fr;
   });
   document.querySelectorAll(".dock__menu [data-mode]").forEach((b) =>
     b.setAttribute("aria-checked", String(b.getAttribute("data-mode") === mode)));
-  emu.hidden = mode !== "emulated";
-  frame.hidden = true;
   companion.hidden = mode !== "companion";
   alpine.hidden = mode !== "alpine";
-  iframe.src = "about:blank"; help.hidden = true; if (link) link.href = "#";
+  debian.hidden = mode !== "debian";
 }
 /* Quand un module embarque son terminal, sa colonne est l'emplacement par
    défaut : l'icône du dock affiche/masque CETTE colonne (pas un 2e terminal).
@@ -363,11 +355,6 @@ function closeTerminal() {
   if (courseAside() && isDetached()) { attachCourseTerminal(); return; }
   const win = termWin(); if (!win) return;
   win.hidden = true; setDockState("terminal", "");
-  // « Éteindre » : on vide l'écran du terminal émulé et on coupe l'iframe.
-  const screen = win.querySelector(".terminal__screen");
-  if (screen) screen.innerHTML = "";
-  const iframe = win.querySelector("[data-term-frame]");
-  if (iframe) iframe.src = "about:blank";
 }
 
 /* Menu ⋮ : choix du mode (et bascule de l'atelier du cours si présent). */
@@ -438,6 +425,12 @@ let alpineFit = null;
 let alpineReady = false;
 let alpineSerial = "";
 const alpinePending = [];
+let debianEmulator = null;
+let debianTerminal = null;
+let debianFit = null;
+let debianReady = false;
+let debianSerial = "";
+const debianPending = [];
 function companionSend(message) {
   if (!companionSocket || companionSocket.readyState !== WebSocket.OPEN) return false;
   companionSocket.send(JSON.stringify(message));
@@ -478,6 +471,11 @@ function wireAlpine() {
   alpineFit = new FitAddon(); alpineTerminal.loadAddon(alpineFit); alpineTerminal.open(screen);
   alpineTerminal.onData((data) => alpineEmulator?.serial0_send(data));
   new ResizeObserver(() => { if (!pane.hidden) alpineFit.fit(); }).observe(screen);
+  if ("caches" in window) {
+    caches.open("iadmin-vm-v1").then((cache) => cache.match(`${VM_BASE}/vm/alpine/alpine-virt-3.21.3-x86.iso`)).then((cached) => {
+      if (cached && !alpineEmulator) status.textContent = T("Image déjà téléchargée et disponible dans le cache.", "Image already downloaded and available in the cache.");
+    }).catch(() => {});
+  }
   start.addEventListener("click", async () => {
     if (alpineEmulator) { alpineTerminal.focus(); return; }
     start.disabled = true; status.textContent = T("Téléchargement de l’image Alpine…", "Downloading the Alpine image…");
@@ -498,6 +496,51 @@ function wireAlpine() {
     } catch (error) { start.disabled = false; status.textContent = T("Échec du chargement de la VM.", "Failed to load the VM."); }
   });
   document.addEventListener("terminal:command", (event) => { if (termMode() === "alpine") { event.preventDefault(); const data = event.detail.command + "\n"; if (alpineReady) alpineEmulator.serial0_send(data); else { alpinePending.push(data); start.click(); } } });
+}
+function wireDebian() {
+  const pane = document.querySelector('[data-term-pane="debian"]');
+  const screen = document.querySelector("[data-debian-screen]");
+  const start = document.querySelector("[data-debian-start]");
+  const bar = document.querySelector("[data-debian-progress]");
+  const status = document.querySelector("[data-debian-status]");
+  if (!pane || !screen || !start || !bar || !status) return;
+  debianTerminal = new XTerm({ cursorBlink: true, fontFamily: '"IBM Plex Mono", monospace', fontSize: 13, theme: { background: "#0d1720", foreground: "#e7edf2" } });
+  debianFit = new FitAddon(); debianTerminal.loadAddon(debianFit); debianTerminal.open(screen);
+  debianTerminal.onData((data) => debianEmulator?.serial0_send(data));
+  new ResizeObserver(() => { if (!pane.hidden) debianFit.fit(); }).observe(screen);
+  const kernelUrl = `${VM_BASE}/vm/debian/bzImage`;
+  const initrdUrl = `${VM_BASE}/vm/debian/initrd.gz`;
+  if ("caches" in window) {
+    caches.open("iadmin-vm-v1").then(async (cache) => (await cache.match(kernelUrl)) && (await cache.match(initrdUrl))).then((cached) => {
+      if (cached && !debianEmulator) status.textContent = T("Image déjà téléchargée et disponible dans le cache.", "Image already downloaded and available in the cache.");
+    }).catch(() => {});
+  }
+  start.addEventListener("click", async () => {
+    if (debianEmulator) { debianTerminal.focus(); return; }
+    start.disabled = true; status.textContent = T("Téléchargement de l’image Debian minimale…", "Downloading the minimal Debian image…");
+    try {
+      let completed = 0;
+      const progress = (loaded, total, cached) => { if (cached || (total && loaded === total)) completed++; bar.value = Math.min(100, completed * 50); };
+      const [V86, kernel, initrd] = await Promise.all([loadV86(), cachedAsset(kernelUrl, progress), cachedAsset(initrdUrl, progress)]);
+      bar.value = 100; status.textContent = T("Démarrage de Debian…", "Starting Debian…");
+      debianEmulator = new V86({
+        wasm_path: `${VM_BASE}/vm/v86.wasm`,
+        bios: { url: `${VM_BASE}/vm/seabios.bin` }, vga_bios: { url: `${VM_BASE}/vm/vgabios.bin` },
+        bzimage: { buffer: kernel }, initrd: { buffer: initrd },
+        cmdline: "console=ttyS0,115200 rdinit=/init", memory_size: 512 * 1024 * 1024, autostart: true,
+      });
+      debianEmulator.add_listener("serial0-output-byte", (byte) => {
+        const char = String.fromCharCode(byte); debianTerminal.write(char);
+        debianSerial = (debianSerial + char).slice(-256);
+        if (!debianReady && debianSerial.includes("IADMIN_DEBIAN_READY")) {
+          debianReady = true; status.textContent = T("Debian prête — système temporaire en mémoire.", "Debian ready — temporary in-memory system.");
+          while (debianPending.length) debianEmulator.serial0_send(debianPending.shift());
+        }
+      });
+      debianEmulator.add_listener("emulator-started", () => { debianFit.fit(); debianTerminal.focus(); });
+    } catch (error) { start.disabled = false; status.textContent = T("Image Debian indisponible. Construisez-la avec scripts/build-debian-vm.sh.", "Debian image unavailable. Build it with scripts/build-debian-vm.sh."); }
+  });
+  document.addEventListener("terminal:command", (event) => { if (termMode() === "debian") { event.preventDefault(); const data = event.detail.command + "\n"; if (debianReady) debianEmulator.serial0_send(data); else { debianPending.push(data); start.click(); } } });
 }
 function companionStatus(fr, en) {
   const node = document.querySelector("[data-companion-status]");
@@ -558,22 +601,22 @@ function wireCompanion() {
   });
 }
 
-function wireTerminalKeys() {
-  const echo = document.querySelector("[data-term-key-echo]");
-  document.querySelectorAll("[data-term-key]").forEach((button) => button.addEventListener("click", () => {
+/* Les raccourcis expliqués dans le corps des cours restent actifs ; seule la
+   rangée de boutons redondante située au-dessus du terminal a été retirée. */
+function wireCourseTerminalKeys() {
+  document.querySelectorAll(".term-key-callout[data-term-key]").forEach((button) => button.addEventListener("click", () => {
     const key = TERM_KEYS[button.getAttribute("data-term-key")];
     if (!key) return;
-    if (echo) { echo.textContent = key.label; echo.setAttribute("data-active", ""); setTimeout(() => echo.removeAttribute("data-active"), 450); }
-    button.setAttribute("data-active", ""); setTimeout(() => button.removeAttribute("data-active"), 180);
-    const mode = termMode();
-    if (mode === "companion") companionSend({ type: "input", data: key.data });
-    else if (mode === "alpine") { if (alpineReady) alpineEmulator.serial0_send(key.data); else { alpinePending.push(key.data); document.querySelector("[data-alpine-start]")?.click(); } }
-    else if (mode === "emulated") document.dispatchEvent(new CustomEvent("terminal:simulated-key", { detail: { key: button.getAttribute("data-term-key"), data: key.data } }));
+    if (termMode() === "companion") companionSend({ type: "input", data: key.data });
+    else if (termMode() === "debian") {
+      if (debianReady) debianEmulator.serial0_send(key.data);
+      else { debianPending.push(key.data); document.querySelector("[data-debian-start]")?.click(); }
+    } else if (alpineReady) alpineEmulator.serial0_send(key.data);
+    else { alpinePending.push(key.data); document.querySelector("[data-alpine-start]")?.click(); }
   }));
 }
 
-/* Contrôles communs à tous les modes (barre du terminal émulé ET barre du
-   pane iframe) : détacher/rattacher (⧉) et minimiser (−). */
+/* Contrôles communs aux deux terminaux : détacher/rattacher et minimiser. */
 function makeDetachBtn() {
   const det = document.createElement("button");
   det.type = "button"; det.className = "term-icon-btn"; det.setAttribute("data-term-detach", "");
@@ -597,32 +640,32 @@ function makeMinBtn(course) {
 
 /* ---- INIT ---------------------------------------------------------------------- */
 function init() {
+  document.addEventListener("terminal:command", () => {
+    const course = document.querySelector(".course");
+    if (course) course.removeAttribute("data-term-off");
+    if (hostInAside()) setDockState("terminal", "open");
+  });
   wireCompanion();
   wireAlpine();
-  wireTerminalKeys();
-  // Atelier du cours : l'hôte de terminal adopte le terminal du module et
-  // s'installe dans la colonne (emplacement par défaut). Le terminal
-  // générique du dock est parqué : une seule session par page.
+  wireDebian();
+  wireCourseTerminalKeys();
+  // Dans un cours, l'hôte complet s'installe dans la colonne de droite.
   const course = document.querySelector(".course");
   const aside = courseAside();
   const host = termHost();
   const dock = document.querySelector(".dock");
   if (course && aside && host) {
-    const dockTerm = host.querySelector(".terminal");
-    if (dockTerm) { dockTerm.setAttribute("data-parked", "true"); dockTerm.hidden = true; }
-    const courseTerm = aside.querySelector(".terminal");
-    if (courseTerm && dock) dock.setAttribute("data-dock-context", "terminal");
-    if (courseTerm) host.querySelector('[data-term-pane="emulated"]').appendChild(courseTerm);
+    if (dock) dock.setAttribute("data-dock-context", "terminal");
     aside.appendChild(host);
-    // Barre du pane iframe (affichée en colonne seulement) : mêmes contrôles.
+    // Barre de contrôle ajoutée lorsque le terminal occupe la colonne du cours.
     const fbar = document.createElement("div");
     fbar.className = "terminal__bar term-host__framebar";
     fbar.innerHTML = '<span class="terminal__glyph" aria-hidden="true">❯_</span>' +
       '<span class="terminal__title" data-term-mode-label></span>' +
       '<span class="terminal__actions"></span>';
-    host.querySelector('[data-term-pane="frame"]').prepend(fbar);
+    host.prepend(fbar);
     try { if (localStorage.getItem("site-astro-term-visible-v1") === "off") course.setAttribute("data-term-off", ""); } catch (e) {}
-    [courseTerm?.querySelector(".terminal__actions"), fbar.querySelector(".terminal__actions")].forEach((actions) => {
+    [fbar.querySelector(".terminal__actions")].forEach((actions) => {
       if (!actions) return;
       actions.prepend(makeMinBtn(course));
       actions.prepend(makeDetachBtn());
@@ -631,8 +674,6 @@ function init() {
     if (isDetached()) detachCourseTerminal();
     else if (!course.hasAttribute("data-term-off")) setDockState("terminal", "open");
   }
-  // site.js demande un retour au mode émulé (clic sur une commande du cours
-  // alors qu'un mode iframe est affiché).
   document.addEventListener("term:mode", applyTermMode);
   document.querySelectorAll("[data-dock-app]").forEach((btn) => {
     const id = btn.getAttribute("data-app") || btn.getAttribute("data-dock-app");

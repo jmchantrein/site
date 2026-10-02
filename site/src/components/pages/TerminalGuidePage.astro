@@ -1,0 +1,58 @@
+---
+import Base from "../../layouts/Base.astro";
+import installer from "../../../public/terminal/install-iadmin-terminal.sh?raw";
+import companion from "../../../public/terminal/iadmin-terminal.py?raw";
+
+interface Props { locale?: "fr" | "en" }
+const { locale = "fr" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const en = locale === "en";
+---
+<Base
+  title={en ? "Connect your terminal" : "Connecter son terminal"}
+  description={en ? "Install and start IAdmin’s local or SSH terminal companion." : "Installer et démarrer le compagnon de terminal local ou SSH d’IAdmin."}
+  locale={locale}
+  altUrl={en ? `${base}/terminal/` : `${base}/en/terminal/`}
+>
+  <main id="main" class="wrap guide prose">
+    <p class="kicker">{en ? "Real local or remote shell" : "Vrai shell local ou distant"}</p>
+    <h1>{en ? "Connect your terminal" : "Connecter son terminal"}</h1>
+    <p class="lead">{en
+      ? "The companion exposes one authenticated PTY on localhost, then stops when the session ends. It can open your local shell or your usual SSH client."
+      : "Le compagnon expose un unique PTY authentifié sur localhost, puis s’arrête à la fin de la session. Il peut ouvrir ton shell local ou ton client SSH habituel."}</p>
+
+    <h2>{en ? "1. Inspect and install" : "1. Vérifier et installer"}</h2>
+    <p>{en
+      ? "The installer and companion are published below from the same files that are tested by the repository. Read them before running anything, then download the installer."
+      : "L’installateur et le compagnon publiés ci-dessous sont exactement les fichiers testés par le dépôt. Lis-les avant toute exécution, puis télécharge l’installateur."}</p>
+    <p><a class="btn btn--primary" href={`${base}/terminal/install-iadmin-terminal.sh`} download>{en ? "Download the installer" : "Télécharger l’installateur"}</a></p>
+    <pre><code class="language-sh">{installer.trim()}</code></pre>
+
+    <h2>{en ? "2. Run it" : "2. L’exécuter"}</h2>
+    <pre><code>sh ~/Downloads/install-iadmin-terminal.sh --with-local-ca</code></pre>
+    <p>{en
+      ? "The HTTPS site requires a secure WebSocket. The option uses mkcert to create and trust a certificate limited to localhost."
+      : "Le site HTTPS exige un WebSocket sécurisé. L’option utilise mkcert pour créer et approuver un certificat limité à localhost."}</p>
+
+    <h2>{en ? "3. Start a session" : "3. Démarrer une session"}</h2>
+    <pre><code>{`# Local shell
+iadmin-terminal local
+
+# Remote shell through your installed SSH client
+iadmin-terminal ssh user@example.org`}</code></pre>
+    <p>{en
+      ? "Copy the one-time wss://localhost address printed by the command, return to the terminal panel, choose “Local or SSH (companion)”, paste it and connect."
+      : "Copie l’adresse temporaire wss://localhost affichée par la commande, reviens au panneau terminal, choisis « Local ou SSH (compagnon) », colle-la puis connecte-toi."}</p>
+
+    <details>
+      <summary>{en ? "Read the companion source" : "Lire le source du compagnon"}</summary>
+      <pre><code class="language-python">{companion.trim()}</code></pre>
+    </details>
+  </main>
+</Base>
+
+<style>
+  .guide { padding-block: var(--space-7); }
+  .guide > * { max-width: var(--measure); }
+  .guide :global(pre) { max-width: none; }
+</style>

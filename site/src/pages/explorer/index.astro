@@ -6,7 +6,11 @@ import ResourceIndex from "../../components/ResourceIndex.astro";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const resources = (await getCollection("ressources", ({ data, id }) => !data.draft && !id.startsWith("en/")))
   .sort((a, b) => b.data.added.getTime() - a.data.added.getTime() || a.data.title.localeCompare(b.data.title, "fr"));
-const items = resources.map((entry) => ({ href: `${base}/explorer/${entry.id}/`, ...entry.data }));
+const items = resources.map((entry) => ({
+  href: `${base}/explorer/${entry.id}/`,
+  ...entry.data,
+  hasDetails: entry.data.editorialStatus === "reviewed" || Boolean(entry.body?.trim()),
+}));
 ---
 <Base title="Quelques recommandations" description="Une sélection toute personnelle et non exhaustive de ressources en tous genres qui gagneraient à être mieux connues." altUrl={`${base}/en/explorer/`}>
   <main id="main" class="wrap">

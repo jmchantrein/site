@@ -31,10 +31,22 @@ test("l'en-tête propose directement le terminal, sans menu d'outils ni Pomodoro
   assert.match(html, /data-dock-opts="terminal"/);
   assert.match(html, /data-term-pane="companion"/);
   assert.match(html, /data-term-pane="alpine"/);
+  assert.match(html, /data-term-pane="debian"/);
   assert.match(html, /data-alpine-progress/);
-  assert.match(html, /data-term-key="ctrl-c"/);
-  assert.match(html, /data-term-key="tab"/);
-  assert.match(html, /terminal\/install-iadmin-terminal\.sh/);
+  assert.doesNotMatch(html, /data-term-pane="emulated"|data-term-key=/);
+  assert.match(html, /L.image sera téléchargée une fois puis mise en cache/);
+  assert.match(html, /href="\/site\/terminal\/"/);
+});
+
+test("la recette du compagnon est publiée dans le site en français et en anglais", async () => {
+  const [fr, en] = await Promise.all([output("terminal/index.html"), output("en/terminal/index.html")]);
+  assert.match(fr, /Connecter son terminal/);
+  assert.match(en, /Connect your terminal/);
+  for (const html of [fr, en]) {
+    assert.match(html, /install-iadmin-terminal\.sh/);
+    assert.match(html, /iadmin-terminal\.py/);
+    assert.match(html, /--with-local-ca/);
+  }
 });
 
 test("une page de cours conserve ses parcours interactifs essentiels", async () => {
@@ -124,6 +136,8 @@ test("le catalogue de recommandations est bilingue, filtrable et sans persistanc
     output("add-recommendations-skill.txt"),
   ]);
   assert.match(fr, /À explorer…/);
+  assert.match(fr, /youtube-nocookie\.com\/embed\/4xq6bVbS-Pw/);
+  assert.doesNotMatch(fr, /Ouvrir la recommandation/);
   assert.match(fr, /Quelques recommandations/);
   assert.match(fr, /data-resource-index/);
   assert.match(fr, /data-match="any"/);
@@ -132,6 +146,7 @@ test("le catalogue de recommandations est bilingue, filtrable et sans persistanc
   assert.doesNotMatch(fr, /(?:localStorage|sessionStorage)[^\n]{0,120}resource/i);
   assert.match(en, /A few recommendations/);
   assert.match(en, /href="\/site\/explorer\/"/);
+  assert.match(en, /youtube-nocookie\.com\/embed\/4xq6bVbS-Pw/);
   assert.match(detail, /youtube-nocookie\.com\/embed\/4xq6bVbS-Pw/);
   assert.doesNotMatch(detail, /Pourquoi je la recommande/);
   assert.match(feed, /La fabrique des idiots/);

@@ -11,7 +11,6 @@ import Note from "../Note.astro";
 import Exercise from "../Exercise.astro";
 import Cmd from "../Cmd.astro";
 import TermLine from "../TermLine.astro";
-import Terminal from "../Terminal.astro";
 import Slides from "../Slides.astro";
 import Slide from "../Slide.astro";
 import Escape from "../Escape.astro";
@@ -123,12 +122,11 @@ const refs = [
 
         <section class="ds-section" id="terminal">
           <h2><span data-lang="fr">05 · Commande cliquable &amp; terminal</span><span data-lang="en">05 · Clickable command &amp; terminal</span></h2>
-          <p><span data-lang="fr">La commande s'« exécute » dans le panneau terminal (frappe animée, sortie simulée et étiquetée). Le terminal accepte aussi la <strong>saisie directe</strong> (<code>help</code>, historique ↑/↓), se bascule en clair/sombre localement et se réinitialise.</span><span data-lang="en">The command “runs” in the terminal panel (animated typing, simulated and labelled output). The terminal also accepts <strong>direct input</strong> (<code>help</code>, ↑/↓ history), toggles light/dark locally and can be reset.</span></p>
+          <p><span data-lang="fr">La commande est envoyée au <strong>vrai shell Alpine</strong> de la machine virtuelle locale. La sortie placée sous la commande reste un exemple pédagogique visible dans le cours ; elle n’est jamais injectée dans le terminal.</span><span data-lang="en">The command is sent to the local virtual machine’s <strong>real Alpine shell</strong>. The output below the command remains a teaching example displayed in the course; it is never injected into the terminal.</span></p>
           <Cmd cmd="uname -r" term="#term-demo">
             <TermLine>6.8.0-1-amd64</TermLine>
             <TermLine type="ok" tag="note"><span data-lang="fr">un seul noyau, partagé par tous les conteneurs.</span><span data-lang="en">a single kernel, shared by every container.</span></TermLine>
           </Cmd>
-          <Terminal id="term-demo" title={fr ? "bash — démo" : "bash — demo"} comment={fr ? "# démo — tapez « help » ou cliquez la commande ci-dessus" : "# demo — type “help” or click the command above"} />
         </section>
 
         <section class="ds-section" id="diaporama">

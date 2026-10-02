@@ -244,285 +244,25 @@ function wireMobileNav() {
   });
 }
 
-/* ---- TERMINAL « live » + commandes cliquables ------------------------------ */
-function escapeHTML(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-
-function getTerminal(cmd) {
-  const sel = cmd.getAttribute("data-term");
-  if (sel) { const t = document.querySelector(sel); if (t) return t; }
-  // Priorité : l'atelier de la page, puis l'atelier détaché en fenêtre
-  // flottante (jamais un terminal parqué), enfin le terminal du dock.
-  return (
-    document.querySelector("main [data-terminal]:not([data-parked])") ||
-    document.querySelector('[data-dock-window="terminal"] .terminal:not([data-parked])[data-terminal]') ||
-    document.querySelector("[data-terminal]:not([data-parked])")
-  );
-}
-
-function typeInto(screen, text, done) {
-  const motionOff = root.getAttribute("data-motion") === "off";
-  const line = document.createElement("div");
-  line.className = "term-line term-line--cmd";
-  const prompt = '<span class="p">$</span> ';
-  screen.appendChild(line);
-  if (motionOff) {
-    line.innerHTML = prompt + escapeHTML(text);
-    screen.scrollTop = screen.scrollHeight; done();
-    return;
-  }
-  let i = 0;
-  const cur = '<span class="term-cursor"></span>';
-  line.innerHTML = prompt + cur;
-  const iv = setInterval(() => {
-    i++;
-    line.innerHTML = prompt + escapeHTML(text.slice(0, i)) + cur;
-    screen.scrollTop = screen.scrollHeight;
-    if (i >= text.length) { clearInterval(iv); line.innerHTML = prompt + escapeHTML(text); setTimeout(done, 160); }
-  }, 22);
-}
-
-function revealOutput(screen, html, done) {
-  const motionOff = root.getAttribute("data-motion") === "off";
-  const wrap = document.createElement("div");
-  wrap.innerHTML = html.trim();
-  const nodes = Array.prototype.slice.call(wrap.children);
-  if (!nodes.length) { done && done(); return; }
-  let idx = 0;
-  (function step() {
-    if (idx >= nodes.length) { done && done(); return; }
-    screen.appendChild(nodes[idx]);
-    screen.scrollTop = screen.scrollHeight;
-    idx++;
-    if (motionOff) step(); else setTimeout(step, 90);
-  })();
-}
-
-function runCommand(cmd) {
-  const command = cmd.getAttribute("data-cmd") || (cmd.querySelector("code") ? cmd.querySelector("code").textContent : "");
-  const routed = new CustomEvent("terminal:command", { cancelable: true, detail: { command } });
-  if (!document.dispatchEvent(routed)) return;
-  const term = getTerminal(cmd); if (!term) return;
-  // Atelier masqué (dock) → le rouvrir : la commande doit se voir s'exécuter.
-  const course = term.closest(".course[data-term-off]");
-  if (course) {
-    course.removeAttribute("data-term-off");
-    try { localStorage.setItem("site-astro-term-visible-v1", "on"); } catch (e) {}
-  }
-  // Atelier détaché dont la fenêtre est minimisée → la faire réapparaître.
-  const dockwin = term.closest(".dockwin");
-  if (dockwin && dockwin.hidden) dockwin.hidden = false;
-  // Mode iframe affiché → revenir au terminal émulé : les commandes du cours
-  // ne s'exécutent que dans la démo simulée (dock.js écoute term:mode).
-  const pane = term.closest("[data-term-pane]");
-  if (pane && pane.hidden) {
-    try { localStorage.setItem("site-astro-dockterm-mode-v1", "emulated"); } catch (e) {}
-    document.dispatchEvent(new CustomEvent("term:mode"));
-  }
-  // Terminal hors écran (mobile : l'atelier est sous l'article) → l'amener en vue.
-  const r = term.getBoundingClientRect();
-  if (r.top > window.innerHeight || r.bottom < 0) term.scrollIntoView({ block: "nearest" });
-  const screen = term.querySelector(".terminal__screen");
-  const text = command;
-  // La sortie est LE template qui suit CE bouton (Cmd.astro les émet
-  // adjacents) — jamais le premier du parent : avec plusieurs <Cmd> dans
-  // une même section, chaque bouton doit rejouer SA sortie.
-  let tpl = cmd.nextElementSibling;
-  while (tpl && !tpl.matches(".cmd-out")) {
-    if (tpl.matches(".cmd")) { tpl = null; break; }
-    tpl = tpl.nextElementSibling;
-  }
-  const out = tpl ? tpl.innerHTML : "";
-  if (cmd.getAttribute("data-running") === "true") return;
-  cmd.setAttribute("data-running", "true");
-  typeInto(screen, text, () => {
-    revealOutput(screen, out, () => {
-      cmd.setAttribute("data-done", "true");
-      cmd.removeAttribute("data-running");
-    });
-  });
+/* ---- COMMANDES CLIQUABLES : routage vers un vrai terminal ------------ */
+function runCommand(command) {
+  document.dispatchEvent(new CustomEvent("terminal:command", {
+    cancelable: true,
+    detail: { command: command.getAttribute("data-cmd") || command.textContent.trim() },
+  }));
 }
 
 function wireTerminals() {
-  document.querySelectorAll(".cmd").forEach((cmd) => {
-    cmd.addEventListener("click", () => runCommand(cmd));
-    cmd.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); runCommand(cmd); } });
-  });
-  document.querySelectorAll("[data-term-replay]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const term = btn.closest(".terminal");
-      const screen = term.querySelector(".terminal__screen");
-      const initial = term.querySelector("template.term-initial");
-      screen.innerHTML = initial ? initial.innerHTML : "";
-      screen.scrollTop = 0;
-      document.querySelectorAll(".cmd").forEach((c) => {
-        if (!c.getAttribute("data-term") || c.getAttribute("data-term") === "#" + term.id) c.removeAttribute("data-done");
-      });
-    });
-  });
-  // initialise chaque écran avec son contenu initial
-  document.querySelectorAll(".terminal").forEach((term) => {
-    const screen = term.querySelector(".terminal__screen");
-    const initial = term.querySelector("template.term-initial");
-    if (initial && screen && !screen.children.length) screen.innerHTML = initial.innerHTML;
-  });
-}
-
-/* ---- THÈME du terminal (clair/sombre) — local au terminal, persistant ------ */
-const TERM_THEME_KEY = "site-astro-term-theme-v1";
-function readTermTheme() { try { return localStorage.getItem(TERM_THEME_KEY) || "dark"; } catch (e) { return "dark"; } }
-function applyTermTheme(theme) {
-  document.querySelectorAll(".terminal").forEach((t) => {
-    if (theme === "light") t.setAttribute("data-term-theme", "light");
-    else t.removeAttribute("data-term-theme");
-  });
-  document.querySelectorAll("[data-term-theme-btn]").forEach((b) => {
-    b.setAttribute("aria-pressed", String(theme === "light"));
-    b.setAttribute("aria-label", curLang() === "en"
-      ? (theme === "light" ? "Terminal theme: light — switch to dark" : "Terminal theme: dark — switch to light")
-      : (theme === "light" ? "Thème du terminal : clair — basculer en sombre" : "Thème du terminal : sombre — basculer en clair"));
-  });
-}
-function wireTermThemes() {
-  applyTermTheme(readTermTheme());
-  document.querySelectorAll("[data-term-theme-btn]").forEach((b) => {
-    b.addEventListener("click", () => {
-      const next = readTermTheme() === "light" ? "dark" : "light";
-      try { localStorage.setItem(TERM_THEME_KEY, next); } catch (e) {}
-      applyTermTheme(next);
-    });
-  });
-}
-
-/* ---- SAISIE DIRECTE de commandes (interpréteur simulé) --------------------- */
-function outLine(cls, fr, en) {
-  return '<div class="term-line ' + cls + '">' +
-    (fr != null ? '<span data-lang="fr">' + fr + "</span>" : "") +
-    (en != null ? '<span data-lang="en">' + en + "</span>" : "") + "</div>";
-}
-
-function termInterpret(raw) {
-  const cmd = raw.trim().replace(/\s+/g, " ");
-  if (cmd === "") return { ignore: true };
-  if (cmd === "clear" || cmd === "cls") return { clear: true };
-  const M = {
-    help:
-      outLine("term-line--out", "commandes disponibles :", "available commands:") +
-      '<div class="term-line term-line--out">help · clear · ls · pwd · whoami · uname -r</div>' +
-      '<div class="term-line term-line--out">podman ps · podman images · cat /etc/os-release</div>' +
-      '<div class="term-line term-line--out">podman run --rm alpine ps -ef</div>' +
-      '<div class="term-line term-line--out">podman run --rm -m 64m alpine free -m</div>',
-    ls: '<div class="term-line term-line--out">Containerfile  app/  README.md</div>',
-    "ls -l":
-      '<div class="term-line term-line--out">-rw-r--r-- 1 dev dev  214 Containerfile</div>' +
-      '<div class="term-line term-line--out">drwxr-xr-x 2 dev dev 4096 app</div>' +
-      '<div class="term-line term-line--out">-rw-r--r-- 1 dev dev  118 README.md</div>',
-    pwd: '<div class="term-line term-line--out">/home/dev/atelier</div>',
-    whoami: '<div class="term-line term-line--out">dev</div>',
-    id: '<div class="term-line term-line--out">uid=1000(dev) gid=1000(dev) groups=1000(dev)</div>',
-    "uname -r":
-      '<div class="term-line term-line--out">6.8.0-1-amd64</div>' +
-      outLine("term-line--ok", '<span class="tag">note</span>un seul noyau, partagé par tous les conteneurs.', '<span class="tag">note</span>a single kernel, shared by every container.'),
-    "podman ps":
-      '<div class="term-line term-line--out">NAMES  STATUS</div>' +
-      '<div class="term-line term-line--out">web    Up 2 minutes</div>' +
-      '<div class="term-line term-line--out">db     Up 2 minutes</div>',
-    "podman images":
-      '<div class="term-line term-line--out">REPOSITORY   TAG   SIZE</div>' +
-      '<div class="term-line term-line--out">alpine       3.20  7.4 MB</div>' +
-      '<div class="term-line term-line--out">demo         1     12 MB</div>',
-    "podman run --rm alpine ps -ef":
-      '<div class="term-line term-line--out">PID   USER     TIME  COMMAND</div>' +
-      '<div class="term-line term-line--out">    1 root      0:00 ps -ef</div>' +
-      outLine("term-line--ok", '<span class="tag">note</span>un seul processus, PID 1 — l\'hôte est invisible.', '<span class="tag">note</span>a single process, PID 1 — the host is invisible.'),
-    "podman run --rm -m 64m alpine free -m":
-      '<div class="term-line term-line--out">              total    used    free</div>' +
-      '<div class="term-line term-line--out">Mem:             64       3      61</div>' +
-      outLine("term-line--warn", '<span class="tag">limite</span>mémoire plafonnée à 64 Mo par le cgroup.', '<span class="tag">limit</span>memory capped at 64 MB by the cgroup.'),
-    "cat /etc/os-release":
-      '<div class="term-line term-line--out">NAME="Alpine Linux"</div>' +
-      '<div class="term-line term-line--out">VERSION_ID=3.20.0</div>',
-  };
-  if (M[cmd]) return { html: M[cmd] };
-  return {
-    html:
-      outLine("term-line--warn",
-        '<span class="tag">erreur</span>bash : ' + escapeHTML(cmd.split(" ")[0]) + " : commande introuvable",
-        '<span class="tag">error</span>bash: ' + escapeHTML(cmd.split(" ")[0]) + ": command not found") +
-      outLine("term-line--out", "tapez <strong>help</strong> pour la liste.", "type <strong>help</strong> for the list."),
-  };
-}
-
-function wireTermInput() {
-  document.querySelectorAll(".terminal").forEach((term) => {
-    const form = term.querySelector("[data-term-input]");
-    if (!form) return;
-    const input = form.querySelector("input");
-    const screen = term.querySelector(".terminal__screen");
-    const hist = []; let hi = 0;
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const v = input.value;
-      const res = termInterpret(v);
-      if (res.ignore) { input.value = ""; return; }
-      const line = document.createElement("div");
-      line.className = "term-line term-line--cmd";
-      line.innerHTML = '<span class="p">$</span> ' + escapeHTML(v.trim());
-      screen.appendChild(line);
-      hist.push(v.trim()); hi = hist.length;
-      input.value = "";
-      if (res.clear) { screen.innerHTML = ""; screen.scrollTop = 0; return; }
-      revealOutput(screen, res.html, () => { screen.scrollTop = screen.scrollHeight; });
-      screen.scrollTop = screen.scrollHeight;
-    });
-    input.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "r") {
-        const query = input.value;
-        const found = hist.slice(0, hi || hist.length).findLast((item) => !query || item.includes(query));
-        if (found) { input.value = found; hi = hist.lastIndexOf(found); moveCaretEnd(input); }
-        e.preventDefault();
-      } else if (e.key === "ArrowUp") {
-        if (hi > 0) { hi--; input.value = hist[hi]; e.preventDefault(); moveCaretEnd(input); }
-      } else if (e.key === "ArrowDown") {
-        if (hi < hist.length - 1) { hi++; input.value = hist[hi]; }
-        else { hi = hist.length; input.value = ""; }
-        e.preventDefault();
+  document.querySelectorAll(".cmd").forEach((command) => {
+    command.addEventListener("click", () => runCommand(command));
+    command.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        runCommand(command);
       }
     });
-    screen.addEventListener("click", (e) => {
-      if (window.getSelection && String(window.getSelection()).length) return;
-      if (e.target.closest("a, button, .cmd")) return;
-      input.focus();
-    });
   });
 }
-
-document.addEventListener("terminal:simulated-key", (event) => {
-  const term = document.querySelector("[data-term-pane=\"emulated\"]:not([hidden]) .terminal:not([data-parked])") || document.querySelector(".terminal:not([data-parked])");
-  if (!term) return;
-  const input = term.querySelector("[data-term-input] input");
-  const screen = term.querySelector(".terminal__screen");
-  if (event.detail.key === "ctrl-l") { screen.innerHTML = ""; return; }
-  if (event.detail.key === "ctrl-c") {
-    const line = document.createElement("div"); line.className = "term-line term-line--cmd";
-    line.textContent = (input.value ? "$ " + input.value : "$ ") + "^C"; screen.appendChild(line); input.value = ""; return;
-  }
-  const value = input.value, start = input.selectionStart ?? value.length, end = input.selectionEnd ?? start;
-  if (event.detail.key === "ctrl-a" || event.detail.key === "home") input.setSelectionRange(0, 0);
-  else if (event.detail.key === "ctrl-e" || event.detail.key === "end") input.setSelectionRange(value.length, value.length);
-  else if (event.detail.key === "ctrl-b" || event.detail.key === "left") input.setSelectionRange(Math.max(0, start - 1), Math.max(0, start - 1));
-  else if (event.detail.key === "ctrl-f" || event.detail.key === "right") input.setSelectionRange(Math.min(value.length, end + 1), Math.min(value.length, end + 1));
-  else if (event.detail.key === "ctrl-u") { input.value = value.slice(start); input.setSelectionRange(0, 0); }
-  else if (event.detail.key === "ctrl-k") input.value = value.slice(0, start);
-  else if (event.detail.key === "ctrl-w") { const cut = value.slice(0, start).replace(/\s*\S+\s*$/, ""); input.value = cut + value.slice(end); input.setSelectionRange(cut.length, cut.length); }
-  else {
-    const names = { tab: "Tab", escape: "Escape", up: "ArrowUp", down: "ArrowDown", "ctrl-p": "ArrowUp", "ctrl-n": "ArrowDown" };
-    const name = names[event.detail.key];
-    if (event.detail.key === "ctrl-r") input.dispatchEvent(new KeyboardEvent("keydown", { key: "r", ctrlKey: true, bubbles: true }));
-    else if (name) input.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true }));
-  }
-  input.focus();
-});
-function moveCaretEnd(el) { const v = el.value; el.value = ""; el.value = v; }
 
 /* ---- EXERCICE : verrou de la solution tant que la réponse est vide --------- */
 function answerGateOn() { return root.getAttribute("data-require-answer") !== "off"; }
@@ -1179,8 +919,6 @@ function init() {
   wireMobileNav();
   wirePanel();
   wireTerminals();
-  wireTermThemes();
-  wireTermInput();
   wireExercises();
   wireReadingProgress();
   wireSerieTimeline();
