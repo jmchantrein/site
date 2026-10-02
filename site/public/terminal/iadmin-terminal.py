@@ -4,6 +4,11 @@
 The server only listens on the loopback interface, accepts one authenticated
 WebSocket client and forwards raw PTY input/output. It has no third-party
 Python dependency.
+
+This program always runs on the computer hosting the browser. In ``local``
+mode the child process is that computer's login shell. In ``ssh`` mode the
+child is that computer's normal OpenSSH client; only this SSH connection and
+its PTY run on the remote host. The companion itself is never copied there.
 """
 
 from __future__ import annotations
@@ -35,6 +40,7 @@ MAX_FRAME = 1024 * 1024
 
 
 def websocket_frame(payload: bytes, opcode: int = 1) -> bytes:
+    """Wrap an unmasked server payload in the smallest WebSocket frame."""
     size = len(payload)
     if size < 126:
         return bytes((0x80 | opcode, size)) + payload
@@ -44,6 +50,7 @@ def websocket_frame(payload: bytes, opcode: int = 1) -> bytes:
 
 
 def read_exact(conn: socket.socket, size: int) -> bytes | None:
+    """Read exactly ``size`` bytes, or report a cleanly closed connection."""
     payload = bytearray()
     while len(payload) < size:
         block = conn.recv(size - len(payload))
@@ -54,6 +61,7 @@ def read_exact(conn: socket.socket, size: int) -> bytes | None:
 
 
 def receive_frame(conn: socket.socket) -> tuple[int, bytes] | None:
+    """Decode one masked browser frame and reject oversized input early."""
     header = read_exact(conn, 2)
     if not header:
         return None
@@ -82,11 +90,13 @@ def receive_frame(conn: socket.socket) -> tuple[int, bytes] | None:
 
 
 def reject(conn: socket.socket, status: str) -> None:
+    """Send a minimal HTTP rejection before WebSocket upgrade."""
     conn.sendall(f"HTTP/1.1 {status}\r\nConnection: close\r\n\r\n".encode())
     conn.close()
 
 
 def handshake(conn: socket.socket, token: str, origins: set[str]) -> bool:
+    """Authenticate both the one-use URL token and the browser origin."""
     request = b""
     while b"\r\n\r\n" not in request and len(request) < 16384:
         block = conn.recv(4096)
@@ -118,17 +128,23 @@ def handshake(conn: socket.socket, token: str, origins: set[str]) -> bool:
 
 
 def resize(fd: int, cols: int, rows: int) -> None:
+    """Keep the child PTY dimensions aligned with the xterm.js viewport."""
     import fcntl
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
 
 
 def session(conn: socket.socket, command: list[str]) -> None:
+    """Bridge WebSocket JSON messages and a shell/SSH pseudo-terminal."""
+    # pty.fork gives interactive programs the terminal semantics they expect
+    # (prompt, job control, colours), unlike a pair of plain subprocess pipes.
     pid, master = pty.fork()
     if pid == 0:
         os.execvp(command[0], command)
     try:
         resize(master, 100, 32)
         while True:
+            # One blocking select handles output and browser input without
+            # threads. The child output is preserved as UTF-8 replacement text.
             readable, _, _ = select.select((conn, master), (), ())
             if master in readable:
                 try:
@@ -141,6 +157,8 @@ def session(conn: socket.socket, command: list[str]) -> None:
                 if frame is None or frame[0] == 8:
                     break
                 if frame[0] == 9:
+                    # Answer browser pings so idle interactive sessions remain
+                    # alive without sending anything to the shell itself.
                     conn.sendall(websocket_frame(frame[1], opcode=10))
                     continue
                 if frame[0] != 1:
@@ -164,6 +182,7 @@ def session(conn: socket.socket, command: list[str]) -> None:
 
 
 def arguments() -> argparse.Namespace:
+    """Describe connection options and the mutually exclusive session modes."""
     parser = argparse.ArgumentParser(description="Connect IAdmin to a local shell or SSH session")
     parser.add_argument("--port", type=int, default=0, help="loopback port (default: random)")
     parser.add_argument("--origin", action="append", default=[], help="additional allowed browser origin")
@@ -178,6 +197,7 @@ def arguments() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Open a one-client loopback server, authenticate, then bridge its PTY."""
     args = arguments()
     config = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "iadmin-terminal")
     default_cert, default_key = os.path.join(config, "localhost.pem"), os.path.join(config, "localhost-key.pem")
@@ -185,9 +205,13 @@ def main() -> int:
         args.cert, args.key = default_cert, default_key
     if bool(args.cert) != bool(args.key):
         raise SystemExit("--cert and --key must be provided together")
+    # SSH configuration, keys, agent, ProxyJump and host verification all stay
+    # under the system ssh client. We deliberately do not parse or read them.
     command = [args.shell, "-l"] if args.mode == "local" else ["ssh", "-tt", *args.ssh_args]
     if args.mode == "ssh" and not args.ssh_args:
         raise SystemExit("an SSH destination is required")
+    # Bind only IPv4 loopback: no other computer on the LAN can connect. Port
+    # zero asks the OS for an available ephemeral port.
     token = secrets.token_urlsafe(32)
     server = socket.create_server(("127.0.0.1", args.port), family=socket.AF_INET)
     port = server.getsockname()[1]
@@ -195,6 +219,8 @@ def main() -> int:
     print(f"IAdmin pairing address:\n{scheme}://localhost:{port}/?token={token}", flush=True)
     if not args.cert:
         print("Warning: an HTTPS site may reject ws://. Use --cert and --key for wss://.", file=sys.stderr)
+    # Exactly one connection is accepted. The process exits with its terminal
+    # session, making the printed random token single-use in normal operation.
     conn, _ = server.accept()
     if args.cert:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

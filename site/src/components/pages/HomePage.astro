@@ -38,6 +38,15 @@ const recommended = recommendedEntry ? {
   modules: 1,
 } : null;
 
+// Toutes les cartes restent rendues au build ; le navigateur ne fait que
+// sélectionner les trois chemins mémorisés, sans requête ni contenu distant.
+const recentCandidates = cours.map((entry) => ({
+  path: `${cpfx}/cours/${slug(entry.id)}/`,
+  title: entry.data.title,
+  description: entry.data.description,
+  duration: entry.data.duration,
+}));
+
 const articles = await getCollection("miscelanea", ({ data, id }) =>
   !data.draft && (locale === "en" ? id.startsWith("en/") : !id.startsWith("en/")));
 // Fraîcheur = la plus récente des dates connues (publication ou éditions).
@@ -82,6 +91,29 @@ const featuredArticle = !a0 ? null : {
           </div>
         </section>
       )}
+    </section>
+
+    <section class="wrap recent" data-recent-courses hidden aria-labelledby="recent-courses-title">
+      <div class="recent__head">
+        <div>
+          <p class="kicker"><span data-lang="fr">Reprendre</span><span data-lang="en">Continue</span></p>
+          <h2 id="recent-courses-title"><span data-lang="fr">Vos derniers cours consultés</span><span data-lang="en">Your recently viewed courses</span></h2>
+        </div>
+        <p><span data-lang="fr">Retrouvez en un clic votre dernière position de lecture.</span><span data-lang="en">Return to your last reading position in one click.</span></p>
+      </div>
+      <div class="recent__grid" data-recent-course-list>
+        {recentCandidates.map((course) => (
+          <a class="module-card recent__card" href={`${course.path}?resume=1`} data-recent-course={course.path} hidden>
+            <div class="module-card__top">
+              <span class="module-card__flag"><span data-lang="fr">Reprendre</span><span data-lang="en">Continue</span></span>
+              {course.duration && <span class="module-card__meta">≈ {course.duration} min</span>}
+            </div>
+            <h3 class="module-card__title">{course.title}</h3>
+            <p class="module-card__desc">{course.description}</p>
+            <span class="module-card__cta"><span data-lang="fr">Continuer le cours</span><span data-lang="en">Continue course</span> →</span>
+          </a>
+        ))}
+      </div>
     </section>
 
     <section class="wrap explore" aria-label={locale === "en" ? "Explore the site" : "Explorer le site"}>
@@ -147,6 +179,13 @@ const featuredArticle = !a0 ? null : {
   .site-status { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
   .status-dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--color-success); flex: none; }
   .explore { margin-top: var(--space-5); }
+  .recent { margin-top: var(--space-2); }
+  .recent__head { display: flex; align-items: end; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-4); }
+  .recent__head h2 { margin: var(--space-1) 0 0; font-size: var(--text-xl); }
+  .recent__head > p { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+  .recent__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: var(--space-4); }
+  .recent__card { display: flex; flex-direction: column; }
+  .recent__card .module-card__cta { margin-top: auto; }
   .explore__title { margin-bottom: var(--space-5); font-size: var(--text-xl); }
   .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-5); align-items: stretch; }
   .pillar { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); background: var(--color-surface-sunken); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
@@ -157,4 +196,5 @@ const featuredArticle = !a0 ? null : {
   .pillar__all { align-self: flex-start; margin-top: auto; }
   .module-card__flag { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-accent-text); text-transform: uppercase; letter-spacing: 0.04em; }
   .design-note { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
+  @media (max-width: 700px) { .recent__head { display: block; } .recent__head > p { margin-top: var(--space-2); } }
 </style>
