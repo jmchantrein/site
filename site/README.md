@@ -26,7 +26,8 @@ Le runtime partagé (`src/scripts/site.js`) câble : tiroirs Accessibilité /
 Paramètres (persistants), langue FR/EN, terminal interactif, verrou des
 exercices, sommaires, ancres, recherche Ctrl+K, diaporamas.
 Le **dock** de l'en-tête (`src/data/dock.ts` + `src/scripts/dock.js`) porte
-le terminal : une vraie VM Alpine légère, une VM Debian minimale construite
+le terminal : une vraie VM Alpine outillée et utilisable hors ligne construite
+par `scripts/build-alpine-vm.sh`, une VM Debian minimale construite
 par `scripts/build-debian-vm.sh`, ou le compagnon pour ouvrir un PTY local / SSH.
 Les images et le moteur v86 sont servis localement puis mis en cache par le
 navigateur ; aucun interpréteur de commandes simulé n'est maintenu.
